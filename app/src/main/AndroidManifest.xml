@@ -2,13 +2,31 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.e.myapplication">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MyApplication">
+        android:theme="@style/Theme.MyApplication"
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".board.FreeBoardActivity"
+            android:exported="false"
+            android:label="@string/title_activity_free_board"
+            android:theme="@style/Theme.MyApplication.NoActionBar" />
+        <activity
+            android:name=".user.RegisterActivity"
+            android:exported="false"
+            android:label="@string/title_activity_register"
+            android:theme="@style/Theme.MyApplication.NoActionBar" />
+        <activity
+            android:name=".user.LoginActivity"
+            android:exported="false"
+            android:label="@string/title_activity_login"
+            android:theme="@style/Theme.MyApplication.NoActionBar" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -25,10 +43,11 @@
             android:exported="false"
             android:label="@string/title_activity_board"
             android:theme="@style/Theme.MyApplication.NoActionBar" />
-        <activity android:name=".board.ShowBoardActivity"
+        <activity
+            android:name=".board.ShowBoardActivity"
             android:exported="false"
             android:label=""
             android:theme="@style/Theme.MyApplication.NoActionBar" />
     </application>
-    <uses-permission android:name="android.permission.INTERNET" />
+
 </manifest>
