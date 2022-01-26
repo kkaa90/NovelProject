@@ -1,8 +1,11 @@
 package com.e.myapplication
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,6 +20,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -27,16 +31,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import coil.compose.rememberImagePainter
 import com.e.myapplication.board.FreeBoardActivity
 import com.e.myapplication.board.ShowBoardActivity
 import com.e.myapplication.dataclass.Novel
+import com.e.myapplication.menu.Drawer
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.gray
 import com.e.myapplication.user.LoginActivity
+import com.e.myapplication.user.ProtoRepository
+import kotlinx.coroutines.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {
@@ -52,53 +63,93 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ShowNovelList(novels: List<Novel>) {
-    Row(modifier = Modifier.fillMaxHeight()) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            TopMenu()
-            Image(
-                painter = rememberImagePainter(""), contentDescription = "", modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-            )
-            Spacer(modifier = Modifier.height(8.0.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text("실시간 랭킹", fontSize = 32.sp, modifier = Modifier.padding(4.0.dp))
-                    Text("좋아요 순", fontSize = 18.sp, modifier = Modifier.padding(4.0.dp))
-                }
-                Text(
-                    text = "더보기 ", fontSize = 14.sp, modifier = Modifier
-                        .clickable(onClick = {})
-                        .padding(4.0.dp)
-                )
+    val context = LocalContext.current
+    val repository = ProtoRepository(context = context)
+    fun read(): String {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
 
+        }
+        return accountInfo.authorization
+    }
+
+    val scaffoldState = rememberScaffoldState()
+    val scope = rememberCoroutineScope()
+    Scaffold(
+        topBar = { TopMenu(scaffoldState, scope) },
+        scaffoldState = scaffoldState,
+        drawerContent = { Drawer() },
+        drawerGesturesEnabled = true
+    ) {
+        BackHandler() {
+            if (scaffoldState.drawerState.isClosed) (context as Activity).finish()
+            else {
+                scope.launch {
+                    scaffoldState.drawerState.apply {
+                        close()
+                    }
+                }
             }
-            LazyColumn {
-                items(novels) { novel ->
-                    Spacer(modifier = Modifier.padding(8.dp))
-                    Greeting3(novel)
+        }
+        Row(modifier = Modifier.fillMaxHeight()) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Image(
+                    painter = rememberImagePainter(""), contentDescription = "", modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clickable(onClick = {
+                            read()
+
+                        })
+                )
+                Spacer(modifier = Modifier.height(8.0.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text("실시간 랭킹", fontSize = 32.sp, modifier = Modifier.padding(4.0.dp))
+                        Text("좋아요 순", fontSize = 18.sp, modifier = Modifier.padding(4.0.dp))
+                    }
+                    Text(
+                        text = "더보기 ", fontSize = 14.sp, modifier = Modifier
+                            .clickable(onClick = {})
+                            .padding(4.0.dp)
+                    )
+
+                }
+                LazyColumn {
+                    items(novels) { novel ->
+                        Spacer(modifier = Modifier.padding(8.dp))
+                        Greeting3(novel)
+                    }
                 }
             }
         }
     }
 
+
 }
 
 @Composable
-fun TopMenu() {
+fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
     val context = LocalContext.current
+
     Row(
         horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
             .fillMaxWidth()
             .background(gray)
     ) {
         IconButton(onClick = {
-            val intent = Intent(context, LoginActivity::class.java)
-            context.startActivity(intent)
+//            val intent = Intent(context, LoginActivity::class.java)
+//            context.startActivity(intent)
+            scope.launch {
+                scaffoldState.drawerState.apply {
+                    if (isClosed) open() else close()
+                }
+            }
         }) {
             Icon(
                 Icons.Default.Menu,
@@ -106,7 +157,9 @@ fun TopMenu() {
             )
         }
         Row {
-            IconButton(onClick = {}) {
+            IconButton(onClick = {
+
+            }) {
                 Icon(
                     Icons.Default.Notifications,
                     contentDescription = null
@@ -128,13 +181,14 @@ fun TopMenu() {
 @Composable
 fun Greeting3(novel: Novel) {
     val context = LocalContext.current
-    Row(verticalAlignment = CenterVertically, modifier = Modifier
-        .fillMaxWidth()
-        .clickable(onClick = {
-            val intent = Intent(context, ShowBoardActivity::class.java)
-            intent.putExtra("novelNum", novel.n)
-            context.startActivity(intent)
-        })
+    Row(
+        verticalAlignment = CenterVertically, modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = {
+                val intent = Intent(context, ShowBoardActivity::class.java)
+                intent.putExtra("novelNum", novel.n)
+                context.startActivity(intent)
+            })
     ) {
         Text(novel.rank.toString(), modifier = Modifier.padding(16.dp), fontSize = 24.sp)
         Image(

@@ -21,13 +21,37 @@ interface UserApi {
     @Headers("Content-Type: application/json")
     @POST("/boards")
     fun writeBoard(
-        @Body body : Boards
-    ): Call<Int>
+        @Header("Authorization") authorization : String?,
+        @Body body : PostBoard
+    ): Call<PostBoardResponse>
 
     @GET("/boards")
     fun getBoards(
         @Query("page") page : Int
-    ): Call<List<Boards>>
+    ): Call<Boards>
 
+    @GET("/boards/{num}")
+    fun getBoard(
+        @Path("num") num : Int
+    ): Call<Board>
+
+    @Headers("Content-Type: application/json")
+    @POST("/boards/{num}/cmts")
+    fun writeComment(
+        @Header("Authorization") authorization : String?,
+        @Body body : PostComments,
+        @Path("num") num : Int
+    ): Call<PostBoardResponse>
+
+    @GET("/boards/{num}/cmts")
+    fun getComment(
+        @Path("num") num : Int
+    ): Call<Comments>
+
+    @GET("/boards/{num}/cmts")
+    fun getComments(
+        @Path("num") num : Int,
+        @Query("page") page : Int
+    ): Call<Comments>
 
 }

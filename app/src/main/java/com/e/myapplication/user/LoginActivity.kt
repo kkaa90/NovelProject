@@ -1,5 +1,7 @@
 package com.e.myapplication.user
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,11 +13,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.e.myapplication.AccountInfo
 import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.GetBody
 import com.e.myapplication.dataclass.User
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Response
 import javax.security.auth.callback.Callback
@@ -32,7 +37,7 @@ class LoginActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Column {
-                        Greeting4()
+                        Login()
                     }
                 }
             }
@@ -41,15 +46,24 @@ class LoginActivity : ComponentActivity() {
 }
 
 
+
+
 @Composable
-fun Greeting4() {
+fun Login() {
     val login = RetrofitClass
     val service = login.api
     var id by remember { mutableStateOf("") }
     var pwd by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
-
-
+    val repository = ProtoRepository(context = context)
+    fun AccountSave(user: User?) {
+        runBlocking(Dispatchers.IO){
+            if (user != null) {
+                repository.writeAccountInfo(user)
+            }
+        }
+        return
+    }
 
     Column() {
         OutlinedTextField(value = id, onValueChange = { id = it }, label = { Text("ID") })
@@ -67,6 +81,9 @@ fun Greeting4() {
                     val r = response.body()?.authorization
                     if (r != "") {
                         println(r)
+                        AccountSave(response.body())
+
+                        (context as Activity).finish()
                     } else {
                         println("로그인 실패")
                     }

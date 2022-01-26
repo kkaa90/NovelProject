@@ -92,8 +92,10 @@ fun Greeting(posting: Posting) {
 
 @Composable
 fun ShowPostList(novel: Novel, postings: List<Posting>) {
+    val scaffoldState = rememberScaffoldState()
+    val scope = rememberCoroutineScope()
     Column(modifier = Modifier.fillMaxWidth()) {
-        TopMenu()
+        TopMenu(scaffoldState, scope)
         Column(
             modifier = Modifier
                 .fillMaxWidth()

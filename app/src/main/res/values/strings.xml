@@ -5,4 +5,7 @@
     <string name="title_activity_login">LoginActivity</string>
     <string name="title_activity_register">RegisterActivity</string>
     <string name="title_activity_free_board">FreeBoardActivity</string>
+    <string name="title_activity_wfree_board">WFreeBoardActivity</string>
+    <string name="title_activity_test">TestActivity</string>
+    <string name="title_activity_write_free_board">WriteFreeBoardActivity</string>
 </resources>

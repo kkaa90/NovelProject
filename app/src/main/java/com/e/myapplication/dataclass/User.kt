@@ -4,9 +4,10 @@ import com.google.gson.annotations.SerializedName
 import retrofit2.http.Query
 
 data class User(
+    @SerializedName("mem_userid") val mem_userid : String,
     @SerializedName("Authorization") val authorization: String,
-    @SerializedName("mem_email") val memEmail: String,
     @SerializedName("mem_icon") val memIcon: String,
+    @SerializedName("mem_id") val mem_id: String,
     @SerializedName("mem_nick") val memNick: String
 )
 

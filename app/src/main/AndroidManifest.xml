@@ -13,6 +13,17 @@
         android:theme="@style/Theme.MyApplication"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".board.WriteFreeBoardActivity"
+            android:exported="false"
+            android:label="@string/title_activity_write_free_board"
+            android:theme="@style/Theme.MyApplication.NoActionBar" />
+
+        <activity
+            android:name=".board.ShowFreeBoardActivity"
+            android:exported="false"
+            android:label="title_activity_wfree_board"
+            android:theme="@style/Theme.MyApplication.NoActionBar" />
+        <activity
             android:name=".board.FreeBoardActivity"
             android:exported="false"
             android:label="@string/title_activity_free_board"
