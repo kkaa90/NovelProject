@@ -1,4 +1,4 @@
-package com.e.myapplication.board
+package com.e.myapplication.novel
 
 import android.app.Activity
 import android.content.Context
@@ -16,10 +16,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -28,9 +25,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
+import com.e.myapplication.board.wB
 import com.e.myapplication.dataclass.ImageUpload
 import com.e.myapplication.dataclass.PostBoard
-import com.e.myapplication.dataclass.PostBoardResponse
+import com.e.myapplication.dataclass.SNCR
+import com.e.myapplication.dataclass.SendNCover
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.user.LoginActivity
@@ -41,29 +40,31 @@ import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.Response
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
-class WriteFreeBoardActivity : ComponentActivity() {
-
+class WriteNCoverActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(color = MaterialTheme.colors.background) {
-                    Greeting7()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colors.background
+                ) {
+                    Greeting4("Android")
                 }
             }
         }
-
     }
 }
 
 @Composable
-fun Greeting7() {
+fun Greeting4(name: String) {
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     fun read(): AccountInfo {
@@ -74,13 +75,12 @@ fun Greeting7() {
         }
         return accountInfo
     }
-
-    val writeBoard = RetrofitClass
-    val service = writeBoard.api
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf("")}
+    var content by remember { mutableStateOf("")}
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var tag by remember { mutableStateOf("") }
+    var tags = remember {mutableListOf<String>()}
     var file: File?
     var f = false
     val launcher =
@@ -120,6 +120,20 @@ fun Greeting7() {
                 Text(text = "이미지 선택")
             }
         }
+        Text(text = "태그 : $tags")
+        Button(onClick = { tags.removeAll(tags) }) {
+            Text("태그 초기화")
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(value = tag, onValueChange = {tag = it}, maxLines = 1)
+            Button(onClick = {
+                tags.add(tag)
+                tag=""
+            }) {
+                Text("태그 추가")
+            }
+        }
+
         Button(onClick = {
 
             var imageNum: String
@@ -130,55 +144,16 @@ fun Greeting7() {
                 println(file?.absolutePath)
                 requestBody = RequestBody.create(MediaType.parse("image/*"), file)
                 val body = MultipartBody.Part.createFormData("images", "image.png", requestBody)
-                val upI = service.uploadImage(ac.authorization.toString(), body)
-                upI.enqueue(object : retrofit2.Callback<ImageUpload> {
-                    override fun onResponse(
-                        call: Call<ImageUpload>,
-                        response: Response<ImageUpload>
-                    ) {
-                        imageNum = response.body()?.msg.toString()
-                        println(imageNum)
-                        if (imageNum == "JWT expiration") {
-                            Toast.makeText(
-                                    context,
-                            "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                            Toast.LENGTH_LONG
-                            ).show()
-                            val intent = Intent(context, LoginActivity::class.java)
-                            context.startActivity(intent)
-                            upI.cancel()
-
-                        }
-                        else {
-                            val postBoard = PostBoard(
-                                content,
-                                "",
-                                imageNum,
-                                title,
-                                ac.memId.toString(),
-                                ac.memNick.toString()
-                            )
-                            wB(context, ac, postBoard)
-                        }
-                        println("이미지 : " + response.body()!!.msg.toString())
-                        println(imageNum)
-                    }
-
-                    override fun onFailure(call: Call<ImageUpload>, t: Throwable) {
-                        t.printStackTrace()
-                    }
-
-                })
+                sImage(context,ac,body,content,title,tags)
             } else {
                 println("파일 없음")
-                val postBoard =
-                    PostBoard(content, "", "", title, ac.memId.toString(), ac.memNick.toString())
-                wB(context, ac, postBoard)
+                val nc = SendNCover(SendNCover.NovelCover("0","0",content,title),tags)
+                wNCover(context,ac,nc)
             }
 
 
         }) {
-            Text(text = "글쓰기")
+            Text(text = "작성")
         }
     }
 
@@ -186,54 +161,82 @@ fun Greeting7() {
 
 @Preview(showBackground = true)
 @Composable
-fun DefaultPreview9() {
+fun DefaultPreview8() {
     MyApplicationTheme {
-        Greeting7()
+        Greeting4("Android")
     }
 }
 
 
-fun wB(context: Context, ac: AccountInfo, postBoard: PostBoard) {
-
-    val writeBoard = RetrofitClass
-    val service = writeBoard.api
-    val wb = service.writeBoard(
-        ac.authorization.toString(),
-        postBoard
-    )
 
 
-    wb.enqueue(object : retrofit2.Callback<PostBoardResponse> {
-        override fun onResponse(
-            call: Call<PostBoardResponse>,
-            response: Response<PostBoardResponse>
-        ) {
+fun wNCover(context: Context, ac : AccountInfo, nc : SendNCover){
+    val retrofitClass = RetrofitClass.api.writeNCover(ac.authorization.toString(),nc)
+    retrofitClass.enqueue(object :retrofit2.Callback<SNCR>{
+        override fun onResponse(call: Call<SNCR>, response: Response<SNCR>) {
             val r = response.body()?.msg
-            println(response.body().toString())
-            println(r)
-            when (r) {
-                "JWT expiration" -> {
-                    println("토큰 만료")
-                    Toast.makeText(context, "토큰이 만료되었습니다.\n 다시 로그인 해주세요.", Toast.LENGTH_LONG).show()
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
-                }
-                "1" -> {
-                    println("글쓰기 성공")
-                    (context as Activity).finish()
-                }
-                else -> {
-                    println("글쓰기 오류")
-                }
+            if(r=="JWT expiration"){
+                val intent = Intent(context,LoginActivity::class.java)
+                context.startActivity(intent)
+                Toast.makeText(
+                    context,
+                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
+                    Toast.LENGTH_LONG
+                ).show()
+                retrofitClass.cancel()
             }
-            wb.cancel()
+            else {
+                println(r)
+                Toast.makeText(
+                    context,
+                    "커버 작성 완료",
+                    Toast.LENGTH_LONG
+                ).show()
+                (context as Activity).finish()
+            }
+
         }
 
-        override fun onFailure(call: Call<PostBoardResponse>, t: Throwable) {
+        override fun onFailure(call: Call<SNCR>, t: Throwable) {
             t.printStackTrace()
         }
+
+
     })
 }
+
+fun sImage(context: Context, ac:AccountInfo, body: MultipartBody.Part, content : String, title : String,
+    tag : List<String>){
+    val retrofitClass = RetrofitClass.api.uploadImage(ac.authorization.toString(),body)
+    retrofitClass.enqueue(object :retrofit2.Callback<ImageUpload>{
+        override fun onResponse(call: Call<ImageUpload>, response: Response<ImageUpload>) {
+            val r = response.body()?.msg
+            if(r=="JWT expiration"){
+                val intent = Intent(context,LoginActivity::class.java)
+                context.startActivity(intent)
+                Toast.makeText(
+                    context,
+                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
+                    Toast.LENGTH_LONG
+                ).show()
+                retrofitClass.cancel()
+            }
+            else {
+                println("사진 번호 : $r")
+                val nc = SendNCover(SendNCover.NovelCover(r!!,"0",content,title),tag)
+                wNCover(context,ac, nc)
+            }
+        }
+
+        override fun onFailure(call: Call<ImageUpload>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+
+}
+
+
 
 fun bitmapToFile(bitmap: Bitmap, fileNameToSave: String): File? { // File name like "image.png"
     //create a file to write bitmap data

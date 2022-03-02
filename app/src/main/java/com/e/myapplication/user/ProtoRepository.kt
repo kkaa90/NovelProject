@@ -22,19 +22,6 @@ private val Context.accountDataStore: DataStore<AccountInfo> by dataStore(
 class ProtoRepository(context: Context) {
     private val accountDataStore = context.accountDataStore
 
-
-    val readAccountAuthorization : Flow<String> = accountDataStore.data
-        .catch { exception ->
-            if(exception is IOException){
-                emit(AccountInfo.getDefaultInstance())
-            }
-            else{
-                throw exception
-            }
-        }.map {
-            println(it.authorization)
-            it.authorization
-        }
     suspend fun readAccountInfo(): AccountInfo {
         return accountDataStore.data.map { it }.first()
 

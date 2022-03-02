@@ -1,57 +1,108 @@
 package com.e.myapplication.retrofit
 
 import com.e.myapplication.dataclass.*
+import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.*
 
 interface UserApi {
+    // 로그인 및 회원가입
     @Headers("Content-Type: application/json")
     @POST("/login")
     fun getUser(
-        @Body body : GetBody
+        @Body body: GetBody
     ): Call<User>
-
 
     @Headers("Content-Type: application/json")
     @POST("/join")
     fun register(
-        @Body body : SendBody
+        @Body body: SendBody
     ): Call<PostBody>
 
+    // 자유게시판 글쓰기 및 불러오기
     @Headers("Content-Type: application/json")
     @POST("/boards")
     fun writeBoard(
-        @Header("Authorization") authorization : String?,
-        @Body body : PostBoard
+        @Header("Authorization") authorization: String?,
+        @Body body: PostBoard
     ): Call<PostBoardResponse>
 
     @GET("/boards")
     fun getBoards(
-        @Query("page") page : Int
+        @Query("page") page: Int
     ): Call<Boards>
 
     @GET("/boards/{num}")
     fun getBoard(
-        @Path("num") num : Int
+        @Path("num") num: Int
     ): Call<Board>
 
+    // 자유게시판 댓글 쓰기 및 불러오기
     @Headers("Content-Type: application/json")
     @POST("/boards/{num}/cmts")
     fun writeComment(
-        @Header("Authorization") authorization : String?,
-        @Body body : PostComments,
-        @Path("num") num : Int
+        @Header("Authorization") authorization: String?,
+        @Body body: PostComments,
+        @Path("num") num: Int
     ): Call<PostBoardResponse>
 
     @GET("/boards/{num}/cmts")
     fun getComment(
-        @Path("num") num : Int
+        @Path("num") num: Int
     ): Call<Comments>
 
     @GET("/boards/{num}/cmts")
     fun getComments(
-        @Path("num") num : Int,
-        @Query("page") page : Int
+        @Path("num") num: Int,
+        @Query("page") page: Int
     ): Call<Comments>
+
+    //이미지 업로드 및 주소받기
+    @Multipart
+    @POST("/upload")
+    fun uploadImage(
+        @Header("Authorization") authorization: String?,
+        @Part images: MultipartBody.Part?
+    ): Call<ImageUpload>
+
+    @GET("/imgs/{num}")
+    fun getImageUrl(
+        @Path("num") num: Int
+    ): Call<ImageUrl>
+
+    //소설 커버 목록 받기 및 쓰기
+    @GET("/novels")
+    fun getNovels(
+        @Query("sort") sort : String
+    ): Call<Novels>
+
+    @Headers("Content-Type: application/json")
+    @POST("/novels")
+    fun writeNCover(
+        @Header("Authorization") authorization: String?,
+        @Body body: SendNCover
+    ): Call<SNCR>
+
+    //각 소설 목록받기
+    @GET("/novels/{num}")
+    fun getNovelList(
+        @Path("num") num: Int
+    ): Call<NovelsInfo>
+
+    //소설 게시글 보기 및 작성
+    @GET("/novels/detail/{num}")
+    fun getNovel(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int,
+        @Query("nv_id") nv_id : Int
+    ) : Call<NovelsDetail>
+
+    @POST("/novels/detail/{num}")
+    fun writeNovel(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int,
+        @Body body: PostNovelsDetail
+    ) : Call<SNCR>
+
 
 }

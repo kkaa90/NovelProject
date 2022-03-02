@@ -1,5 +1,6 @@
 package com.e.myapplication.board
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -33,6 +34,7 @@ import java.util.ArrayList
 import javax.security.auth.callback.Callback
 
 class FreeBoardActivity : ComponentActivity() {
+    @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

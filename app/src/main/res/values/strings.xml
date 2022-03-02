@@ -8,4 +8,7 @@
     <string name="title_activity_wfree_board">WFreeBoardActivity</string>
     <string name="title_activity_test">TestActivity</string>
     <string name="title_activity_write_free_board">WriteFreeBoardActivity</string>
+    <string name="title_activity_write_ncover">WriteNCoverActivity</string>
+    <string name="title_activity_novel_cover">NovelCoverActivity</string>
+    <string name="title_activity_write_novel">WriteNovelActivity</string>
 </resources>

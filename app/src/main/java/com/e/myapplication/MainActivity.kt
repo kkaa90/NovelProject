@@ -1,9 +1,11 @@
 package com.e.myapplication
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.Toast
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -14,13 +16,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -31,29 +34,94 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import coil.compose.rememberImagePainter
 import com.e.myapplication.board.FreeBoardActivity
-import com.e.myapplication.board.ShowBoardActivity
-import com.e.myapplication.dataclass.Novel
+import com.e.myapplication.dataclass.ImageUrl
+import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
+import com.e.myapplication.novel.NovelCoverActivity
+import com.e.myapplication.novel.ShowNovelListActivity
+import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.gray
-import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import retrofit2.Call
+import retrofit2.Response
+
 
 class MainActivity : ComponentActivity() {
+    private val multiplePermissionsCode = 100
+    private val requiredPermissions =
+        arrayOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
+        checkPermissions()
+        val novels = mutableStateListOf<Novels.Content>()
+        val tags = mutableStateListOf<List<String>>()
+        getNovels(novels, tags)
         setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    ShowNovelList(SampleData.novelList)
+                    ShowNovelList(novels, tags)
+                }
+            }
+        }
+    }
+
+    private fun checkPermissions() {
+        //거절되었거나 아직 수락하지 않은 권한(퍼미션)을 저장할 문자열 배열 리스트
+        var rejectedPermissionList = ArrayList<String>()
+
+        //필요한 퍼미션들을 하나씩 끄집어내서 현재 권한을 받았는지 체크
+        for (permission in requiredPermissions) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    permission
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                //만약 권한이 없다면 rejectedPermissionList에 추가
+                rejectedPermissionList.add(permission)
+            }
+        }
+        //거절된 퍼미션이 있다면...
+        if (rejectedPermissionList.isNotEmpty()) {
+            //권한 요청!
+            val array = arrayOfNulls<String>(rejectedPermissionList.size)
+            ActivityCompat.requestPermissions(
+                this,
+                rejectedPermissionList.toArray(array),
+                multiplePermissionsCode
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            multiplePermissionsCode -> {
+                if (grantResults.isNotEmpty()) {
+                    for ((i, permission) in permissions.withIndex()) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            //권한 획득 실패
+                            Log.i("TAG", "The user has denied to $permission")
+                            Log.i("TAG", "I can't work for you anymore then. ByeBye!")
+                        }
+                    }
                 }
             }
         }
@@ -62,7 +130,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun ShowNovelList(novels: List<Novel>) {
+fun ShowNovelList(novels: SnapshotStateList<Novels.Content>, tags: SnapshotStateList<List<String>>) {
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     fun read(): String {
@@ -115,16 +183,20 @@ fun ShowNovelList(novels: List<Novel>) {
                     }
                     Text(
                         text = "더보기 ", fontSize = 14.sp, modifier = Modifier
-                            .clickable(onClick = {})
+                            .clickable(onClick = {
+                                val intent = Intent(context,NovelCoverActivity::class.java)
+                                context.startActivity(intent)
+                            })
                             .padding(4.0.dp)
                     )
 
                 }
                 LazyColumn {
-                    items(novels) { novel ->
+                    itemsIndexed(novels) { index, novel ->
                         Spacer(modifier = Modifier.padding(8.dp))
-                        Greeting3(novel)
+                        Greeting3(novel, tags[index])
                     }
+
                 }
             }
         }
@@ -179,32 +251,53 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
 }
 
 @Composable
-fun Greeting3(novel: Novel) {
+fun Greeting3(novel: Novels.Content, tag: List<String>) {
+    var t = ""
+    if(tag.isNotEmpty()){
+        t+=tag[0]
+        for(i in 1 until tag.size){
+            t+=", "
+            t+=tag[i]
+        }
+    }
+
     val context = LocalContext.current
     Row(
         verticalAlignment = CenterVertically, modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                val intent = Intent(context, ShowBoardActivity::class.java)
-                intent.putExtra("novelNum", novel.n)
+                val intent = Intent(context, ShowNovelListActivity::class.java)
+                intent.putExtra("novelNum", novel.nvcid)
                 context.startActivity(intent)
             })
     ) {
-        Text(novel.rank.toString(), modifier = Modifier.padding(16.dp), fontSize = 24.sp)
-        Image(
-            painter = painterResource(R.drawable.schumi), contentDescription = "schumi",
-            modifier = Modifier
-                .size(60.dp)
-                .clip(RectangleShape)
-                .border(1.5.dp, MaterialTheme.colors.secondary, RectangleShape),
+        Text("-", modifier = Modifier.padding(16.dp), fontSize = 24.sp)
+        if(novel.imgUrl=="1"||novel.imgUrl=="23"){
+            Image(
+                painter = painterResource(R.drawable.schumi), contentDescription = "schumi",
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RectangleShape)
+                    .border(1.5.dp, MaterialTheme.colors.secondary, RectangleShape),
 
-            )
+                )
+        }
+        else {
+            Image(
+                painter = rememberImagePainter(novel.imgUrl), contentDescription = "schumi",
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RectangleShape)
+                    .border(1.5.dp, MaterialTheme.colors.secondary, RectangleShape),
+
+                )
+        }
         Spacer(modifier = Modifier.width(16.0.dp))
         Column {
-            Text(novel.title)
-            Text(novel.writer)
+            Text(novel.nvcTitle)
+            Text(novel.nvcid.toString())
             Spacer(modifier = Modifier.height(4.0.dp))
-            Text("장르 : " + novel.genre)
+            Text("태그 : $t")
         }
     }
 }
@@ -213,6 +306,23 @@ fun Greeting3(novel: Novel) {
 @Composable
 fun DefaultPreview3() {
     MyApplicationTheme {
-        ShowNovelList(SampleData.novelList)
+
     }
+}
+
+fun getNovels(novelList : SnapshotStateList<Novels.Content>, tags : SnapshotStateList<List<String>>){
+    val getNovels = RetrofitClass.api.getNovels("nvcid,ASC")
+    getNovels.enqueue(object : retrofit2.Callback<Novels>{
+        override fun onResponse(call: Call<Novels>, response: Response<Novels>) {
+            val r = response.body()?.content
+            val t = response.body()?.tags
+            novelList.addAll(r!!)
+            tags.addAll(t!!)
+        }
+
+        override fun onFailure(call: Call<Novels>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
 }

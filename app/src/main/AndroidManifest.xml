@@ -3,21 +3,38 @@
     package="com.e.myapplication">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".novel.WriteNovelActivity"
+            android:exported="false"
+            android:label="@string/title_activity_write_novel"
+            android:theme="@style/Theme.MyApplication" />
+        <activity
+            android:name=".novel.NovelCoverActivity"
+            android:exported="false"
+            android:label="@string/title_activity_novel_cover"
+            android:theme="@style/Theme.MyApplication" />
+        <activity
+            android:name=".novel.WriteNCoverActivity"
+            android:exported="false"
+            android:label="@string/title_activity_write_ncover"
+            android:theme="@style/Theme.MyApplication" />
+        <activity
             android:name=".board.WriteFreeBoardActivity"
             android:exported="false"
             android:label="@string/title_activity_write_free_board"
             android:theme="@style/Theme.MyApplication.NoActionBar" />
-
         <activity
             android:name=".board.ShowFreeBoardActivity"
             android:exported="false"
@@ -50,12 +67,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".board.BoardActivity"
+            android:name=".novel.NovelActivity"
             android:exported="false"
-            android:label="@string/title_activity_board"
+            android:label=""
             android:theme="@style/Theme.MyApplication.NoActionBar" />
         <activity
-            android:name=".board.ShowBoardActivity"
+            android:name=".novel.ShowNovelListActivity"
             android:exported="false"
             android:label=""
             android:theme="@style/Theme.MyApplication.NoActionBar" />

@@ -8,7 +8,9 @@ data class User(
     @SerializedName("Authorization") val authorization: String,
     @SerializedName("mem_icon") val memIcon: String,
     @SerializedName("mem_id") val mem_id: String,
-    @SerializedName("mem_nick") val memNick: String
+    @SerializedName("mem_nick") val memNick: String,
+    @SerializedName("attendance point") val aPoint : String,
+    @SerializedName("mem_lastlogin_datetime") val lastLogin : String
 )
 
 data class PostBody(
