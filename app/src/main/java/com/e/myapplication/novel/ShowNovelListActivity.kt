@@ -1,9 +1,13 @@
 package com.e.myapplication.novel
 
 import android.app.Activity
+import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -31,15 +35,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
+import com.e.myapplication.AccountInfo
 import com.e.myapplication.R
 import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.NovelsInfo
+import com.e.myapplication.dataclass.Nvc
+import com.e.myapplication.dataclass.nvcr
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.dimGray
 import com.e.myapplication.ui.theme.skyBlue
+import com.e.myapplication.user.ProtoRepository
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Response
 
@@ -121,6 +133,16 @@ fun ShowPostList(
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
+    val repository = ProtoRepository(context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+
+        }
+        return accountInfo
+    }
+    val ac = read()
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope) },
         floatingActionButton = {
@@ -211,7 +233,14 @@ fun ShowPostList(
                                     Image(
                                         painter = painterResource(id = R.drawable.ic_baseline_notifications_24),
                                         contentDescription = null,
-                                        colorFilter = ColorFilter.tint(Color.Black)
+                                        colorFilter = ColorFilter.tint(Color.Black),
+                                        modifier = Modifier.clickable {
+                                            val m = getToken()
+                                            println(m)
+                                            val nvc = Nvc(ac.memId.toString(),num.toString(),
+                                                m)
+                                            addSubscribe(context, ac, nvc)
+                                        }
                                     )
                                     Text("1000", fontSize = 12.sp)
                                 }
@@ -393,4 +422,37 @@ fun getNovelsList(
         }
 
     })
+}
+
+fun addSubscribe(context: Context, ac: AccountInfo, nvc: Nvc){
+    val retrofitClass = RetrofitClass.api.subscribe(ac.authorization.toString(), nvc)
+    retrofitClass.enqueue(object : retrofit2.Callback<nvcr>{
+        override fun onResponse(call: Call<nvcr>, response: Response<nvcr>) {
+            Toast.makeText(
+                context,
+                response.body()!!.msg.toString(),
+                Toast.LENGTH_LONG
+            ).show()
+            retrofitClass.cancel()
+        }
+
+        override fun onFailure(call: Call<nvcr>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+}
+
+fun getToken() : String{
+    var m = ""
+    FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task->
+        if(!task.isSuccessful){
+            Log.w(ContentValues.TAG, "Fetching FCM registration token failed", task.exception)
+            return@OnCompleteListener
+        }
+
+        val token = task.result
+        m= token.toString()
+    })
+    return m
 }

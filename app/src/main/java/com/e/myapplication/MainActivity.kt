@@ -2,10 +2,12 @@ package com.e.myapplication
 
 import android.Manifest
 import android.app.Activity
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -46,6 +48,8 @@ import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.gray
 import com.e.myapplication.user.ProtoRepository
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -168,7 +172,7 @@ fun ShowNovelList(novels: State<List<Novels.Content>>, tags: State<List<List<Str
                         .height(180.dp)
                         .clickable(onClick = {
                             read()
-
+                            getToken()
                         })
                 )
                 Spacer(modifier = Modifier.height(8.0.dp))
@@ -308,4 +312,15 @@ fun DefaultPreview3() {
     MyApplicationTheme {
 
     }
+}
+fun getToken(){
+    FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task->
+        if(!task.isSuccessful){
+            Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+            return@OnCompleteListener
+        }
+
+        val token = task.result
+        println(token)
+    })
 }

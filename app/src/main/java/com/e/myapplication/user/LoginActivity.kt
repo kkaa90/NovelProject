@@ -84,9 +84,12 @@ fun Login() {
                     val u = response.headers()
                     val d = u.values("Set-Cookie")
                     if (r == 200) {
+                        val nick = URLDecoder.decode(d[1].split("=")[1],"UTF-8")
+                        val ll = URLDecoder.decode(d[5].split("=")[1],"UTF-8")
                         val user = User(u.get("mem_userid")!!,u.get("Authorization")!!,u.get("mem_icon")!!,
-                            u.get("mem_id")!!,u.get("mem_nick")!!,d[0].split("=")[1],URLDecoder.decode(u.get("mem_lastlogin_datetime")!!,"UTF-8"))
-                        println(user.lastLogin)
+                            u.get("mem_id")!!,nick,d[0].split("=")[1],ll)
+                        println(nick)
+                        println(ll)
                         AccountSave(user)
                         (context as Activity).finish()
                     } else {

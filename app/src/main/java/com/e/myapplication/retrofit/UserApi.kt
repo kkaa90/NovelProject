@@ -104,5 +104,13 @@ interface UserApi {
         @Body body: PostNovelsDetail
     ) : Call<SNCR>
 
+    //소설 구독
+    @POST("/nvc")
+    fun subscribe(
+        @Header("Authorization") authorization: String?,
+        @Body body : Nvc
+    ) : Call<nvcr>
+
+
 
 }
