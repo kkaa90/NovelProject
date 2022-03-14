@@ -15,7 +15,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -36,9 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
 import coil.compose.rememberImagePainter
 import com.e.myapplication.board.FreeBoardActivity
-import com.e.myapplication.dataclass.ImageUrl
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.novel.NovelCoverActivity
@@ -62,19 +61,20 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
+    private lateinit var mainActivityViewModel : MainActivityViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
         checkPermissions()
-        val novels = mutableStateListOf<Novels.Content>()
-        val tags = mutableStateListOf<List<String>>()
-        getNovels(novels, tags)
+        mainActivityViewModel = ViewModelProvider(this).get(MainActivityViewModel::class.java)
+        mainActivityViewModel.updateNovels()
         setContent {
             MyApplicationTheme {
-                // A surface container using the 'background' color from the theme
+                val vmn = mainActivityViewModel.n.collectAsState()
+                val vmt = mainActivityViewModel.t.collectAsState()
                 Surface(color = MaterialTheme.colors.background) {
-                    ShowNovelList(novels, tags)
+                    ShowNovelList(vmn, vmt)
                 }
             }
         }
@@ -130,7 +130,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun ShowNovelList(novels: SnapshotStateList<Novels.Content>, tags: SnapshotStateList<List<String>>) {
+fun ShowNovelList(novels: State<List<Novels.Content>>, tags: State<List<List<String>>>) {
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     fun read(): String {
@@ -184,7 +184,7 @@ fun ShowNovelList(novels: SnapshotStateList<Novels.Content>, tags: SnapshotState
                     Text(
                         text = "더보기 ", fontSize = 14.sp, modifier = Modifier
                             .clickable(onClick = {
-                                val intent = Intent(context,NovelCoverActivity::class.java)
+                                val intent = Intent(context, NovelCoverActivity::class.java)
                                 context.startActivity(intent)
                             })
                             .padding(4.0.dp)
@@ -192,9 +192,9 @@ fun ShowNovelList(novels: SnapshotStateList<Novels.Content>, tags: SnapshotState
 
                 }
                 LazyColumn {
-                    itemsIndexed(novels) { index, novel ->
+                    itemsIndexed(novels.value) { index, novel ->
                         Spacer(modifier = Modifier.padding(8.dp))
-                        Greeting3(novel, tags[index])
+                        Greeting3(novel, tags.value[index])
                     }
 
                 }
@@ -308,21 +308,4 @@ fun DefaultPreview3() {
     MyApplicationTheme {
 
     }
-}
-
-fun getNovels(novelList : SnapshotStateList<Novels.Content>, tags : SnapshotStateList<List<String>>){
-    val getNovels = RetrofitClass.api.getNovels("nvcid,ASC")
-    getNovels.enqueue(object : retrofit2.Callback<Novels>{
-        override fun onResponse(call: Call<Novels>, response: Response<Novels>) {
-            val r = response.body()?.content
-            val t = response.body()?.tags
-            novelList.addAll(r!!)
-            tags.addAll(t!!)
-        }
-
-        override fun onFailure(call: Call<Novels>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
 }

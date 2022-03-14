@@ -11,7 +11,7 @@ interface UserApi {
     @POST("/login")
     fun getUser(
         @Body body: GetBody
-    ): Call<User>
+    ): Call<U>
 
     @Headers("Content-Type: application/json")
     @POST("/join")

@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.GetBody
+import com.e.myapplication.dataclass.U
 import com.e.myapplication.dataclass.User
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
@@ -23,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Response
+import java.net.URLDecoder
 import javax.security.auth.callback.Callback
 
 class LoginActivity : ComponentActivity() {
@@ -72,17 +74,20 @@ fun Login() {
             val getResult = service.getUser(GetBody(id, pwd))
             println(getResult.request().url())
             println(getResult.request().toString())
-            getResult.enqueue(object : retrofit2.Callback<User> {
-                override fun onFailure(call: Call<User>, t: Throwable) {
+            getResult.enqueue(object : retrofit2.Callback<U> {
+                override fun onFailure(call: Call<U>, t: Throwable) {
                     t.printStackTrace()
                 }
 
-                override fun onResponse(call: Call<User>, response: Response<User>) {
-                    val r = response.body()?.authorization
-                    if (r != "") {
-                        println(r)
-                        AccountSave(response.body())
-
+                override fun onResponse(call: Call<U>, response: Response<U>) {
+                    val r = response.code()
+                    val u = response.headers()
+                    val d = u.values("Set-Cookie")
+                    if (r == 200) {
+                        val user = User(u.get("mem_userid")!!,u.get("Authorization")!!,u.get("mem_icon")!!,
+                            u.get("mem_id")!!,u.get("mem_nick")!!,d[0].split("=")[1],URLDecoder.decode(u.get("mem_lastlogin_datetime")!!,"UTF-8"))
+                        println(user.lastLogin)
+                        AccountSave(user)
                         (context as Activity).finish()
                     } else {
                         println("로그인 실패")

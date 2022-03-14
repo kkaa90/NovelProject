@@ -1,19 +1,14 @@
-package com.e.myapplication
+package com.e.myapplication.novel
 
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.retrofit.RetrofitClass
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Response
 
-class MainActivityViewModel : ViewModel() {
+class NovelCoverViewModel : ViewModel(){
     private val _n = MutableStateFlow(emptyList<Novels.Content>())
     val n : StateFlow<List<Novels.Content>> get() = _n
 

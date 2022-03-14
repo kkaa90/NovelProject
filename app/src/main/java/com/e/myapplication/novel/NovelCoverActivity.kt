@@ -13,36 +13,31 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
 import com.e.myapplication.Greeting3
 import com.e.myapplication.TopMenu
-import com.e.myapplication.dataclass.ImageUrl
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
-import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Response
 
 class NovelCoverActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val novels = mutableStateListOf<Novels.Content>()
-        val tags = mutableStateListOf<List<String>>()
-        getNovels(novels, tags)
+        val ncvm = ViewModelProvider(this).get(NovelCoverViewModel::class.java)
+        ncvm.updateNovels()
         setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
+                val novels = ncvm.n.collectAsState()
+                val tags = ncvm.t.collectAsState()
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
@@ -56,8 +51,8 @@ class NovelCoverActivity : ComponentActivity() {
 
 @Composable
 fun Greeting8(
-    novels: SnapshotStateList<Novels.Content>,
-    tags: SnapshotStateList<List<String>>
+    novels: State<List<Novels.Content>>,
+    tags: State<List<List<String>>>
 ) {
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
@@ -107,9 +102,9 @@ fun Greeting8(
 
                 }
                 LazyColumn {
-                    itemsIndexed(novels) { index, novel ->
+                    itemsIndexed(novels.value) { index, novel ->
                         Spacer(modifier = Modifier.padding(8.dp))
-                        Greeting3(novel, tags[index])
+                        Greeting3(novel, tags.value[index])
                     }
 
                 }
@@ -124,24 +119,4 @@ fun DefaultPreview10() {
     MyApplicationTheme {
 
     }
-}
-
-fun getNovels(
-    novelList: SnapshotStateList<Novels.Content>,
-    tags: SnapshotStateList<List<String>>
-) {
-    val getNovels = RetrofitClass.api.getNovels("nvcid,DESC")
-    getNovels.enqueue(object : retrofit2.Callback<Novels> {
-        override fun onResponse(call: Call<Novels>, response: Response<Novels>) {
-            val r = response.body()?.content
-            val t = response.body()?.tags
-            novelList.addAll(r!!)
-            tags.addAll(t!!)
-        }
-
-        override fun onFailure(call: Call<Novels>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
 }
