@@ -134,6 +134,10 @@ fun ShowPostList(
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     val repository = ProtoRepository(context)
+    val m = remember {
+        mutableStateOf("")
+    }
+    getToken(m)
     fun read(): AccountInfo {
         var accountInfo: AccountInfo
         runBlocking(Dispatchers.IO) {
@@ -235,10 +239,9 @@ fun ShowPostList(
                                         contentDescription = null,
                                         colorFilter = ColorFilter.tint(Color.Black),
                                         modifier = Modifier.clickable {
-                                            val m = getToken()
                                             println(m)
                                             val nvc = Nvc(ac.memId.toString(),num.toString(),
-                                                m)
+                                                m.value)
                                             addSubscribe(context, ac, nvc)
                                         }
                                     )
@@ -426,6 +429,8 @@ fun getNovelsList(
 
 fun addSubscribe(context: Context, ac: AccountInfo, nvc: Nvc){
     val retrofitClass = RetrofitClass.api.subscribe(ac.authorization.toString(), nvc)
+    println(retrofitClass.request().url())
+    println(retrofitClass.request().toString())
     retrofitClass.enqueue(object : retrofit2.Callback<nvcr>{
         override fun onResponse(call: Call<nvcr>, response: Response<nvcr>) {
             Toast.makeText(
@@ -443,8 +448,7 @@ fun addSubscribe(context: Context, ac: AccountInfo, nvc: Nvc){
     })
 }
 
-fun getToken() : String{
-    var m = ""
+fun getToken(m: MutableState<String>){
     FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task->
         if(!task.isSuccessful){
             Log.w(ContentValues.TAG, "Fetching FCM registration token failed", task.exception)
@@ -452,7 +456,6 @@ fun getToken() : String{
         }
 
         val token = task.result
-        m= token.toString()
+        m.value= token.toString()
     })
-    return m
 }
