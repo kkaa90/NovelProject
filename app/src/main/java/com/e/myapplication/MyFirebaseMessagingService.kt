@@ -21,9 +21,8 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage)
     {
         super.onMessageReceived(remoteMessage)
-        if (remoteMessage.notification != null)
-        {
-            sendNotification(remoteMessage.notification?.title, remoteMessage.notification!!.body!!)
+        if(remoteMessage.data.isNotEmpty()){
+            sendNotification(remoteMessage.data["title"].toString(),remoteMessage.data["body"].toString())
         }
     }
 

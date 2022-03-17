@@ -234,7 +234,8 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
         }
         Row {
             IconButton(onClick = {
-
+                val intent = Intent(context, NotificationActivity::class.java)
+                context.startActivity(intent)
             }) {
                 Icon(
                     Icons.Default.Notifications,

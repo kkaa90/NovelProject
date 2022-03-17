@@ -16,6 +16,11 @@
         android:theme="@style/Theme.MyApplication"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".NotificationActivity"
+            android:exported="false"
+            android:label="@string/title_activity_notification"
+            android:theme="@style/Theme.MyApplication" />
+        <activity
             android:name=".novel.WriteNovelActivity"
             android:exported="false"
             android:label="@string/title_activity_write_novel"
@@ -76,6 +81,7 @@
             android:exported="false"
             android:label=""
             android:theme="@style/Theme.MyApplication.NoActionBar" />
+
         <service
             android:name=".MyFirebaseMessagingService"
             android:enabled="true"
@@ -84,8 +90,6 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
     </application>
-
 
 </manifest>
