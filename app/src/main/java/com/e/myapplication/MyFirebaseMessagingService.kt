@@ -23,6 +23,8 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
         super.onMessageReceived(remoteMessage)
         if(remoteMessage.data.isNotEmpty()){
             sendNotification(remoteMessage.data["title"].toString(),remoteMessage.data["body"].toString())
+            Log.d("remote",remoteMessage.data["title"].toString())
+            println(remoteMessage.data.toString())
         }
     }
 

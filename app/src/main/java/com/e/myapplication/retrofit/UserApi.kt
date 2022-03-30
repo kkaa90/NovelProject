@@ -1,7 +1,9 @@
 package com.e.myapplication.retrofit
 
 import com.e.myapplication.dataclass.*
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import okhttp3.MultipartBody
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.*
 
@@ -111,6 +113,14 @@ interface UserApi {
         @Body body : Nvc
     ) : Call<nvcr>
 
+    @POST("/oauth2/authorization/google")
+    fun test(
+        @Body body : GoogleSignInAccount
+    ) : Call<ResponseBody>
 
+    @Headers("Accept: text/html")
+    @GET("/oauth2/authorization/google")
+    fun test2(
 
+    ) : Call<ResponseBody>
 }
