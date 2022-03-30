@@ -231,6 +231,9 @@ fun testFun2(context: Context){
     val retrofitClass = RetrofitClass.api.test2()
     retrofitClass.enqueue(object : retrofit2.Callback<ResponseBody>{
         override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+            println("===========")
+            println(response.body()!!.string())
+            println("===========")
             val l = response.raw().request().url()
             println(response.code())
             val intent = Intent(context,TestActivity::class.java)
