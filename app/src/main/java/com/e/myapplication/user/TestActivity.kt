@@ -2,6 +2,7 @@ package com.e.myapplication.user
 
 import android.os.Bundle
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -15,6 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
 import com.e.myapplication.ui.theme.MyApplicationTheme
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.io.IOException
 
 class TestActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,7 +27,7 @@ class TestActivity : ComponentActivity() {
         val intent = intent
         val l = intent.getStringExtra("url")
         println("주소 : $l")
-        val l2 = "https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?response_type=code&client_id=1042421259759-kfl3kh6j5vdml7n9iu3fj5nrhmfb6huj.apps.googleusercontent.com&scope=email%20profile&state=9Rl1oV85YIBpSDnpQtkfajQSwPTPlxqI9Acw8H8SdnQ%3D&redirect_uri=https%3A%2F%2Ftreenovel.tk%3A8080%2Flogin%2Foauth2%2Fcode%2Fgoogle&flowName=GeneralOAuthFlow"
+        val l2 = "https://treenovel.tk:8080/oauth2/authorization/google"
         setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
@@ -59,7 +64,26 @@ fun WebPageView(url : String){
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient(){
+                override fun shouldOverrideUrlLoading(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): Boolean {
+                    super.shouldOverrideUrlLoading(view, request)
+                    val okHttpClient = OkHttpClient.Builder().build()
+                    val okRequest : Request = Request.Builder().url(request!!.url.toString()).build()
+                    Thread(){
+                        try {
+                            val okResponse : Response = okHttpClient.newCall(okRequest).execute()
+                            println(okResponse.headers().toString())
+                        } catch (e:IOException){
+                            e.printStackTrace()
+                        }
+                    }.start()
+                    //println("링크 : +${request!!.url.toString()}")
+                    return false
+                }
+            }
             settings.javaScriptEnabled = true
             settings.userAgentString = "Mozilla/5.0 AppleWebKit/535.19 Chrome/56.0.0 Mobile Safari/535.19"
             loadUrl(url)
