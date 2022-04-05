@@ -112,7 +112,7 @@ fun Greeting(novelsInfo: NovelsInfo.NovelInfo, num: Int) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = novelsInfo.nvContents,
+                text = novelsInfo.nvWriter,
                 style = MaterialTheme.typography.body2
             )
 

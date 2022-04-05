@@ -7,7 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -23,31 +23,47 @@ import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import java.util.*
+import java.util.logging.Handler
+import kotlin.concurrent.timer
 
 
-class DrawerMenu(val route : String, val title: String, val activity: Activity)
+class DrawerMenu(val route: String, val title: String, val activity: Activity)
 
 @Composable
-fun Drawer(){
+fun Drawer() {
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
+    var userId by remember { mutableStateOf("") }
+    var userNick by remember { mutableStateOf("") }
+
+    fun read() {
         var accountInfo: AccountInfo
         runBlocking(Dispatchers.IO) {
             accountInfo = repository.readAccountInfo()
-
         }
-        return accountInfo
+        userId = accountInfo.memUserid
+        userNick = accountInfo.memNick
+
     }
-    val ac = read()
+
+
+    val timer = Timer()
+    timer.schedule(object : TimerTask() {
+        override fun run() {
+            read()
+        }
+    }, 1000, 1000)
     val drawers = listOf(
-        DrawerMenu("home","Home", MainActivity()),
-        DrawerMenu("account","Account", LoginActivity()),
-        DrawerMenu("board","Board", FreeBoardActivity()),
-        DrawerMenu("novel","Novel", NovelCoverActivity())
+        DrawerMenu("home", "Home", MainActivity()),
+        DrawerMenu("account", "Account", LoginActivity()),
+        DrawerMenu("board", "Board", FreeBoardActivity()),
+        DrawerMenu("novel", "Novel", NovelCoverActivity())
     )
+
+
     Column() {
-        Image(painter = painterResource(id = R.drawable.schumi), contentDescription = "", 
+        Image(painter = painterResource(id = R.drawable.schumi), contentDescription = "",
             modifier = Modifier
                 .height(100.dp)
                 .fillMaxWidth()
@@ -55,15 +71,18 @@ fun Drawer(){
                 .clickable(onClick = {
                     val intent = Intent(context, LoginActivity::class.java)
                     context.startActivity(intent)
-                }))
-        Spacer(modifier = Modifier
-            .fillMaxWidth()
-            .height(5.dp))
-        Text(text = ac.memUserid)
-        Text(text = ac.memNick)
+                })
+        )
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(5.dp)
+        )
+        Text(text = userId)
+        Text(text = userNick)
         drawers.forEach { drawer ->
             Column(modifier = Modifier.clickable {
-                val intent = Intent(context,drawer.activity::class.java)
+                val intent = Intent(context, drawer.activity::class.java)
                 context.startActivity(intent)
             }) {
                 Spacer(modifier = Modifier.height(20.dp))
@@ -77,6 +96,6 @@ fun Drawer(){
 
 @Preview
 @Composable
-fun previewDrawer(){
+fun previewDrawer() {
     Drawer()
 }

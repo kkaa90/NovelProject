@@ -20,9 +20,6 @@ class MainActivityViewModel : ViewModel() {
     private val _t = MutableStateFlow(emptyList<List<String>>())
     val t : StateFlow<List<List<String>>> get() = _t
 
-
-
-
     fun updateNovels(){
         val gNovels = RetrofitClass.api.getNovels("nvcid,ASC")
         gNovels.enqueue(object :retrofit2.Callback<Novels>{

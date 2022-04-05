@@ -35,6 +35,7 @@ import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.GetBody
 import com.e.myapplication.dataclass.U
 import com.e.myapplication.dataclass.User
+import com.e.myapplication.menu.Drawer
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -113,23 +114,29 @@ fun Login(gso : GoogleSignInOptions, gsc : GoogleSignInClient) {
             val getResult = service.getUser(GetBody(id, pwd))
             println(getResult.request().url())
             println(getResult.request().toString())
-            getResult.enqueue(object : retrofit2.Callback<U> {
-                override fun onFailure(call: Call<U>, t: Throwable) {
+            getResult.enqueue(object : retrofit2.Callback<ResponseBody> {
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     t.printStackTrace()
                 }
 
-                override fun onResponse(call: Call<U>, response: Response<U>) {
+                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     val r = response.code()
                     val u = response.headers()
                     val d = u.values("Set-Cookie")
+                    println(d)
                     if (r == 200) {
-                        val nick = URLDecoder.decode(d[1].split("=")[1],"UTF-8")
+                        val nick = URLDecoder.decode(d[0].split("=")[1],"UTF-8")
+                        val id = d[1].split("=")[1]
+                        val userid = d[2].split("=")[1]
+                        val memicon = d[3].split("=")[1]
+                        val mempoint = d[4].split("=")[1]
                         val ll = URLDecoder.decode(d[5].split("=")[1],"UTF-8")
-                        val user = User(u.get("mem_userid")!!,u.get("Authorization")!!,u.get("mem_icon")!!,
-                            u.get("mem_id")!!,nick,d[0].split("=")[1],ll)
+                        val user = User(userid,u.get("Authorization")!!,memicon,
+                            id,nick,mempoint,ll)
                         println(nick)
                         println(ll)
                         AccountSave(user)
+
                         (context as Activity).finish()
                     } else {
                         println("로그인 실패")

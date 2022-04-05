@@ -171,7 +171,7 @@ fun ShowNovelList(novels: State<List<Novels.Content>>, tags: State<List<List<Str
                         .fillMaxWidth()
                         .height(180.dp)
                         .clickable(onClick = {
-                            read()
+                            println(read())
                             getToken()
                         })
                 )
