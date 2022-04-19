@@ -4,12 +4,14 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -66,7 +68,6 @@ class NovelActivity : ComponentActivity() {
 @Composable
 fun Greeting2(boards: SnapshotStateList<NovelsDetail>) {
     Column() {
-        Text("왜 안나옴", modifier = Modifier.clickable { println(boards.size) })
         LazyColumn {
             items(boards) { b ->
                 ShowBoard(board = b)
@@ -79,10 +80,8 @@ fun Greeting2(boards: SnapshotStateList<NovelsDetail>) {
 @Composable
 fun ShowBoard(board: NovelsDetail) {
     val context = LocalContext.current
-
     Text(
-        text = "Hello ${board.nvTitle}!",
-        modifier = Modifier.clickable(onClick = { (context as Activity).finish() })
+        text = "Hello ${board.nvTitle}!"
     )
 }
 
@@ -106,20 +105,39 @@ fun getNovelBoard(
     retrofitClass.enqueue(object : retrofit2.Callback<NovelsDetail> {
         override fun onResponse(call: Call<NovelsDetail>, response: Response<NovelsDetail>) {
             val r = response.body()
-            println(r!!.msg)
-            if (r.msg != "null") {
-                snapshotStateList.add(r)
-            } else if (r.msg == "JWT expiration") {
-                val intent = Intent(context, LoginActivity::class.java)
-                context.startActivity(intent)
-                (context as Activity).finish()
+            var m = r?.msg
+            if(m==null){
+                m="null"
+            }
+            println(r.toString())
+
+            when (m) {
+                "JWT expiration" -> {
+                    val intent = Intent(context, LoginActivity::class.java)
+                    context.startActivity(intent)
+                    Toast.makeText(
+                        context,
+                        "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    (context as Activity).finish()
+                }
+                "point lack" -> {
+                    Toast.makeText(
+                        context,
+                        "포인트가 부족합니다.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    (context as Activity).finish()
+                }
+                "null" -> {
+                    snapshotStateList.add(r!!)
+                }
             }
         }
 
         override fun onFailure(call: Call<NovelsDetail>, t: Throwable) {
             t.printStackTrace()
         }
-
     })
-
 }

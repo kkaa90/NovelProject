@@ -21,6 +21,20 @@ interface UserApi {
         @Body body: SendBody
     ): Call<PostBody>
 
+
+    @Headers("Content-Type: application/json")
+    @PUT("/users")
+    fun changeProfile(
+        @Body body: SendBody
+    ): Call<PostBody>
+
+    //포인트
+    @Headers("Content-Type: application/json")
+    @GET("/users/point")
+    fun getPoint(
+        @Header("Authorization") authorization: String?
+    ): Call<Point>
+
     // 자유게시판 글쓰기 및 불러오기
     @Headers("Content-Type: application/json")
     @POST("/boards")
@@ -123,4 +137,28 @@ interface UserApi {
     fun test2(
 
     ) : Call<ResponseBody>
+
+    //검색
+    @GET("/novels/search")
+    fun searchNovel(
+        @Query("keyword") keyword : String,
+    ) : Call<Novels>
+
+    @GET("/boards/search")
+    fun searchBoard(
+        @Query("srctype") srctype : String,
+        @Query("keyword") keyword: String
+    ) : Call<Boards>
+
+    @POST("/boards/{num}/like")
+    fun likeBoard(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num : Int
+    ) : Call<CallMethod>
+
+    @POST("/boards/{num}/dislike")
+    fun dislikeBoard(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num : Int
+    ) : Call<CallMethod>
 }

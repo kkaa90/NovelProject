@@ -33,9 +33,11 @@ import com.e.myapplication.AccountInfo
 import com.e.myapplication.R
 import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.GetBody
+import com.e.myapplication.dataclass.Point
 import com.e.myapplication.dataclass.U
 import com.e.myapplication.dataclass.User
 import com.e.myapplication.menu.Drawer
+import com.e.myapplication.menu.point
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -96,7 +98,7 @@ fun Login(gso : GoogleSignInOptions, gsc : GoogleSignInClient) {
         }
         return
     }
-    val startForResult = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){ result: ActivityResult ->
+    /*val startForResult = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){ result: ActivityResult ->
         if(result.resultCode == Activity.RESULT_OK)
         {
             val intent = result.data
@@ -106,7 +108,7 @@ fun Login(gso : GoogleSignInOptions, gsc : GoogleSignInClient) {
                 handleSignInResult(task)
             }
         }
-    }
+    }*/
     Column() {
         OutlinedTextField(value = id, onValueChange = { id = it }, label = { Text("ID") })
         OutlinedTextField(value = pwd, onValueChange = { pwd = it }, label = { Text("패스워드") })
@@ -136,7 +138,7 @@ fun Login(gso : GoogleSignInOptions, gsc : GoogleSignInClient) {
                         println(nick)
                         println(ll)
                         AccountSave(user)
-
+                        getPoint(u.get("Authorization")!!)
                         (context as Activity).finish()
                     } else {
                         println("로그인 실패")
@@ -154,7 +156,7 @@ fun Login(gso : GoogleSignInOptions, gsc : GoogleSignInClient) {
         }) {
             Text(text = "회원가입")
         }
-        Button(
+        /*Button(
             onClick = {
                 startForResult.launch(gsc.signInIntent)
             },
@@ -172,10 +174,13 @@ fun Login(gso : GoogleSignInOptions, gsc : GoogleSignInClient) {
                 contentDescription = ""
             )
             Text(text = "Sign in with Google", modifier = Modifier.padding(6.dp))
-        }
+        }*/
+
         Button(
             onClick = {
-                testFun2(context)
+                //testFun2(context)
+                      val intent = Intent(context,TestActivity::class.java)
+                context.startActivity(intent)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -203,6 +208,7 @@ fun DefaultPreview4() {
 
     }
 }
+/*
 private fun handleSignInResult(completeTask: Task<GoogleSignInAccount>){
     try {
         val account = completeTask.getResult(ApiException::class.java)
@@ -250,6 +256,26 @@ fun testFun2(context: Context){
         }
 
         override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+}
+*/
+fun getPoint(token : String){
+    val retrofitClass = RetrofitClass.api.getPoint(token)
+    retrofitClass.enqueue(object  : retrofit2.Callback<Point>{
+        override fun onResponse(call: Call<Point>, response: Response<Point>) {
+            val r = response.body()!!.point.toInt()
+            if(r==-1){
+
+            }
+            else {
+                point = r
+            }
+        }
+
+        override fun onFailure(call: Call<Point>, t: Throwable) {
             t.printStackTrace()
         }
 

@@ -26,6 +26,7 @@ class MainActivityViewModel : ViewModel() {
             override fun onResponse(call: Call<Novels>, response: Response<Novels>) {
                 _n.value = response.body()!!.content
                 _t.value = response.body()!!.tags
+
             }
 
             override fun onFailure(call: Call<Novels>, t: Throwable) {

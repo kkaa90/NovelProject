@@ -20,17 +20,17 @@ data class Novels(
     val totalPages: Int
 ) {
     data class Content(
-        @SerializedName("img_url")
+        @SerializedName("imgUrl")
         val imgUrl: String,
-        @SerializedName("nvc_contents")
+        @SerializedName("nvcContents")
         val nvcContents: String,
-        @SerializedName("nvc_hit")
+        @SerializedName("nvcHit")
         val nvcHit: Int,
-        @SerializedName("nvc_reviewcount")
+        @SerializedName("nvcReviewcount")
         val nvcReviewcount: Int,
-        @SerializedName("nvc_reviewpoint")
+        @SerializedName("nvcReviewpoint")
         val nvcReviewpoint: Int,
-        @SerializedName("nvc_title")
+        @SerializedName("nvcTitle")
         val nvcTitle: String,
         @SerializedName("nvcid")
         val nvcid: Int,

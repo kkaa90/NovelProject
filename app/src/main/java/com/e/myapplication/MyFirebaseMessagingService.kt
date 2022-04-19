@@ -9,6 +9,7 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.e.myapplication.notification.Notify
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -23,6 +24,8 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
         super.onMessageReceived(remoteMessage)
         if(remoteMessage.data.isNotEmpty()){
             sendNotification(remoteMessage.data["title"].toString(),remoteMessage.data["body"].toString())
+            val r = Runnable { notifyDB.dao().insert(Notify(remoteMessage.data["title"].toString(),remoteMessage.data["body"].toString())) }
+            Thread(r).start()
             Log.d("remote",remoteMessage.data["title"].toString())
             println(remoteMessage.data.toString())
         }

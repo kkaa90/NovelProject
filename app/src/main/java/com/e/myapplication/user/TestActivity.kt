@@ -46,9 +46,6 @@ var temp2 = mutableStateOf(false)
 class TestActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val intent = intent
-        val l = intent.getStringExtra("url")
-        //println("주소 : $l")
         val l2 = "https://treenovel.tk:8080/oauth2/authorization/google"
         setContent {
             MyApplicationTheme {

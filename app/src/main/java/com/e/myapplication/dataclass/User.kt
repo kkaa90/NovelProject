@@ -35,3 +35,6 @@ data class GetBody(
     @SerializedName("mem_password") val mem_password: String
 )
 
+data class Point(
+    @SerializedName("point") val point: String
+)

@@ -38,13 +38,17 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.room.Room
 import coil.compose.rememberImagePainter
 import com.e.myapplication.board.FreeBoardActivity
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
+import com.e.myapplication.notification.NotificationActivity
+import com.e.myapplication.notification.NotifyDB
 import com.e.myapplication.novel.NovelCoverActivity
 import com.e.myapplication.novel.ShowNovelListActivity
 import com.e.myapplication.retrofit.RetrofitClass
+import com.e.myapplication.search.SearchActivity
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.gray
 import com.e.myapplication.user.ProtoRepository
@@ -56,8 +60,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Response
-
-
+lateinit var notifyDB : NotifyDB
 class MainActivity : ComponentActivity() {
     private val multiplePermissionsCode = 100
     private val requiredPermissions =
@@ -66,13 +69,13 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
     private lateinit var mainActivityViewModel : MainActivityViewModel
-
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
         checkPermissions()
         mainActivityViewModel = ViewModelProvider(this).get(MainActivityViewModel::class.java)
         mainActivityViewModel.updateNovels()
+        notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java,"notifyDB").build()
         setContent {
             MyApplicationTheme {
                 val vmn = mainActivityViewModel.n.collectAsState()
@@ -243,7 +246,7 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
                 )
             }
             IconButton(onClick = {
-                val intent = Intent(context, FreeBoardActivity::class.java)
+                val intent = Intent(context, SearchActivity::class.java)
                 context.startActivity(intent)
             }) {
                 Icon(
