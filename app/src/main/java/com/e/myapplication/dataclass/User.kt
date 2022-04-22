@@ -9,13 +9,13 @@ data class U(
 )
 
 data class User(
-    @SerializedName("mem_userid") val mem_userid : String,
+    @SerializedName("memUserid") val memUserid : String,
     @SerializedName("Authorization") val authorization: String,
-    @SerializedName("mem_icon") val memIcon: String,
-    @SerializedName("mem_id") val mem_id: String,
-    @SerializedName("mem_nick") val memNick: String,
-    @SerializedName("attendance point") val aPoint : String,
-    @SerializedName("mem_lastlogin_datetime") val lastLogin : String
+    @SerializedName("memIcon") val memIcon: String,
+    @SerializedName("memId") val memId: String,
+    @SerializedName("memNick") val memNick: String,
+    @SerializedName("attendancePoint") val aPoint : String,
+    @SerializedName("memLastloginDatetime") val lastLogin : String
 )
 
 data class PostBody(
@@ -23,16 +23,16 @@ data class PostBody(
 )
 
 data class SendBody(
-    @SerializedName("mem_userid") val mem_userid: String,
-    @SerializedName("mem_password") val mem_password: String,
-    @SerializedName("mem_email") val mem_email: String,
-    @SerializedName("mem_nick") val mem_nick: String,
-    @SerializedName("mem_icon") val mem_icon: String
+    @SerializedName("memUserid") val memUserid: String,
+    @SerializedName("memPassword") val memPassword: String,
+    @SerializedName("memEmail") val memEmail: String,
+    @SerializedName("memNick") val memNick: String,
+    @SerializedName("memIcon") val memIcon: String
 )
 
 data class GetBody(
-    @SerializedName("mem_userid") val mem_userid: String,
-    @SerializedName("mem_password") val mem_password: String
+    @SerializedName("memUserId") val memUserId: String,
+    @SerializedName("memPassword") val memPassword: String
 )
 
 data class Point(

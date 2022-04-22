@@ -4,30 +4,30 @@ package com.e.myapplication.dataclass
 import com.google.gson.annotations.SerializedName
 
 data class Comment(
-    @SerializedName("brd_cmt_blame")
+    @SerializedName("brdCmtBlame")
     val brdCmtBlame: Int,
-    @SerializedName("brd_cmt_contents")
+    @SerializedName("brdCmtContents")
     val brdCmtContents: String,
-    @SerializedName("brd_cmt_datetime")
+    @SerializedName("brdCmtDatetime")
     val brdCmtDatetime: String,
-    @SerializedName("brd_cmt_dislike")
+    @SerializedName("brdCmtDislike")
     val brdCmtDislike: Int,
-    @SerializedName("brd_cmt_id")
+    @SerializedName("brdCmtId")
     val brdCmtId: Int,
-    @SerializedName("brd_cmt_like")
+    @SerializedName("brdCmtLike")
     val brdCmtLike: Int,
-    @SerializedName("brd_cmt_reply")
+    @SerializedName("brdCmtReply")
     val brdCmtReply: Int,
-    @SerializedName("brd_cmt_replynum")
+    @SerializedName("brdCmtReplynum")
     val brdCmtReplynum: Int,
-    @SerializedName("brd_cmt_state")
+    @SerializedName("brdCmtState")
     val brdCmtState: Int,
-    @SerializedName("brd_cmt_updatetime")
+    @SerializedName("brdCmtUpdatetime")
     val brdCmtUpdatetime: Any,
-    @SerializedName("brd_id")
+    @SerializedName("brdId")
     val brdId: Int,
-    @SerializedName("mem_id")
+    @SerializedName("memId")
     val memId: Int,
-    @SerializedName("mem_nickname")
+    @SerializedName("memNickname")
     val memNickname: String
 )

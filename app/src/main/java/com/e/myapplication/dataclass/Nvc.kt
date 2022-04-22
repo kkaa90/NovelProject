@@ -4,10 +4,8 @@ package com.e.myapplication.dataclass
 import com.google.gson.annotations.SerializedName
 
 data class Nvc(
-    @SerializedName("memid")
-    val memid: String,
-    @SerializedName("nvcid")
-    val nvcid: String,
+    @SerializedName("nvcId")
+    val nvcId: String,
     @SerializedName("token")
     val token: String
 )

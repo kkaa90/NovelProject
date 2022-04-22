@@ -8,6 +8,6 @@ data class ImageUpload(
 )
 
 data class ImageUrl(
-    @SerializedName("img_url")
+    @SerializedName("imgUrl")
     val imgUrl: String
 )

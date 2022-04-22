@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -24,7 +23,6 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -40,14 +38,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import coil.compose.rememberImagePainter
-import com.e.myapplication.board.FreeBoardActivity
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.notification.NotificationActivity
 import com.e.myapplication.notification.NotifyDB
 import com.e.myapplication.novel.NovelCoverActivity
 import com.e.myapplication.novel.ShowNovelListActivity
-import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.search.SearchActivity
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.gray
@@ -58,8 +54,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import retrofit2.Call
-import retrofit2.Response
+
 lateinit var notifyDB : NotifyDB
 class MainActivity : ComponentActivity() {
     private val multiplePermissionsCode = 100
@@ -275,7 +270,7 @@ fun Greeting3(novel: Novels.Content, tag: List<String>) {
             .fillMaxWidth()
             .clickable(onClick = {
                 val intent = Intent(context, ShowNovelListActivity::class.java)
-                intent.putExtra("novelNum", novel.nvcid)
+                intent.putExtra("novelNum", novel.nvcId)
                 context.startActivity(intent)
             })
     ) {
@@ -303,7 +298,7 @@ fun Greeting3(novel: Novels.Content, tag: List<String>) {
         Spacer(modifier = Modifier.width(16.0.dp))
         Column {
             Text(novel.nvcTitle)
-            Text(novel.nvcid.toString())
+            Text(novel.nvcId.toString())
             Spacer(modifier = Modifier.height(4.0.dp))
             Text("태그 : $t")
         }

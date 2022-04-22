@@ -49,13 +49,12 @@ class ShowFreeBoardActivity : ComponentActivity() {
         val num = intent.getIntExtra("num", 0)
         val board = mutableStateListOf<Board>()
         val comment = mutableStateListOf<Comment>()
-        val iUrl = mutableStateListOf<ImageUrl>()
-        getBoard(num, board, iUrl)
+        getBoard(num, board)
         getComment(num, comment)
         setContent {
             MyApplicationTheme {
                 Surface(color = MaterialTheme.colors.background) {
-                    ShowBoard(boards = board, comment = comment, url = iUrl, num = num)
+                    ShowBoard(boards = board, comment = comment, num = num)
                 }
             }
         }
@@ -66,7 +65,6 @@ class ShowFreeBoardActivity : ComponentActivity() {
 fun ShowBoard(
     boards: SnapshotStateList<Board>,
     comment: SnapshotStateList<Comment>,
-    url: SnapshotStateList<ImageUrl>,
     num: Int
 ) {
     var content by remember { mutableStateOf("") }
@@ -76,7 +74,7 @@ fun ShowBoard(
     Column {
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(boards) { board ->
-                ShowBoard2(board, url, num)
+                ShowBoard2(board, num)
             }
         }
         Spacer(
@@ -107,15 +105,15 @@ fun ShowBoard(
 }
 
 @Composable
-fun ShowBoard2(board: Board, iurl: SnapshotStateList<ImageUrl>,num : Int) {
+fun ShowBoard2(board: Board, num : Int) {
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     val ac = read(repository)
 
     Column {
         Text(text = board.brdTitle)
-        if (iurl.size != 0) {
-            val url = iurl[0].imgUrl
+        if (board.brdImg != 0) {
+            val url = board.imgUrl
             println(url)
             Image(
                 painter = rememberImagePainter(url),
@@ -198,8 +196,6 @@ fun sendComment(
             content,
             commentNum.toString(),
             "0",
-            brdId.toString(),
-            ac.memId.toString(),
             ac.memNick.toString()
         ), brdId
     )
@@ -231,7 +227,7 @@ fun sendComment(
     })
 }
 
-fun getBoard(num: Int, board: SnapshotStateList<Board>, iUrl: SnapshotStateList<ImageUrl>) {
+fun getBoard(num: Int, board: SnapshotStateList<Board>) {
     val getBoard = RetrofitClass.api.getBoard(num)
 
     getBoard.enqueue(object : retrofit2.Callback<Board> {
@@ -240,9 +236,6 @@ fun getBoard(num: Int, board: SnapshotStateList<Board>, iUrl: SnapshotStateList<
             println("응답")
             println(response.body())
             println("보드")
-            if (board[0].brdImg != 0) {
-                getImage(board[0].brdImg, iUrl)
-            }
         }
 
 
@@ -274,21 +267,7 @@ fun getComment(num: Int, comment: SnapshotStateList<Comment>) {
     })
 }
 
-fun getImage(brdImg: Int, iUrl: SnapshotStateList<ImageUrl>) {
-    val getImage = RetrofitClass.api.getImageUrl(brdImg)
-    getImage.enqueue(object : retrofit2.Callback<ImageUrl> {
-        override fun onResponse(
-            call: Call<ImageUrl>,
-            response: Response<ImageUrl>
-        ) {
-            response.body()?.let { iUrl.add(it) }
-        }
 
-        override fun onFailure(call: Call<ImageUrl>, t: Throwable) {
-            t.printStackTrace()
-        }
-    })
-}
 
 fun read(repository: ProtoRepository): AccountInfo {
     var accountInfo: AccountInfo
@@ -358,7 +337,21 @@ fun dislike(context: Context, ac: AccountInfo, num: Int) {
 
     })
 }
-
+//fun getImage(brdImg: Int, iUrl: SnapshotStateList<ImageUrl>) {
+//    val getImage = RetrofitClass.api.getImageUrl(brdImg)
+//    getImage.enqueue(object : retrofit2.Callback<ImageUrl> {
+//        override fun onResponse(
+//            call: Call<ImageUrl>,
+//            response: Response<ImageUrl>
+//        ) {
+//            response.body()?.let { iUrl.add(it) }
+//        }
+//
+//        override fun onFailure(call: Call<ImageUrl>, t: Throwable) {
+//            t.printStackTrace()
+//        }
+//    })
+//}
 
 @Preview(showBackground = true)
 @Composable

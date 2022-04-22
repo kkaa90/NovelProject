@@ -10,19 +10,17 @@ data class PostNovelsDetail(
     val parent: String
 ) {
     data class Novel(
-        @SerializedName("img_url")
+        @SerializedName("imgUrl")
         val imgUrl: String,
-        @SerializedName("mem_id")
-        val memId: String,
-        @SerializedName("nv_contents")
+        @SerializedName("nvContents")
         val nvContents: String,
-        @SerializedName("nv_state")
+        @SerializedName("nvState")
         val nvState: String,
-        @SerializedName("nv_title")
+        @SerializedName("nvTitle")
         val nvTitle: String,
-        @SerializedName("nv_writer")
+        @SerializedName("nvWriter")
         val nvWriter: String,
-        @SerializedName("nv_point")
+        @SerializedName("nvPoint")
         val nvPoint: String
     )
 }

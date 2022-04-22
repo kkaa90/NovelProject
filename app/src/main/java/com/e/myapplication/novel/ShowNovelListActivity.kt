@@ -203,7 +203,7 @@ fun ShowPostList(
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(cover.value.nvid.toString(), color = dimGray, fontSize = 18.sp)
+                            Text(cover.value.nvId.toString(), color = dimGray, fontSize = 18.sp)
                             Spacer(modifier = Modifier.padding(4.dp))
                             Row() {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -240,7 +240,7 @@ fun ShowPostList(
                                         colorFilter = ColorFilter.tint(Color.Black),
                                         modifier = Modifier.clickable {
                                             println(m)
-                                            val nvc = Nvc(ac.memId.toString(),num.toString(),
+                                            val nvc = Nvc(num.toString(),
                                                 m.value)
                                             addSubscribe(context, ac, nvc)
                                         }

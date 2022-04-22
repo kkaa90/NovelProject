@@ -4,36 +4,36 @@ package com.e.myapplication.dataclass
 import com.google.gson.annotations.SerializedName
 
 data class Board(
-    @SerializedName("brd_comment_count")
+    @SerializedName("brdCommentCount")
     val brdCommentCount: Int,
-    @SerializedName("brd_contents")
+    @SerializedName("brdContents")
     val brdContents: String,
-    @SerializedName("brd_datetime")
+    @SerializedName("brdDatetime")
     val brdDatetime: String,
-    @SerializedName("brd_dislike")
+    @SerializedName("brdDislike")
     val brdDislike: Int,
-    @SerializedName("brd_file")
+    @SerializedName("brdFile")
     val brdFile: Int,
-    @SerializedName("brd_hit")
+    @SerializedName("brdHit")
     val brdHit: Int,
-    @SerializedName("brd_id")
+    @SerializedName("brdId")
     val brdId: Int,
-    @SerializedName("brd_img")
+    @SerializedName("brdImg")
     val brdImg: Int,
-    @SerializedName("brd_like")
+    @SerializedName("brdLike")
     val brdLike: Int,
-    @SerializedName("brd_notice")
+    @SerializedName("brdNotice")
     val brdNotice: Int,
-    @SerializedName("brd_state")
+    @SerializedName("brdState")
     val brdState: Int,
-    @SerializedName("brd_title")
+    @SerializedName("brdTitle")
     val brdTitle: String,
-    @SerializedName("brd_updatetime")
+    @SerializedName("brdUpdatetime")
     val brdUpdatetime: Any,
-    @SerializedName("img_id")
-    val imgId: Int,
-    @SerializedName("mem_id")
+    @SerializedName("imgUrl")
+    val imgUrl: String,
+    @SerializedName("memId")
     val memId: Int,
-    @SerializedName("mem_nickname")
+    @SerializedName("memNickname")
     val memNickname: String
 )

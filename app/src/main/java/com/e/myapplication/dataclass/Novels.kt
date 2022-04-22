@@ -32,10 +32,10 @@ data class Novels(
         val nvcReviewpoint: Int,
         @SerializedName("nvcTitle")
         val nvcTitle: String,
-        @SerializedName("nvcid")
-        val nvcid: Int,
-        @SerializedName("nvid")
-        val nvid: Int
+        @SerializedName("nvcId")
+        val nvcId: Int,
+        @SerializedName("nvId")
+        val nvId: Int
     )
 
     data class Pageable(
@@ -70,13 +70,13 @@ data class SendNCover(
     val tag: List<String>
 ) {
     data class NovelCover(
-        @SerializedName("img_id")
-        val imgId: String,
-        @SerializedName("nv_id")
+        @SerializedName("imgUrl")
+        val imgUrl: String,
+        @SerializedName("nvId")
         val nvId: String,
-        @SerializedName("nvc_content")
+        @SerializedName("nvcContent")
         val nvcContent: String,
-        @SerializedName("nvc_title")
+        @SerializedName("nvcTitle")
         val nvcTitle: String
     )
 }

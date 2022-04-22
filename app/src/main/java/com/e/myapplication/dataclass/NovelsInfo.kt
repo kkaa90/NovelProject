@@ -12,52 +12,51 @@ data class NovelsInfo(
     val novelInfo: List<NovelInfo>
 ) {
     data class NovelCover(
-        @SerializedName("img_url")
+        @SerializedName("imgUrl")
         val imgUrl: String,
-        @SerializedName("nvc_contents")
+        @SerializedName("nvcContents")
         val nvcContents: String,
-        @SerializedName("nvc_hit")
+        @SerializedName("nvcHit")
         val nvcHit: Int,
-        @SerializedName("nvc_reviewcount")
+        @SerializedName("nvcReviewcount")
         val nvcReviewcount: Int,
-        @SerializedName("nvc_reviewpoint")
+        @SerializedName("nvcReviewpoint")
         val nvcReviewpoint: Int,
-        @SerializedName("nvc_title")
+        @SerializedName("nvcTitle")
         val nvcTitle: String,
-        @SerializedName("nvcid")
-        val nvcid: Int,
-        @SerializedName("nvid")
-        val nvid: Int
+        @SerializedName("nvcId")
+        val nvcId: Int,
+        @SerializedName("nvId")
+        val nvId: Int
     )
-
     data class NovelInfo(
-        @SerializedName("img_url")
+        @SerializedName("imgUrl")
         val imgUrl: String,
-        @SerializedName("mem_id")
+        @SerializedName("memId")
         val memId: Int,
-        @SerializedName("nv_comment_count")
+        @SerializedName("nvCommentCount")
         val nvCommentCount: Int,
-        @SerializedName("nv_contents")
+        @SerializedName("nvContents")
         val nvContents: String,
-        @SerializedName("nv_datetime")
+        @SerializedName("nvDatetime")
         val nvDatetime: String,
-        @SerializedName("nv_hit")
+        @SerializedName("nvHit")
         val nvHit: Int,
-        @SerializedName("nv_id")
+        @SerializedName("nvId")
         val nvId: Int,
-        @SerializedName("nv_point")
+        @SerializedName("nvPoint")
         val nvPoint: Int,
-        @SerializedName("nv_reviewcount")
+        @SerializedName("nvReviewcount")
         val nvReviewcount: Int,
-        @SerializedName("nv_reviewpoint")
+        @SerializedName("nvReviewpoint")
         val nvReviewpoint: Int,
-        @SerializedName("nv_state")
+        @SerializedName("nvState")
         val nvState: Int,
-        @SerializedName("nv_title")
+        @SerializedName("nvTitle")
         val nvTitle: String,
-        @SerializedName("nv_updatetime")
+        @SerializedName("nvUpdatetime")
         val nvUpdatetime: Any,
-        @SerializedName("nv_writer")
+        @SerializedName("nvWriter")
         val nvWriter: String
     )
 }

@@ -4,31 +4,31 @@ package com.e.myapplication.dataclass
 import com.google.gson.annotations.SerializedName
 
 data class NovelsDetail(
-    @SerializedName("img_url")
+    @SerializedName("imgUrl")
     val imgUrl: Int,
-    @SerializedName("mem_id")
+    @SerializedName("memId")
     val memId: Int,
-    @SerializedName("nv_comment_count")
+    @SerializedName("nvCommentCount")
     val nvCommentCount: Int,
-    @SerializedName("nv_contents")
+    @SerializedName("nvContents")
     val nvContents: String,
-    @SerializedName("nv_datetime")
+    @SerializedName("nvDatetime")
     val nvDatetime: String,
-    @SerializedName("nv_hit")
+    @SerializedName("nvHit")
     val nvHit: Int,
-    @SerializedName("nv_id")
+    @SerializedName("nvId")
     val nvId: Int,
-    @SerializedName("nv_reviewcount")
+    @SerializedName("nvReviewcount")
     val nvReviewcount: Int,
-    @SerializedName("nv_reviewpoint")
+    @SerializedName("nvReviewpoint")
     val nvReviewpoint: Int,
-    @SerializedName("nv_state")
+    @SerializedName("nvState")
     val nvState: Int,
-    @SerializedName("nv_title")
+    @SerializedName("nvTitle")
     val nvTitle: String,
-    @SerializedName("nv_updatetime")
+    @SerializedName("nvUpdatetime")
     val nvUpdatetime: Any,
-    @SerializedName("nv_writer")
+    @SerializedName("nvWriter")
     val nvWriter: String,
     @SerializedName("msg")
     val msg: String

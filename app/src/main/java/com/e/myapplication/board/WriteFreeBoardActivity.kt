@@ -153,10 +153,11 @@ fun Greeting7() {
                             val postBoard = PostBoard(
                                 content,
                                 "",
-                                imageNum,
+                                "1",
                                 title,
-                                ac.memId.toString(),
-                                ac.memNick.toString()
+                                ac.memNick.toString(),
+                                imageNum,
+                                "0"
                             )
                             wB(context, ac, postBoard)
                         }
@@ -172,7 +173,7 @@ fun Greeting7() {
             } else {
                 println("파일 없음")
                 val postBoard =
-                    PostBoard(content, "", "", title, ac.memId.toString(), ac.memNick.toString())
+                    PostBoard(content, "", "0", title, ac.memNick.toString(), "1","")
                 wB(context, ac, postBoard)
             }
 

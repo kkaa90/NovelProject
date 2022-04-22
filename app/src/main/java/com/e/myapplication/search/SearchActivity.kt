@@ -60,7 +60,7 @@ class SearchActivity : ComponentActivity() {
 @Composable
 fun Greeting13(name: String) {
     val context = LocalContext.current
-    val sMenu: List<String> = listOf("제목", "글쓴이", "본문")
+    val sMenu: List<String> = listOf("제목", "글쓴이", "전체")
     var sMenuExpanded by remember { mutableStateOf(false) }
     var sMenuName: String by remember { mutableStateOf(sMenu[0]) }
     var sKeyword by remember { mutableStateOf("") }
@@ -171,7 +171,7 @@ fun SNResult(novel: Novels.Content){
             .fillMaxWidth()
             .clickable(onClick = {
                 val intent = Intent(context, ShowNovelListActivity::class.java)
-                intent.putExtra("novelNum", novel.nvcid)
+                intent.putExtra("novelNum", novel.nvcId)
                 context.startActivity(intent)
             })
     ) {
@@ -199,7 +199,7 @@ fun SNResult(novel: Novels.Content){
         Spacer(modifier = Modifier.width(16.0.dp))
         Column {
             Text(novel.nvcTitle)
-            Text(novel.nvcid.toString())
+            Text(novel.nvcId.toString())
             Spacer(modifier = Modifier.height(4.0.dp))
             Text(" ")
         }

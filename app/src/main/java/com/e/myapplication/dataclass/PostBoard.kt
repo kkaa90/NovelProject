@@ -4,18 +4,20 @@ package com.e.myapplication.dataclass
 import com.google.gson.annotations.SerializedName
 
 data class PostBoard(
-    @SerializedName("brd_contents")
+    @SerializedName("brdContents")
     val brdContents: String,
-    @SerializedName("brd_file")
+    @SerializedName("brdFile")
     val brdFile: String,
-    @SerializedName("brd_img")
+    @SerializedName("brdImg")
     val brdImg: String,
-    @SerializedName("brd_title")
+    @SerializedName("brdTitle")
     val brdTitle: String,
-    @SerializedName("mem_id")
-    val memId: String,
-    @SerializedName("mem_nickname")
-    val memNickname: String
+    @SerializedName("memNickname")
+    val memNickname: String,
+    @SerializedName("imgUrl")
+    val imgUrl : String,
+    @SerializedName("brdState")
+    val brdState : String
 )
 
 data class PostBoardResponse(

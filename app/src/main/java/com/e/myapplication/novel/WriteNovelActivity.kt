@@ -211,7 +211,6 @@ fun Greeting9(num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>) {
                     val novel = PostNovelsDetail(
                         PostNovelsDetail.Novel(
                             "0",
-                            ac.memId,
                             content,
                             "0",
                             title,
@@ -298,7 +297,7 @@ fun nImage(
             } else {
                 println("사진 번호 : $r")
                 val novel = PostNovelsDetail(
-                    PostNovelsDetail.Novel(r!!, ac.memId, content, "0", title, ac.memNick, point),
+                    PostNovelsDetail.Novel(r!!, content, "0", title, ac.memNick, point),
                     "0"
                 )
                 writeNovel(context, ac, num, novel)
