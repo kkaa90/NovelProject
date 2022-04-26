@@ -1,6 +1,7 @@
 package com.e.myapplication.user
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -95,7 +96,6 @@ fun WebPageView(url: String) {
                     super.onPageFinished(view, url)
                     //view?.loadUrl("javascript:window.Android.getHtml(document.getElementsByTagName('html')[0].innerHTML);")
                     view?.loadUrl("javascript:window.Android.getHtml(document.documentElement.innerHTML);")
-
                     Handler().postDelayed(
                         Runnable()
                         {
@@ -103,7 +103,11 @@ fun WebPageView(url: String) {
                             {
                                 if (temp2.value) {
                                     AccountSave(temp)
-                                    (context as Activity).finish()
+                                    val intent = Intent(context, LoginActivity::class.java).apply {
+                                        putExtra("lToken",temp.authorization)
+                                    }
+                                    (context as Activity).setResult(Activity.RESULT_OK,intent)
+                                    context.finish()
                                 }
                             }
                         }, 2000
@@ -138,13 +142,13 @@ class MyJavascriptInterface {
             val jsonObject = obj.asJsonObject
             Log.d("Test2", d)
             println(jsonObject)
-            temp = User(jsonObject.get("mem_userid").toString().replace("\"",""),
+            temp = User(jsonObject.get("memUserId").toString().replace("\"",""),
                 jsonObject.get("token").toString().replace("\"",""),
-                jsonObject.get("mem_icon").toString().replace("\"",""),
-                jsonObject.get("mem_id").toString().replace("\"",""),
-                jsonObject.get("mem_nick").toString().replace("\"",""),
-                jsonObject.get("mem_point").toString().replace("\"",""),
-                jsonObject.get("mem_lastlogin_datetime").toString().replace("\"",""))
+                jsonObject.get("memIcon").toString().replace("\"",""),
+                jsonObject.get("memId").toString().replace("\"",""),
+                jsonObject.get("memNick").toString().replace("\"",""),
+                jsonObject.get("memPoint").toString().replace("\"",""),
+                jsonObject.get("memLastloginDatetime").toString().replace("\"",""))
             temp2.value = true
         }
     }

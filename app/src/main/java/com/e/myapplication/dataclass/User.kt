@@ -38,3 +38,7 @@ data class GetBody(
 data class Point(
     @SerializedName("point") val point: String
 )
+
+data class Token(
+    @SerializedName("token") val token : String
+)

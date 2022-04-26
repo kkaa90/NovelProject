@@ -46,6 +46,7 @@ import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.dimGray
 import com.e.myapplication.ui.theme.skyBlue
+import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
@@ -99,6 +100,7 @@ fun Greeting(novelsInfo: NovelsInfo.NovelInfo, num: Int) {
                 intent
                     .putExtra("boardNum", novelsInfo.nvId)
                     .putExtra("novelNum", num)
+                    .putExtra("nvTitle",novelsInfo.nvTitle)
                 context.startActivity(intent)
             })
             .fillMaxWidth()
@@ -146,13 +148,14 @@ fun ShowPostList(
         }
         return accountInfo
     }
+
     val ac = read()
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope) },
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 val intent = Intent(context, WriteNovelActivity::class.java)
-                intent.putExtra("num",num)
+                intent.putExtra("num", num)
                 context.startActivity(intent)
             }) {
                 Icon(Icons.Filled.Add, contentDescription = "")
@@ -207,44 +210,51 @@ fun ShowPostList(
                             Spacer(modifier = Modifier.padding(4.dp))
                             Row() {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.ic_baseline_remove_red_eye_24),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(Color.Black)
-                                    )
+                                    IconButton(onClick = { /*TODO*/ }) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_baseline_remove_red_eye_24),
+                                            contentDescription = null
+                                        )
+                                    }
                                     Text("1000", fontSize = 12.sp)
                                 }
                                 Spacer(modifier = Modifier.padding(4.0.dp))
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(Color.Black)
-                                    )
+                                    IconButton(onClick = { /*TODO*/ }) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
+                                            contentDescription = null
+                                        )
+                                    }
+
                                     Text("1000", fontSize = 12.sp)
                                 }
                                 Spacer(modifier = Modifier.padding(4.0.dp))
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.ic_baseline_comment_24),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(Color.Black)
-                                    )
+                                    IconButton(onClick = { /*TODO*/ }) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_baseline_comment_24),
+                                            contentDescription = null
+                                        )
+                                    }
+
                                     Text("1000", fontSize = 12.sp)
                                 }
                                 Spacer(modifier = Modifier.padding(4.0.dp))
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.ic_baseline_notifications_24),
-                                        contentDescription = null,
-                                        colorFilter = ColorFilter.tint(Color.Black),
-                                        modifier = Modifier.clickable {
-                                            println(m)
-                                            val nvc = Nvc(num.toString(),
-                                                m.value)
-                                            addSubscribe(context, ac, nvc)
-                                        }
-                                    )
+                                    IconButton(onClick = {
+                                        println(m)
+                                        val nvc = Nvc(
+                                            num.toString(),
+                                            m.value
+                                        )
+                                        addSubscribe(context, nvc)
+                                    }) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_baseline_notifications_24),
+                                            contentDescription = null
+                                        )
+                                    }
                                     Text("1000", fontSize = 12.sp)
                                 }
                             }
@@ -364,7 +374,7 @@ fun ShowPostList(
                                 }
                             }
 
-                            IconButton(onClick = {  }) {
+                            IconButton(onClick = { }) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_baseline_sort_24),
                                     contentDescription = ""
@@ -427,15 +437,36 @@ fun getNovelsList(
     })
 }
 
-fun addSubscribe(context: Context, ac: AccountInfo, nvc: Nvc){
+fun addSubscribe(context: Context, nvc: Nvc) {
+    val repository = ProtoRepository(context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+
+        }
+        return accountInfo
+    }
+    val ac = read()
     val retrofitClass = RetrofitClass.api.subscribe(ac.authorization.toString(), nvc)
     println(retrofitClass.request().url())
     println(retrofitClass.request().toString())
-    retrofitClass.enqueue(object : retrofit2.Callback<nvcr>{
+    retrofitClass.enqueue(object : retrofit2.Callback<nvcr> {
         override fun onResponse(call: Call<nvcr>, response: Response<nvcr>) {
+            val r = response.body()!!.msg
+            var message = ""
+            when (r) {
+                "delete" -> message = "구독이 취소 되었습니다."
+                "subscribe" -> message = "구독 되었습니다."
+                else -> {
+                    message = "토큰이 만료되었습니다."
+                    val intent = Intent(context,LoginActivity::class.java)
+                    context.startActivity(intent)
+                }
+            }
             Toast.makeText(
                 context,
-                response.body()!!.msg.toString(),
+                message,
                 Toast.LENGTH_LONG
             ).show()
             retrofitClass.cancel()
@@ -448,14 +479,14 @@ fun addSubscribe(context: Context, ac: AccountInfo, nvc: Nvc){
     })
 }
 
-fun getToken(m: MutableState<String>){
-    FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task->
-        if(!task.isSuccessful){
+fun getToken(m: MutableState<String>) {
+    FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+        if (!task.isSuccessful) {
             Log.w(ContentValues.TAG, "Fetching FCM registration token failed", task.exception)
             return@OnCompleteListener
         }
 
         val token = task.result
-        m.value= token.toString()
+        m.value = token.toString()
     })
 }

@@ -16,6 +16,13 @@ interface UserApi {
     ): Call<ResponseBody>
 
     @Headers("Content-Type: application/json")
+    @PUT("/users/token")
+    fun sendToken(
+        @Header("Authorization") authorization: String?,
+        @Body body : Token
+    ): Call<CallMethod>
+
+    @Headers("Content-Type: application/json")
     @POST("/join")
     fun register(
         @Body body: SendBody
@@ -110,7 +117,7 @@ interface UserApi {
     fun getNovel(
         @Header("Authorization") authorization: String?,
         @Path("num") num: Int,
-        @Query("nv_id") nv_id : Int
+        @Query("nv-id") nv_id : Int
     ) : Call<NovelsDetail>
 
     @POST("/novels/detail/{num}")
@@ -119,6 +126,15 @@ interface UserApi {
         @Path("num") num: Int,
         @Body body: PostNovelsDetail
     ) : Call<SNCR>
+
+    //각화 리뷰
+    @Headers("Content-Type: application/json")
+    @POST("/novels/review/{num}")
+    fun sendReview(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int,
+        @Body body: ReviewBody
+    ): Call<CallMethod>
 
     //소설 구독
     @POST("/nvc")
@@ -150,6 +166,8 @@ interface UserApi {
         @Query("keyword") keyword: String
     ) : Call<Boards>
 
+
+    //좋아요 싫어요
     @POST("/boards/{num}/like")
     fun likeBoard(
         @Header("Authorization") authorization: String?,

@@ -84,8 +84,6 @@ fun Greeting13(name: String) {
                 Row(Modifier.clickable { sMenuExpanded = !sMenuExpanded }) {
                     Text(sMenuName)
                     Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "")
-                    Spacer(modifier = Modifier.width(4.dp))
-
                 }
                 DropdownMenu(
                     expanded = sMenuExpanded,
