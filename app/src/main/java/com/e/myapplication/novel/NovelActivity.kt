@@ -16,6 +16,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -26,12 +28,16 @@ import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
+import com.e.myapplication.R
 import com.e.myapplication.board.read
 import com.e.myapplication.board.sendComment
 import com.e.myapplication.dataclass.*
@@ -95,8 +101,10 @@ fun Greeting2(
     var visibility by remember { mutableStateOf(false) }
     var commentV by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
-    Column(modifier = Modifier
-        .fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
         Scaffold(topBar = {
             AnimatedVisibility(visible = visibility) {
                 Row(
@@ -187,21 +195,23 @@ fun Greeting2(
                         }
                     }
                 } else {
-                    var content by rememberSaveable {
+                    var content by remember {
                         mutableStateOf("")
                     }
                     Column(Modifier.fillMaxSize()) {
                         Row {
                             OutlinedTextField(value = content, onValueChange = { content = it })
                             Button(onClick = {
-
+                                sendC(context, nNum, bNum, 0, content, comments)
                             }) {
                                 Text(text = "댓글 작성")
                             }
                         }
                         LazyColumn(Modifier.fillMaxWidth()) {
-                            items(comments) { c ->
-                                ShowComment(comment = c)
+                            itemsIndexed(comments) { index, c ->
+                                if (c.nvCmtReply == 0) {
+                                    ShowComment(comment = c, nNum, bNum, comments, index)
+                                }
                             }
                         }
                     }
@@ -222,11 +232,75 @@ fun ShowBoard(board: NovelsDetail) {
 }
 
 @Composable
-fun ShowComment(comment: NvComments.Comment) {
-    Column() {
-        Text(text = comment.memNickname)
+fun ShowComment(
+    comment: NvComments.Comment,
+    nNum: Int,
+    bNum: Int,
+    comments: SnapshotStateList<NvComments.Comment>,
+    index: Int
+) {
+    val context = LocalContext.current
+    var visibility by remember { mutableStateOf(false) }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable { visibility = !visibility }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(id = R.drawable.schumi),
+                contentDescription = "",
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .border(1.dp, Color.Black, CircleShape)
+                    .size(16.dp)
+            )
+            Text(text = comment.memNickname)
+        }
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = comment.nvCmtContents)
+        AnimatedVisibility(visible = visibility) {
+            var content by remember {
+                mutableStateOf("")
+            }
+            Column(Modifier.fillMaxWidth()) {
+                Row {
+                    Spacer(modifier = Modifier.width(10.dp))
+                    OutlinedTextField(value = content, onValueChange = { content = it })
+                    Button(onClick = {
+                        sendC(context, nNum, bNum, comment.nvCmtId, content, comments)
+                    }) {
+                        Text(text = "댓글 작성")
+                    }
+
+                }
+                if (comment.nvCmtReplynum != 0) {
+                    for (i: Int in index + 1 until comment.nvCmtReplynum + index + 1) {
+                        Row() {
+                            Spacer(modifier = Modifier.width(20.dp))
+                            Column() {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.schumi),
+                                        contentDescription = "",
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .border(1.dp, Color.Black, CircleShape)
+                                            .size(16.dp)
+                                    )
+                                    Text(text = comments[i].memNickname)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(text = comments[i].nvCmtContents)
+                            }
+                            
+                        }
+                        
+                    }
+                }
+
+            }
+        }
+
     }
 
 }
@@ -289,7 +363,14 @@ fun getNovelBoard(
     })
 }
 
-fun sendC(context: Context, nNum: Int, bNum: Int, nCR: Int, cmt: String) {
+fun sendC(
+    context: Context,
+    nNum: Int,
+    bNum: Int,
+    nCR: Int,
+    cmt: String,
+    comments: SnapshotStateList<NvComments.Comment>
+) {
     val repository = ProtoRepository(context)
     fun read(): AccountInfo {
         var accountInfo: AccountInfo
@@ -306,7 +387,22 @@ fun sendC(context: Context, nNum: Int, bNum: Int, nCR: Int, cmt: String) {
     )
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
-            TODO("Not yet implemented")
+            println("댓글 전송 테스트 결과 : "+response.body()!!.msg)
+            when (response.body()!!.msg) {
+                "JWT expiration" -> {
+                    val intent = Intent(context, LoginActivity::class.java)
+                    context.startActivity(intent)
+                    Toast.makeText(
+                        context,
+                        "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                "1" -> {
+                    getC(nNum, bNum, comments)
+                }
+            }
+
         }
 
         override fun onFailure(call: Call<CallMethod>, t: Throwable) {
