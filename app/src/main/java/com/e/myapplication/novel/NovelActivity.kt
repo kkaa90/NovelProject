@@ -33,9 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.board.read
 import com.e.myapplication.board.sendComment
-import com.e.myapplication.dataclass.CallMethod
-import com.e.myapplication.dataclass.NovelsDetail
-import com.e.myapplication.dataclass.ReviewBody
+import com.e.myapplication.dataclass.*
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.user.LoginActivity
@@ -54,6 +52,7 @@ class NovelActivity : ComponentActivity() {
         val nNum = intent.getIntExtra("novelNum", 0)
         val nvTitle = intent.getStringExtra("nvTitle")
         val board = mutableStateListOf<NovelsDetail>()
+        val comment = mutableStateListOf<NvComments.Comment>()
         val repository = ProtoRepository(this)
         fun read(): AccountInfo {
             var accountInfo: AccountInfo
@@ -66,11 +65,12 @@ class NovelActivity : ComponentActivity() {
 
         val ac = read()
         getNovelBoard(this, ac, nNum = nNum, bNum = bNum, board)
+        getC(nNum, bNum, comment)
         setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    Greeting2(board, bNum, nNum, nvTitle!!)
+                    Greeting2(board, bNum, nNum, nvTitle!!,comment)
                 }
             }
         }
@@ -78,7 +78,13 @@ class NovelActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting2(boards: SnapshotStateList<NovelsDetail>, bNum: Int, nNum: Int, nvTitle: String) {
+fun Greeting2(
+    boards: SnapshotStateList<NovelsDetail>,
+    bNum: Int,
+    nNum: Int,
+    nvTitle: String,
+    comments: SnapshotStateList<NvComments.Comment>
+) {
     val context = LocalContext.current
     val rPoint = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
     var rName: String by remember { mutableStateOf(rPoint[9]) }
@@ -109,11 +115,15 @@ fun Greeting2(boards: SnapshotStateList<NovelsDetail>, bNum: Int, nNum: Int, nvT
                 AnimatedVisibility(visible = visibility) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
 
-                        Text(text = "댓글", modifier = Modifier.clickable { commentV = !commentV }.padding(8.dp))
+                        Text(text = "댓글", modifier = Modifier
+                            .clickable { commentV = !commentV }
+                            .padding(8.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = "리뷰 점수")
@@ -152,34 +162,45 @@ fun Greeting2(boards: SnapshotStateList<NovelsDetail>, bNum: Int, nNum: Int, nvT
                         }
                     }
                 }
-            }) {
+            }) { innerpadding ->
             BackHandler() {
                 if (commentV) commentV = false
                 else if (!commentV && visibility) visibility = false
                 else (context as Activity).finish()
             }
-            if (!commentV) {
-                LazyColumn(
-                    Modifier
-                        .clickable { visibility = !visibility }
-                        .fillMaxSize()) {
-                    items(boards) { b ->
-                        ShowBoard(board = b)
+            Column(modifier = Modifier.fillMaxSize().padding(innerpadding)) {
+                if (!commentV) {
+                    LazyColumn(
+                        Modifier
+                            .clickable { visibility = !visibility }
+                            .fillMaxSize()) {
+                        items(boards) { b ->
+                            ShowBoard(board = b)
+                        }
                     }
-                }
-            } else {
-                var content by rememberSaveable {
-                    mutableStateOf("")
-                }
-                Row {
-                    OutlinedTextField(value = content, onValueChange = { content = it })
-                    Button(onClick = {
+                } else {
+                    var content by rememberSaveable {
+                        mutableStateOf("")
+                    }
+                    Column(Modifier.fillMaxSize()) {
+                        Row {
+                            OutlinedTextField(value = content, onValueChange = { content = it })
+                            Button(onClick = {
 
-                    }) {
-                        Text(text = "댓글 작성")
+                            }) {
+                                Text(text = "댓글 작성")
+                            }
+                        }
+                        LazyColumn{
+                            items(comments){ c ->
+                                ShowComment(comment = c)
+                            }
+                        }
                     }
+
                 }
             }
+
         }
     }
 }
@@ -190,7 +211,16 @@ fun ShowBoard(board: NovelsDetail) {
     Column() {
         Text(text = board.nvContents)
     }
+}
 
+@Composable
+fun ShowComment(comment : NvComments.Comment){
+    Column() {
+        Text(text = comment.memNickname)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = comment.nvCmtContents)
+    }
+    
 }
 
 @Preview(showBackground = true)
@@ -251,6 +281,53 @@ fun getNovelBoard(
     })
 }
 
+fun sendC(context: Context, nNum: Int, bNum: Int, nCR: Int, cmt: String) {
+    val repository = ProtoRepository(context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+
+        }
+        return accountInfo
+    }
+
+    val ac = read()
+    val retrofitClass = RetrofitClass.api.sendNComment(
+        ac.authorization, nNum, PostNvComments(ac.memNick, cmt, nCR, 0, bNum)
+    )
+    retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
+        override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+}
+
+fun getC(nNum: Int, bNum: Int, comments: SnapshotStateList<NvComments.Comment>) {
+    comments.removeAll(comments)
+    val retrofitClass = RetrofitClass.api.getNComment(nNum, bNum, 1)
+    retrofitClass.enqueue(object : retrofit2.Callback<NvComments> {
+        override fun onResponse(call: Call<NvComments>, response: Response<NvComments>) {
+            val r = response.body()
+            if (r?.pagenum != 0) {
+                for (i: Int in 0 until r?.comments?.size!!) {
+                    let { comments.addAll(r.comments[i]) }
+                }
+            }
+        }
+
+        override fun onFailure(call: Call<NvComments>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+}
+
 fun sendR(context: Context, bNum: Int, nNum: Int, rvPoint: String) {
     val repository = ProtoRepository(context)
     fun read(): AccountInfo {
@@ -265,7 +342,7 @@ fun sendR(context: Context, bNum: Int, nNum: Int, rvPoint: String) {
     val ac = read()
 
     val retrofitClass =
-        RetrofitClass.api.sendReview(ac.authorization, bNum, ReviewBody(nNum.toString(), rvPoint))
+        RetrofitClass.api.sendReview(ac.authorization, bNum, ReviewBody(rvPoint))
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
             when (response.body()!!.msg) {

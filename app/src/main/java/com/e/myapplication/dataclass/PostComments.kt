@@ -13,3 +13,16 @@ data class PostComments(
     @SerializedName("memNickname")
     val memNickname: String
 )
+
+data class PostNvComments(
+    @SerializedName("memNickname")
+    val memNickname: String,
+    @SerializedName("nvCmtContents")
+    val nvCmtContents: String,
+    @SerializedName("nvCmtReply")
+    val nvCmtReply: Int,
+    @SerializedName("nvCmtState")
+    val nvCmtState: Int,
+    @SerializedName("nvId")
+    val nvId: Int
+)

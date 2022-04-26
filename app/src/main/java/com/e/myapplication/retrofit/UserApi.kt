@@ -127,9 +127,24 @@ interface UserApi {
         @Body body: PostNovelsDetail
     ) : Call<SNCR>
 
+    //소설 댓글
+    @POST("/novels/detail/{num}/cmts")
+    fun sendNComment(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int,
+        @Body body: PostNvComments
+    ) : Call<CallMethod>
+
+    @GET("/novels/detail/{num}/cmts")
+    fun getNComment(
+        @Path("num") num : Int,
+        @Query("nv-id") nv_id :Int,
+        @Query("pagenum") pagenum : Int
+    ) : Call<NvComments>
+
     //각화 리뷰
     @Headers("Content-Type: application/json")
-    @POST("/novels/review/{num}")
+    @POST("/novels/{num}/review")
     fun sendReview(
         @Header("Authorization") authorization: String?,
         @Path("num") num: Int,
