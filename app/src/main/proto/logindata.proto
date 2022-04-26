@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option java_package = "com.e.myapplication";
+option java_multiple_files = true;
+option java_outer_classname = "LoginCheck";
+
+message LoginInfo{
+  bool chkIdSave = 1;
+  bool chkAccSave = 2;
+  string id = 3;
+  string pwd = 4;
+}

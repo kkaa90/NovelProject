@@ -42,3 +42,10 @@ data class Point(
 data class Token(
     @SerializedName("token") val token : String
 )
+
+data class ChkLogin(
+    val chkIdSave : Boolean,
+    val chkAutoLogin : Boolean,
+    val id : String,
+    val pwd : String
+)

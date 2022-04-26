@@ -34,11 +34,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.e.myapplication.AccountInfo
+import com.e.myapplication.*
 import com.e.myapplication.R
-import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.*
-import com.e.myapplication.getToken
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.menu.point
 import com.e.myapplication.retrofit.RetrofitClass
@@ -86,14 +84,9 @@ class LoginActivity : ComponentActivity() {
 
 @Composable
 fun Login() {
-    val login = RetrofitClass
-    val service = login.api
-    var id by remember { mutableStateOf("") }
-    var pwd by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
-    var check1 by remember { mutableStateOf(false) }
-    var check2 by remember { mutableStateOf(false) }
+    val repository2 = LoginRepository(context)
     fun AccountSave(user: User?) {
         runBlocking(Dispatchers.IO) {
             if (user != null) {
@@ -102,6 +95,31 @@ fun Login() {
         }
         return
     }
+
+    fun LoginSave(chkLogin: ChkLogin?){
+        runBlocking(Dispatchers.IO){
+            if(chkLogin!=null){
+                repository2.writeLoginInfo(chkLogin)
+            }
+        }
+        return
+    }
+
+    fun readLoginInfo() : LoginInfo{
+        var loginInfo : LoginInfo
+        runBlocking(Dispatchers.IO) {
+            loginInfo = repository2.readLoginInfo()
+        }
+        return loginInfo
+    }
+
+    val l = readLoginInfo()
+    val login = RetrofitClass
+    val service = login.api
+    var id by remember { mutableStateOf(l.id) }
+    var pwd by rememberSaveable { mutableStateOf(l.pwd) }
+    var check1 by remember { mutableStateOf(l.chkIdSave) }
+    var check2 by remember { mutableStateOf(l.chkAccSave) }
 
     var t = remember {
         mutableStateOf("")
@@ -160,6 +178,7 @@ fun Login() {
             val getResult = service.getUser(GetBody(id, pwd))
             println(getResult.request().url())
             println(getResult.request().toString())
+            val chkLogin = ChkLogin(check1,check2,if (check1) id else "", if(check2) pwd else "")
             getResult.enqueue(object : retrofit2.Callback<ResponseBody> {
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     t.printStackTrace()
@@ -188,6 +207,7 @@ fun Login() {
                         println(nick)
                         println(ll)
                         AccountSave(user)
+                        LoginSave(chkLogin)
                         sendT(u.get("Authorization")!!, t.value)
                         getPoint(u.get("Authorization")!!)
                         (context as Activity).finish()

@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -70,7 +71,7 @@ class NovelActivity : ComponentActivity() {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    Greeting2(board, bNum, nNum, nvTitle!!,comment)
+                    Greeting2(board, bNum, nNum, nvTitle!!, comment)
                 }
             }
         }
@@ -93,8 +94,8 @@ fun Greeting2(
     }
     var visibility by remember { mutableStateOf(false) }
     var commentV by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
     Column(modifier = Modifier
-        .clickable { }
         .fillMaxSize()) {
         Scaffold(topBar = {
             AnimatedVisibility(visible = visibility) {
@@ -168,11 +169,18 @@ fun Greeting2(
                 else if (!commentV && visibility) visibility = false
                 else (context as Activity).finish()
             }
-            Column(modifier = Modifier.fillMaxSize().padding(innerpadding)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerpadding)
+            ) {
                 if (!commentV) {
                     LazyColumn(
                         Modifier
-                            .clickable { visibility = !visibility }
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null
+                            ) { visibility = !visibility }
                             .fillMaxSize()) {
                         items(boards) { b ->
                             ShowBoard(board = b)
@@ -191,8 +199,8 @@ fun Greeting2(
                                 Text(text = "댓글 작성")
                             }
                         }
-                        LazyColumn{
-                            items(comments){ c ->
+                        LazyColumn(Modifier.fillMaxWidth()) {
+                            items(comments) { c ->
                                 ShowComment(comment = c)
                             }
                         }
@@ -214,13 +222,13 @@ fun ShowBoard(board: NovelsDetail) {
 }
 
 @Composable
-fun ShowComment(comment : NvComments.Comment){
+fun ShowComment(comment: NvComments.Comment) {
     Column() {
         Text(text = comment.memNickname)
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = comment.nvCmtContents)
     }
-    
+
 }
 
 @Preview(showBackground = true)
