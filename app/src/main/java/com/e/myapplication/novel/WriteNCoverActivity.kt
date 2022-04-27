@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -34,6 +35,7 @@ import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
+import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType
@@ -144,11 +146,11 @@ fun Greeting4(name: String) {
                 println(file?.absolutePath)
                 requestBody = RequestBody.create(MediaType.parse("image/*"), file)
                 val body = MultipartBody.Part.createFormData("images", "image.png", requestBody)
-                sImage(context,ac,body,content,title,tags)
+                sImage(context,body,content,title,tags)
             } else {
                 println("파일 없음")
                 val nc = SendNCover(SendNCover.NovelCover("0","0",content,title),tags)
-                wNCover(context,ac,nc)
+                wNCover(context,nc)
             }
 
 
@@ -170,20 +172,25 @@ fun DefaultPreview8() {
 
 
 
-fun wNCover(context: Context, ac : AccountInfo, nc : SendNCover){
+fun wNCover(context: Context, nc : SendNCover){
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+
+        }
+        return accountInfo
+    }
+    val ac =read()
     val retrofitClass = RetrofitClass.api.writeNCover(ac.authorization.toString(),nc)
     retrofitClass.enqueue(object :retrofit2.Callback<SNCR>{
         override fun onResponse(call: Call<SNCR>, response: Response<SNCR>) {
             val r = response.body()?.msg
             if(r=="JWT expiration"){
-                val intent = Intent(context,LoginActivity::class.java)
-                context.startActivity(intent)
-                Toast.makeText(
-                    context,
-                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                    Toast.LENGTH_LONG
-                ).show()
+                getAToken(context)
                 retrofitClass.cancel()
+                Handler().postDelayed(Runnable { wNCover(context, nc) },1000)
             }
             else {
                 println(r)
@@ -205,26 +212,31 @@ fun wNCover(context: Context, ac : AccountInfo, nc : SendNCover){
     })
 }
 
-fun sImage(context: Context, ac:AccountInfo, body: MultipartBody.Part, content : String, title : String,
+fun sImage(context: Context, body: MultipartBody.Part, content : String, title : String,
     tag : List<String>){
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+
+        }
+        return accountInfo
+    }
+    val ac =read()
     val retrofitClass = RetrofitClass.api.uploadImage(ac.authorization.toString(),body)
     retrofitClass.enqueue(object :retrofit2.Callback<ImageUpload>{
         override fun onResponse(call: Call<ImageUpload>, response: Response<ImageUpload>) {
             val r = response.body()?.msg
             if(r=="JWT expiration"){
-                val intent = Intent(context,LoginActivity::class.java)
-                context.startActivity(intent)
-                Toast.makeText(
-                    context,
-                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                    Toast.LENGTH_LONG
-                ).show()
+                getAToken(context)
                 retrofitClass.cancel()
+                Handler().postDelayed(Runnable { sImage(context, body, content, title, tag) },1000)
             }
             else {
                 println("사진 번호 : $r")
                 val nc = SendNCover(SendNCover.NovelCover(r!!,"0",content,title),tag)
-                wNCover(context,ac, nc)
+                wNCover(context, nc)
             }
         }
 

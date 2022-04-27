@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -37,6 +38,7 @@ import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
+import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType
@@ -205,7 +207,7 @@ fun Greeting9(num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>) {
                     println(file?.absolutePath)
                     requestBody = RequestBody.create(MediaType.parse("image/*"), file)
                     val body = MultipartBody.Part.createFormData("images", "image.png", requestBody)
-                    nImage(context, ac, body, content, title, num, point)
+                    nImage(context, body, content, title, num, point)
                 } else {
                     println("파일 없음")
                     val novel = PostNovelsDetail(
@@ -218,7 +220,7 @@ fun Greeting9(num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>) {
                             point
                         ), parent
                     )
-                    writeNovel(context, ac, num, novel)
+                    writeNovel(context, num, novel)
                 }
             }
         }) {
@@ -236,24 +238,28 @@ fun DefaultPreview11() {
 
 fun writeNovel(
     context: Context,
-    ac: AccountInfo,
     num: Int,
     novel: PostNovelsDetail,
 ) {
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+
+        }
+        return accountInfo
+    }
+    val ac = read()
     val retrofitClass = RetrofitClass.api.writeNovel(ac.authorization, num, novel)
     retrofitClass.enqueue(object : retrofit2.Callback<SNCR> {
         override fun onResponse(call: Call<SNCR>, response: Response<SNCR>) {
             val r = response.body()!!.msg
             when (r) {
                 "JWT expiration" -> {
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
-                    Toast.makeText(
-                        context,
-                        "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    getAToken(context)
                     retrofitClass.cancel()
+                    Handler().postDelayed( Runnable { writeNovel(context, num, novel) },1000)
                 }
                 "1" -> {
                     (context as Activity).finish()
@@ -274,33 +280,37 @@ fun writeNovel(
 
 fun nImage(
     context: Context,
-    ac: AccountInfo,
     body: MultipartBody.Part,
     content: String,
     title: String,
     num: Int,
     point: String
 ) {
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+
+        }
+        return accountInfo
+    }
+    val ac = read()
     val retrofitClass = RetrofitClass.api.uploadImage(ac.authorization.toString(), body)
     retrofitClass.enqueue(object : retrofit2.Callback<ImageUpload> {
         override fun onResponse(call: Call<ImageUpload>, response: Response<ImageUpload>) {
             val r = response.body()?.msg
             if (r == "JWT expiration") {
-                val intent = Intent(context, LoginActivity::class.java)
-                context.startActivity(intent)
-                Toast.makeText(
-                    context,
-                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                    Toast.LENGTH_LONG
-                ).show()
+                getAToken(context)
                 retrofitClass.cancel()
+                Handler().postDelayed(Runnable { nImage(context, body, content, title, num, point) },1000)
             } else {
                 println("사진 번호 : $r")
                 val novel = PostNovelsDetail(
                     PostNovelsDetail.Novel(r!!, content, "0", title, ac.memNick, point),
                     "0"
                 )
-                writeNovel(context, ac, num, novel)
+                writeNovel(context, num, novel)
             }
         }
 

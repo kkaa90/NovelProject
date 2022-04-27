@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,6 +37,7 @@ import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
+import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
@@ -86,7 +88,7 @@ fun ShowBoard(
             OutlinedTextField(value = content, onValueChange = { content = it })
             Button(onClick = {
                 val ac = read(repository)
-                sendComment(ac, writeComment, content, boards[0].brdId, context, num, comment, 0)
+                sendComment(writeComment, content, boards[0].brdId, context, num, comment, 0)
             }) {
                 Text(text = "댓글 작성")
             }
@@ -123,11 +125,11 @@ fun ShowBoard2(board: Board, num : Int) {
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically){
-            IconButton(onClick = { like(context,ac,num) }) {
+            IconButton(onClick = { like(context,num) }) {
                 Icon(painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24), contentDescription = "")
             }
             Text(text = board.brdLike.toString())
-            IconButton(onClick = { dislike(context, ac, num) }) {
+            IconButton(onClick = { dislike(context, num) }) {
                 Icon(painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24), contentDescription = "")
             }
             Text(text = board.brdDislike.toString())
@@ -157,7 +159,6 @@ fun ShowComment(
                     Button(onClick = {
                         val ac = read(repository)
                         sendComment(
-                            ac,
                             writeComment,
                             content,
                             comment.brdId,
@@ -186,10 +187,19 @@ fun ShowComment2(comment: Comment) {
 }
 
 fun sendComment(
-    ac: AccountInfo, writeComment: RetrofitClass, content: String, brdId: Int,
+    writeComment: RetrofitClass, content: String, brdId: Int,
     context: Context, num: Int, comments: SnapshotStateList<Comment>,
     commentNum: Int
 ) {
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+        }
+        return accountInfo
+    }
+    val ac = read()
     val rc = writeComment.api.writeComment(
         ac.authorization.toString(),
         PostComments(
@@ -209,13 +219,13 @@ fun sendComment(
             if (result == "1") {
                 getComment(num, comments)
             } else {
-                Toast.makeText(
-                    context,
-                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                    Toast.LENGTH_LONG
-                ).show()
-                val intent = Intent(context, LoginActivity::class.java)
-                context.startActivity(intent)
+                getAToken(context)
+                rc.cancel()
+                Handler().postDelayed(Runnable()
+                {
+                    val acc = read()
+                    sendComment(writeComment, content, brdId, context, num, comments, commentNum)
+                }, 1000)
 
             }
 
@@ -277,7 +287,16 @@ fun read(repository: ProtoRepository): AccountInfo {
     return accountInfo
 }
 
-fun like(context: Context, ac: AccountInfo, num: Int) {
+fun like(context: Context, num: Int) {
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+        }
+        return accountInfo
+    }
+    val ac = read()
     val retrofitClass = RetrofitClass.api.likeBoard(ac.authorization, num)
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
@@ -290,13 +309,12 @@ fun like(context: Context, ac: AccountInfo, num: Int) {
                     Toast.LENGTH_LONG
                 ).show()
             } else {
-                Toast.makeText(
-                    context,
-                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                    Toast.LENGTH_LONG
-                ).show()
-                val intent = Intent(context, LoginActivity::class.java)
-                context.startActivity(intent)
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler().postDelayed(Runnable()
+                {
+                    like(context, num)
+                }, 1000)
             }
 
         }
@@ -309,7 +327,16 @@ fun like(context: Context, ac: AccountInfo, num: Int) {
 
 }
 
-fun dislike(context: Context, ac: AccountInfo, num: Int) {
+fun dislike(context: Context, num: Int) {
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+        }
+        return accountInfo
+    }
+    val ac = read()
     val retrofitClass = RetrofitClass.api.dislikeBoard(ac.authorization,num)
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
@@ -321,13 +348,12 @@ fun dislike(context: Context, ac: AccountInfo, num: Int) {
                     Toast.LENGTH_LONG
                 ).show()
             } else {
-                Toast.makeText(
-                    context,
-                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                    Toast.LENGTH_LONG
-                ).show()
-                val intent = Intent(context, LoginActivity::class.java)
-                context.startActivity(intent)
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler().postDelayed(Runnable()
+                {
+                    dislike(context, num)
+                }, 1000)
             }
         }
 

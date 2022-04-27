@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -48,6 +49,7 @@ import com.e.myapplication.ui.theme.dimGray
 import com.e.myapplication.ui.theme.skyBlue
 import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
+import com.e.myapplication.user.getAToken
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.Dispatchers
@@ -449,8 +451,6 @@ fun addSubscribe(context: Context, nvc: Nvc) {
     }
     val ac = read()
     val retrofitClass = RetrofitClass.api.subscribe(ac.authorization.toString(), nvc)
-    println(retrofitClass.request().url())
-    println(retrofitClass.request().toString())
     retrofitClass.enqueue(object : retrofit2.Callback<nvcr> {
         override fun onResponse(call: Call<nvcr>, response: Response<nvcr>) {
             val r = response.body()!!.msg
@@ -459,9 +459,8 @@ fun addSubscribe(context: Context, nvc: Nvc) {
                 "delete" -> message = "구독이 취소 되었습니다."
                 "subscribe" -> message = "구독 되었습니다."
                 else -> {
-                    message = "토큰이 만료되었습니다."
-                    val intent = Intent(context,LoginActivity::class.java)
-                    context.startActivity(intent)
+                    getAToken(context)
+                    Handler().postDelayed(Runnable { addSubscribe(context, nvc) },1000)
                 }
             }
             Toast.makeText(

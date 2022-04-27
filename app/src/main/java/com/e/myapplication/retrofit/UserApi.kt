@@ -23,6 +23,12 @@ interface UserApi {
     ): Call<CallMethod>
 
     @Headers("Content-Type: application/json")
+    @PUT("/users/refresh")
+    fun getAccessToken(
+        @Header("Authorization") authorization: String?
+    ): Call<CallMethod>
+
+    @Headers("Content-Type: application/json")
     @POST("/join")
     fun register(
         @Body body: SendBody

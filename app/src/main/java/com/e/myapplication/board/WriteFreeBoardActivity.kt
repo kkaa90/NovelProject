@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -35,6 +36,7 @@ import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
+import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType
@@ -140,16 +142,15 @@ fun Greeting7() {
                         println(imageNum)
                         if (imageNum == "JWT expiration") {
                             Toast.makeText(
-                                    context,
-                            "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                            Toast.LENGTH_LONG
+                                context,
+                                "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
+                                Toast.LENGTH_LONG
                             ).show()
                             val intent = Intent(context, LoginActivity::class.java)
                             context.startActivity(intent)
                             upI.cancel()
 
-                        }
-                        else {
+                        } else {
                             val postBoard = PostBoard(
                                 content,
                                 "",
@@ -159,7 +160,7 @@ fun Greeting7() {
                                 imageNum,
                                 "0"
                             )
-                            wB(context, ac, postBoard)
+                            wB(context, postBoard)
                         }
                         println("이미지 : " + response.body()!!.msg.toString())
                         println(imageNum)
@@ -173,8 +174,8 @@ fun Greeting7() {
             } else {
                 println("파일 없음")
                 val postBoard =
-                    PostBoard(content, "", "0", title, ac.memNick.toString(), "1","")
-                wB(context, ac, postBoard)
+                    PostBoard(content, "", "0", title, ac.memNick.toString(), "1", "")
+                wB(context, postBoard)
             }
 
 
@@ -193,9 +194,18 @@ fun DefaultPreview9() {
     }
 }
 
+fun wB(context: Context, postBoard: PostBoard) {
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
 
-fun wB(context: Context, ac: AccountInfo, postBoard: PostBoard) {
+        }
+        return accountInfo
+    }
 
+    val ac = read()
     val writeBoard = RetrofitClass
     val service = writeBoard.api
     val wb = service.writeBoard(
@@ -215,9 +225,9 @@ fun wB(context: Context, ac: AccountInfo, postBoard: PostBoard) {
             when (r) {
                 "JWT expiration" -> {
                     println("토큰 만료")
-                    Toast.makeText(context, "토큰이 만료되었습니다.\n 다시 로그인 해주세요.", Toast.LENGTH_LONG).show()
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
+                    getAToken(context)
+                    wb.cancel()
+                    Handler().postDelayed(Runnable() { wB(context, postBoard) }, 1000)
                 }
                 "1" -> {
                     println("글쓰기 성공")

@@ -30,7 +30,7 @@ import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
-var temp = User("", "", "", "", "", "", "")
+var temp = User("", "", "", "", "", "", "", "")
 var temp2 = mutableStateOf(false)
 
 class TestActivity : ComponentActivity() {
@@ -104,9 +104,9 @@ fun WebPageView(url: String) {
                                 if (temp2.value) {
                                     AccountSave(temp)
                                     val intent = Intent(context, LoginActivity::class.java).apply {
-                                        putExtra("lToken",temp.authorization)
+                                        putExtra("lToken", temp.authorization)
                                     }
-                                    (context as Activity).setResult(Activity.RESULT_OK,intent)
+                                    (context as Activity).setResult(Activity.RESULT_OK, intent)
                                     context.finish()
                                 }
                             }
@@ -124,7 +124,7 @@ fun WebPageView(url: String) {
         apply
     }, update = {
         it.loadUrl(url)
-    }, modifier = Modifier.alpha(if(t) 0f else 1f))
+    }, modifier = Modifier.alpha(if (t) 0f else 1f))
 }
 
 class MyJavascriptInterface {
@@ -142,13 +142,16 @@ class MyJavascriptInterface {
             val jsonObject = obj.asJsonObject
             Log.d("Test2", d)
             println(jsonObject)
-            temp = User(jsonObject.get("memUserId").toString().replace("\"",""),
-                jsonObject.get("token").toString().replace("\"",""),
-                jsonObject.get("memIcon").toString().replace("\"",""),
-                jsonObject.get("memId").toString().replace("\"",""),
-                jsonObject.get("memNick").toString().replace("\"",""),
-                jsonObject.get("memPoint").toString().replace("\"",""),
-                jsonObject.get("memLastloginDatetime").toString().replace("\"",""))
+            temp = User(
+                jsonObject.get("memUserId").toString().replace("\"", ""),
+                jsonObject.get("token").toString().replace("\"", ""),
+                jsonObject.get("memIcon").toString().replace("\"", ""),
+                jsonObject.get("memId").toString().replace("\"", ""),
+                jsonObject.get("memNick").toString().replace("\"", ""),
+                jsonObject.get("memPoint").toString().replace("\"", ""),
+                jsonObject.get("memLastloginDatetime").toString().replace("\"", ""),
+                jsonObject.get("RefreshToken").toString().replace("\"", "")
+            )
             temp2.value = true
         }
     }

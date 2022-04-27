@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -54,6 +55,7 @@ import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
 import java.net.URLDecoder
+import java.util.*
 import javax.security.auth.callback.Callback
 
 class LoginActivity : ComponentActivity() {
@@ -202,7 +204,7 @@ fun Login() {
                         val ll = URLDecoder.decode(d[5].split("=")[1], "UTF-8")
                         val user = User(
                             userid, u.get("Authorization")!!, memicon,
-                            id, nick, mempoint, ll
+                            id, nick, mempoint, ll, u.get("RefreshToken")!!
                         )
                         println(nick)
                         println(ll)
@@ -374,5 +376,49 @@ fun sendT(lToken: String, fToken: String) {
         }
 
     })
+}
+
+fun getAToken(context: Context){
+    val repository = ProtoRepository(context = context)
+    fun AccountSave(user: User?) {
+        runBlocking(Dispatchers.IO) {
+            if (user != null) {
+                repository.writeAccountInfo(user)
+            }
+        }
+        return
+    }
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+        }
+        return accountInfo
+    }
+    val ac = read()
+    val retrofitClass = RetrofitClass.api.getAccessToken(ac.refreshToken)
+    retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
+        override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+            if(response.body()!!.msg=="OK"){
+                val r= response.headers()
+                val user = User(ac.memUserid,r.get("Authorization")!!,ac.memIcon,ac.memId,ac.memNick,"0","",ac.refreshToken)
+                AccountSave(user)
+            }
+            else {
+                val intent = Intent(context, LoginActivity::class.java)
+                context.startActivity(intent)
+                Toast.makeText(
+                    context,
+                    "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+        override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+
 }
 

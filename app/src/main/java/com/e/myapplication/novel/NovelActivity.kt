@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.opengl.Visibility
 import android.os.Bundle
+import android.os.Handler
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -45,6 +46,7 @@ import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
+import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
@@ -71,7 +73,7 @@ class NovelActivity : ComponentActivity() {
         }
 
         val ac = read()
-        getNovelBoard(this, ac, nNum = nNum, bNum = bNum, board)
+        getNovelBoard(this, nNum = nNum, bNum = bNum, board)
         getC(nNum, bNum, comment)
         setContent {
             MyApplicationTheme {
@@ -314,12 +316,20 @@ fun DefaultPreview2() {
 
 fun getNovelBoard(
     context: Context,
-    ac: AccountInfo,
     nNum: Int,
     bNum: Int,
     snapshotStateList: SnapshotStateList<NovelsDetail>
 ) {
+    val repository = ProtoRepository(context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+        }
+        return accountInfo
+    }
 
+    val ac = read()
     val retrofitClass = RetrofitClass.api.getNovel(ac.authorization, nNum, bNum)
     println(retrofitClass.request().url())
     retrofitClass.enqueue(object : retrofit2.Callback<NovelsDetail> {
@@ -333,14 +343,8 @@ fun getNovelBoard(
 
             when (m) {
                 "JWT expiration" -> {
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
-                    Toast.makeText(
-                        context,
-                        "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    (context as Activity).finish()
+                    getAToken(context)
+                    Handler().postDelayed(Runnable { getNovelBoard(context, nNum, bNum, snapshotStateList) },1000)
                 }
                 "point lack" -> {
                     Toast.makeText(
@@ -376,7 +380,6 @@ fun sendC(
         var accountInfo: AccountInfo
         runBlocking(Dispatchers.IO) {
             accountInfo = repository.readAccountInfo()
-
         }
         return accountInfo
     }
@@ -390,13 +393,8 @@ fun sendC(
             println("댓글 전송 테스트 결과 : "+response.body()!!.msg)
             when (response.body()!!.msg) {
                 "JWT expiration" -> {
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
-                    Toast.makeText(
-                        context,
-                        "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    getAToken(context)
+                    Handler().postDelayed(Runnable { sendC(context, nNum, bNum, nCR, cmt, comments) },1000)
                 }
                 "1" -> {
                     getC(nNum, bNum, comments)
@@ -451,13 +449,8 @@ fun sendR(context: Context, bNum: Int, nNum: Int, rvPoint: String) {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
             when (response.body()!!.msg) {
                 "JWT expiration" -> {
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
-                    Toast.makeText(
-                        context,
-                        "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    getAToken(context)
+                    Handler().postDelayed(Runnable { sendR(context, bNum, nNum, rvPoint) },1000)
                 }
                 "OK" -> {
                     Toast.makeText(
