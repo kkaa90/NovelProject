@@ -2,7 +2,6 @@ package com.e.myapplication.menu
 
 import android.app.Activity
 import android.content.Intent
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,14 +18,11 @@ import com.e.myapplication.R
 import com.e.myapplication.board.FreeBoardActivity
 import com.e.myapplication.novel.NovelCoverActivity
 import com.e.myapplication.user.ChangeProfileActivity
-import com.e.myapplication.user.Login
 import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.util.*
-import java.util.logging.Handler
-import kotlin.concurrent.timer
 
 
 class DrawerMenu(val route: String, val title: String, val activity: Activity)
@@ -65,7 +61,7 @@ fun Drawer() {
     )
 
 
-    Column() {
+    Column {
         Image(painter = painterResource(id = R.drawable.schumi), contentDescription = "",
             modifier = Modifier
                 .height(100.dp)
@@ -100,6 +96,6 @@ fun Drawer() {
 
 @Preview
 @Composable
-fun previewDrawer() {
+fun PreviewDrawer() {
     Drawer()
 }

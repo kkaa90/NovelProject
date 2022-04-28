@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -20,14 +21,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -47,7 +50,6 @@ import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.dimGray
 import com.e.myapplication.ui.theme.skyBlue
-import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
 import com.google.android.gms.tasks.OnCompleteListener
@@ -137,21 +139,10 @@ fun ShowPostList(
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
-    val repository = ProtoRepository(context)
     val m = remember {
         mutableStateOf("")
     }
     getToken(m)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-
-        }
-        return accountInfo
-    }
-
-    val ac = read()
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope) },
         floatingActionButton = {
@@ -186,7 +177,7 @@ fun ShowPostList(
                     .background(skyBlue)
 
             ) {
-                Row() {
+                Row {
 
                     Image(
                         painter = rememberImagePainter(cover.value.imgUrl),
@@ -210,7 +201,7 @@ fun ShowPostList(
                             )
                             Text(cover.value.nvId.toString(), color = dimGray, fontSize = 18.sp)
                             Spacer(modifier = Modifier.padding(4.dp))
-                            Row() {
+                            Row {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     IconButton(onClick = { /*TODO*/ }) {
                                         Icon(
@@ -267,9 +258,9 @@ fun ShowPostList(
                     }
 
                 }
-                Row() {
+                Row {
                     Spacer(modifier = Modifier.padding(8.dp))
-                    Column() {
+                    Column {
                         Text(cover.value.nvcContents, fontSize = 21.sp)
                         Spacer(modifier = Modifier.padding(4.dp))
                         Text(
@@ -321,7 +312,7 @@ fun ShowPostList(
             var eIsEmpty by remember { mutableStateOf(false) }
             when (tabIndex) {
                 0 -> {
-                    Column() {
+                    Column {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -337,7 +328,7 @@ fun ShowPostList(
                                     Text(text = "공지 숨기기")
                                 }
                                 Spacer(modifier = Modifier.padding(30.dp))
-                                Column() {
+                                Column {
                                     Row(Modifier.clickable { dMenuExpanded = !dMenuExpanded }) {
                                         Text(dMenuName)
                                         Icon(imageVector = Icons.Filled.ArrowDropDown, "")
@@ -460,7 +451,7 @@ fun addSubscribe(context: Context, nvc: Nvc) {
                 "subscribe" -> message = "구독 되었습니다."
                 else -> {
                     getAToken(context)
-                    Handler().postDelayed(Runnable { addSubscribe(context, nvc) },1000)
+                    Handler(Looper.getMainLooper()).postDelayed({ addSubscribe(context, nvc) },1000)
                 }
             }
             Toast.makeText(

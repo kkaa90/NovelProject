@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
 
     private fun checkPermissions() {
         //거절되었거나 아직 수락하지 않은 권한(퍼미션)을 저장할 문자열 배열 리스트
-        var rejectedPermissionList = ArrayList<String>()
+        val rejectedPermissionList = ArrayList<String>()
 
         //필요한 퍼미션들을 하나씩 끄집어내서 현재 권한을 받았는지 체크
         for (permission in requiredPermissions) {
@@ -152,7 +152,7 @@ fun ShowNovelList(novels: State<List<Novels.Content>>, tags: State<List<List<Str
         drawerContent = { Drawer() },
         drawerGesturesEnabled = true
     ) {
-        BackHandler() {
+        BackHandler {
             if (scaffoldState.drawerState.isClosed) (context as Activity).finish()
             else {
                 scope.launch {

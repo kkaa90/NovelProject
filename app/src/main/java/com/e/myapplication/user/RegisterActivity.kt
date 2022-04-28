@@ -9,7 +9,6 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.e.myapplication.dataclass.PostBody
 import com.e.myapplication.dataclass.SendBody
@@ -43,8 +42,7 @@ fun Greeting5() {
     var pwd by rememberSaveable { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var nick by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    Column() {
+    Column {
         OutlinedTextField(value = id, onValueChange = { id = it }, label = { Text("ID") })
         OutlinedTextField(value = pwd, onValueChange = { pwd = it }, label = { Text("패스워드") })
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("이메일") })

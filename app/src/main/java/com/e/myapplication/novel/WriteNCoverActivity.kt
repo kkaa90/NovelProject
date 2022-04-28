@@ -2,14 +2,10 @@ package com.e.myapplication.novel
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.Handler
+import android.os.*
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -26,14 +22,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
-import com.e.myapplication.board.wB
 import com.e.myapplication.dataclass.ImageUpload
-import com.e.myapplication.dataclass.PostBoard
 import com.e.myapplication.dataclass.SNCR
 import com.e.myapplication.dataclass.SendNCover
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
-import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +51,7 @@ class WriteNCoverActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Greeting4("Android")
+                    Greeting4()
                 }
             }
         }
@@ -66,23 +59,14 @@ class WriteNCoverActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting4(name: String) {
+fun Greeting4() {
     val context = LocalContext.current
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-
-        }
-        return accountInfo
-    }
     var title by remember { mutableStateOf("")}
     var content by remember { mutableStateOf("")}
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var tag by remember { mutableStateOf("") }
-    var tags = remember {mutableListOf<String>()}
+    val tags = remember {mutableListOf<String>()}
     var file: File?
     var f = false
     val launcher =
@@ -100,11 +84,11 @@ fun Greeting4(name: String) {
         Row {
 
             imageUri?.let {
-                if (Build.VERSION.SDK_INT < 28) {
-                    bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                bitmap = if (Build.VERSION.SDK_INT < 28) {
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
                 } else {
                     val source = ImageDecoder.createSource(context.contentResolver, it)
-                    bitmap = ImageDecoder.decodeBitmap(source)
+                    ImageDecoder.decodeBitmap(source)
                 }
 
                 f = true
@@ -137,9 +121,6 @@ fun Greeting4(name: String) {
         }
 
         Button(onClick = {
-
-            var imageNum: String
-            val ac = read()
             if (f) {
                 println("파일 있음")
                 file = bitmapToFile(bitmap!!, "image.jpg")
@@ -165,7 +146,7 @@ fun Greeting4(name: String) {
 @Composable
 fun DefaultPreview8() {
     MyApplicationTheme {
-        Greeting4("Android")
+        Greeting4()
     }
 }
 
@@ -184,13 +165,13 @@ fun wNCover(context: Context, nc : SendNCover){
     }
     val ac =read()
     val retrofitClass = RetrofitClass.api.writeNCover(ac.authorization.toString(),nc)
-    retrofitClass.enqueue(object :retrofit2.Callback<SNCR>{
+    retrofitClass.enqueue(object : Callback<SNCR>{
         override fun onResponse(call: Call<SNCR>, response: Response<SNCR>) {
             val r = response.body()?.msg
             if(r=="JWT expiration"){
                 getAToken(context)
                 retrofitClass.cancel()
-                Handler().postDelayed(Runnable { wNCover(context, nc) },1000)
+                Handler(Looper.getMainLooper()).postDelayed({ wNCover(context, nc) },1000)
             }
             else {
                 println(r)
@@ -225,13 +206,13 @@ fun sImage(context: Context, body: MultipartBody.Part, content : String, title :
     }
     val ac =read()
     val retrofitClass = RetrofitClass.api.uploadImage(ac.authorization.toString(),body)
-    retrofitClass.enqueue(object :retrofit2.Callback<ImageUpload>{
+    retrofitClass.enqueue(object : Callback<ImageUpload>{
         override fun onResponse(call: Call<ImageUpload>, response: Response<ImageUpload>) {
             val r = response.body()?.msg
             if(r=="JWT expiration"){
                 getAToken(context)
                 retrofitClass.cancel()
-                Handler().postDelayed(Runnable { sImage(context, body, content, title, tag) },1000)
+                Handler(Looper.getMainLooper()).postDelayed({ sImage(context, body, content, title, tag) },1000)
             }
             else {
                 println("사진 번호 : $r")

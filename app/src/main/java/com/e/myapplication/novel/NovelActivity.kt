@@ -2,10 +2,9 @@ package com.e.myapplication.novel
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
-import android.opengl.Visibility
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -24,8 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,12 +36,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.R
-import com.e.myapplication.board.read
-import com.e.myapplication.board.sendComment
 import com.e.myapplication.dataclass.*
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
-import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
@@ -62,17 +56,6 @@ class NovelActivity : ComponentActivity() {
         val nvTitle = intent.getStringExtra("nvTitle")
         val board = mutableStateListOf<NovelsDetail>()
         val comment = mutableStateListOf<NvComments.Comment>()
-        val repository = ProtoRepository(this)
-        fun read(): AccountInfo {
-            var accountInfo: AccountInfo
-            runBlocking(Dispatchers.IO) {
-                accountInfo = repository.readAccountInfo()
-
-            }
-            return accountInfo
-        }
-
-        val ac = read()
         getNovelBoard(this, nNum = nNum, bNum = bNum, board)
         getC(nNum, bNum, comment)
         setContent {
@@ -139,7 +122,7 @@ fun Greeting2(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = "리뷰 점수")
                             Spacer(modifier = Modifier.width(4.0.dp))
-                            Column() {
+                            Column {
                                 Row(
                                     modifier = Modifier
                                         .border(
@@ -174,7 +157,7 @@ fun Greeting2(
                     }
                 }
             }) { innerpadding ->
-            BackHandler() {
+            BackHandler {
                 if (commentV) commentV = false
                 else if (!commentV && visibility) visibility = false
                 else (context as Activity).finish()
@@ -227,8 +210,7 @@ fun Greeting2(
 
 @Composable
 fun ShowBoard(board: NovelsDetail) {
-    val context = LocalContext.current
-    Column() {
+    Column {
         Text(text = board.nvContents)
     }
 }
@@ -277,9 +259,9 @@ fun ShowComment(
                 }
                 if (comment.nvCmtReplynum != 0) {
                     for (i: Int in index + 1 until comment.nvCmtReplynum + index + 1) {
-                        Row() {
+                        Row {
                             Spacer(modifier = Modifier.width(20.dp))
-                            Column() {
+                            Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.schumi),
@@ -344,7 +326,7 @@ fun getNovelBoard(
             when (m) {
                 "JWT expiration" -> {
                     getAToken(context)
-                    Handler().postDelayed(Runnable { getNovelBoard(context, nNum, bNum, snapshotStateList) },1000)
+                    Handler(Looper.getMainLooper()).postDelayed({ getNovelBoard(context, nNum, bNum, snapshotStateList) },1000)
                 }
                 "point lack" -> {
                     Toast.makeText(
@@ -394,7 +376,7 @@ fun sendC(
             when (response.body()!!.msg) {
                 "JWT expiration" -> {
                     getAToken(context)
-                    Handler().postDelayed(Runnable { sendC(context, nNum, bNum, nCR, cmt, comments) },1000)
+                    Handler(Looper.getMainLooper()).postDelayed({ sendC(context, nNum, bNum, nCR, cmt, comments) },1000)
                 }
                 "1" -> {
                     getC(nNum, bNum, comments)
@@ -450,7 +432,7 @@ fun sendR(context: Context, bNum: Int, nNum: Int, rvPoint: String) {
             when (response.body()!!.msg) {
                 "JWT expiration" -> {
                     getAToken(context)
-                    Handler().postDelayed(Runnable { sendR(context, bNum, nNum, rvPoint) },1000)
+                    Handler(Looper.getMainLooper()).postDelayed({ sendR(context, bNum, nNum, rvPoint) },1000)
                 }
                 "OK" -> {
                     Toast.makeText(

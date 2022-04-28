@@ -2,14 +2,13 @@ package com.e.myapplication.novel
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -18,14 +17,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -33,10 +34,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
-import com.e.myapplication.dataclass.*
+import com.e.myapplication.dataclass.ImageUpload
+import com.e.myapplication.dataclass.NovelsInfo
+import com.e.myapplication.dataclass.PostNovelsDetail
+import com.e.myapplication.dataclass.SNCR
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
-import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
@@ -46,9 +49,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Response
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileOutputStream
 
 class WriteNovelActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,11 +107,11 @@ fun Greeting9(num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>) {
         Row {
 
             imageUri?.let {
-                if (Build.VERSION.SDK_INT < 28) {
-                    bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                bitmap = if (Build.VERSION.SDK_INT < 28) {
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
                 } else {
                     val source = ImageDecoder.createSource(context.contentResolver, it)
-                    bitmap = ImageDecoder.decodeBitmap(source)
+                    ImageDecoder.decodeBitmap(source)
                 }
 
                 f = true
@@ -128,7 +129,7 @@ fun Greeting9(num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>) {
                 Text(text = "이미지 선택")
             }
         }
-        Row() {
+        Row {
             Text(text = "포인트 : ")
             OutlinedTextField(
                 value = point,
@@ -158,9 +159,9 @@ fun Greeting9(num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>) {
         var dMenuExpanded by remember { mutableStateOf(false) }
         var dMenuName: String by remember { mutableStateOf("선택") }
         var dMenuIndex : Int by remember { mutableStateOf(0) }
-        Row(){
+        Row {
             Text(text = "부모 화 : ")
-            Column() {
+            Column {
                 Row(Modifier.clickable { dMenuExpanded = !dMenuExpanded }) {
                     Text(dMenuName)
                     Icon(imageVector = Icons.Filled.ArrowDropDown, "")
@@ -182,16 +183,17 @@ fun Greeting9(num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>) {
         }
 
         Button(onClick = {
-            var imageNum: String
             val ac = read()
-            val parent : String = if (dMenuName=="첫화"){
-                "0"
-            }
-            else if(dMenuName=="선택"){
-                "-"
-            }
-            else {
-                novelInfo[dMenuIndex].nvId.toString()
+            val parent : String = when (dMenuName) {
+                "첫화" -> {
+                    "0"
+                }
+                "선택" -> {
+                    "-"
+                }
+                else -> {
+                    novelInfo[dMenuIndex].nvId.toString()
+                }
             }
             if(parent=="-"){
                 Toast.makeText(
@@ -254,12 +256,11 @@ fun writeNovel(
     val retrofitClass = RetrofitClass.api.writeNovel(ac.authorization, num, novel)
     retrofitClass.enqueue(object : retrofit2.Callback<SNCR> {
         override fun onResponse(call: Call<SNCR>, response: Response<SNCR>) {
-            val r = response.body()!!.msg
-            when (r) {
+            when (response.body()!!.msg) {
                 "JWT expiration" -> {
                     getAToken(context)
                     retrofitClass.cancel()
-                    Handler().postDelayed( Runnable { writeNovel(context, num, novel) },1000)
+                    Handler(Looper.getMainLooper()).postDelayed({ writeNovel(context, num, novel) },1000)
                 }
                 "1" -> {
                     (context as Activity).finish()
@@ -303,7 +304,7 @@ fun nImage(
             if (r == "JWT expiration") {
                 getAToken(context)
                 retrofitClass.cancel()
-                Handler().postDelayed(Runnable { nImage(context, body, content, title, num, point) },1000)
+                Handler(Looper.getMainLooper()).postDelayed({ nImage(context, body, content, title, num, point) },1000)
             } else {
                 println("사진 번호 : $r")
                 val novel = PostNovelsDetail(

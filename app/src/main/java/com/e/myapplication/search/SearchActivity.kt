@@ -50,7 +50,7 @@ class SearchActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Greeting13("Android")
+                    Greeting13()
                 }
             }
         }
@@ -58,7 +58,7 @@ class SearchActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting13(name: String) {
+fun Greeting13() {
     val context = LocalContext.current
     val sMenu: List<String> = listOf("제목", "글쓴이", "전체")
     var sMenuExpanded by remember { mutableStateOf(false) }
@@ -66,9 +66,9 @@ fun Greeting13(name: String) {
     var sKeyword by remember { mutableStateOf("") }
     var tabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("소설", "게시판")
-    var nResult = remember { mutableStateListOf<Novels.Content>() }
-    var bResult = remember { mutableStateListOf<Board>() }
-    Column() {
+    val nResult = remember { mutableStateListOf<Novels.Content>() }
+    val bResult = remember { mutableStateListOf<Board>() }
+    Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { (context as Activity).finish() }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
@@ -80,7 +80,7 @@ fun Greeting13(name: String) {
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column() {
+            Column {
                 Row(Modifier.clickable { sMenuExpanded = !sMenuExpanded }) {
                     Text(sMenuName)
                     Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "")
@@ -97,7 +97,7 @@ fun Greeting13(name: String) {
                     }
                 }
             }
-            Row() {
+            Row {
                 OutlinedTextField(
                     value = sKeyword, onValueChange = { sKeyword = it },
                     Modifier.width(220.dp)
@@ -208,7 +208,7 @@ fun SNResult(novel: Novels.Content){
 @Composable
 fun DefaultPreview15() {
     MyApplicationTheme {
-        Greeting13("Android")
+        Greeting13()
     }
 }
 

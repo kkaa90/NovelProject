@@ -3,18 +3,11 @@ package com.e.myapplication.user
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
-import android.view.ViewGroup
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -29,34 +22,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.e.myapplication.*
 import com.e.myapplication.R
 import com.e.myapplication.dataclass.*
-import com.e.myapplication.menu.Drawer
 import com.e.myapplication.menu.point
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.SignInButton
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
 import java.net.URLDecoder
-import java.util.*
-import javax.security.auth.callback.Callback
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +47,7 @@ class LoginActivity : ComponentActivity() {
 //            .requestEmail().build()
 //        val gsc = GoogleSignIn.getClient(this, gso)
 //        println("테스트중 : ${getString(R.string.gms_id)}")
-        setContent() {
+        setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
 
@@ -89,7 +70,7 @@ fun Login() {
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     val repository2 = LoginRepository(context)
-    fun AccountSave(user: User?) {
+    fun accountSave(user: User?) {
         runBlocking(Dispatchers.IO) {
             if (user != null) {
                 repository.writeAccountInfo(user)
@@ -98,7 +79,7 @@ fun Login() {
         return
     }
 
-    fun LoginSave(chkLogin: ChkLogin?){
+    fun loginSave(chkLogin: ChkLogin?){
         runBlocking(Dispatchers.IO){
             if(chkLogin!=null){
                 repository2.writeLoginInfo(chkLogin)
@@ -123,7 +104,7 @@ fun Login() {
     var check1 by remember { mutableStateOf(l.chkIdSave) }
     var check2 by remember { mutableStateOf(l.chkAccSave) }
 
-    var t = remember {
+    val t = remember {
         mutableStateOf("")
     }
     com.e.myapplication.novel.getToken(t)
@@ -154,7 +135,7 @@ fun Login() {
             visualTransformation = PasswordVisualTransformation()
         )
         Spacer(modifier = Modifier.height(10.dp))
-        Row() {
+        Row {
             Row(Modifier.clickable {
                 check1 = !check1
                 if (!check1)
@@ -208,8 +189,8 @@ fun Login() {
                         )
                         println(nick)
                         println(ll)
-                        AccountSave(user)
-                        LoginSave(chkLogin)
+                        accountSave(user)
+                        loginSave(chkLogin)
                         sendT(u.get("Authorization")!!, t.value)
                         getPoint(u.get("Authorization")!!)
                         (context as Activity).finish()
@@ -380,7 +361,7 @@ fun sendT(lToken: String, fToken: String) {
 
 fun getAToken(context: Context){
     val repository = ProtoRepository(context = context)
-    fun AccountSave(user: User?) {
+    fun accountSave(user: User?) {
         runBlocking(Dispatchers.IO) {
             if (user != null) {
                 repository.writeAccountInfo(user)
@@ -402,7 +383,7 @@ fun getAToken(context: Context){
             if(response.body()!!.msg=="OK"){
                 val r= response.headers()
                 val user = User(ac.memUserid,r.get("Authorization")!!,ac.memIcon,ac.memId,ac.memNick,"0","",ac.refreshToken)
-                AccountSave(user)
+                accountSave(user)
             }
             else {
                 val intent = Intent(context, LoginActivity::class.java)

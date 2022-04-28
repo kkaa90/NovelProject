@@ -2,9 +2,9 @@ package com.e.myapplication.board
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,25 +17,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.R
 import com.e.myapplication.dataclass.*
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
-import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
@@ -71,7 +68,6 @@ fun ShowBoard(
 ) {
     var content by remember { mutableStateOf("") }
     val context = LocalContext.current
-    val repository = ProtoRepository(context = context)
     val writeComment = RetrofitClass
     Column {
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
@@ -87,8 +83,8 @@ fun ShowBoard(
         Row {
             OutlinedTextField(value = content, onValueChange = { content = it })
             Button(onClick = {
-                val ac = read(repository)
                 sendComment(writeComment, content, boards[0].brdId, context, num, comment, 0)
+                content = ""
             }) {
                 Text(text = "댓글 작성")
             }
@@ -96,7 +92,7 @@ fun ShowBoard(
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             itemsIndexed(comment) { index, c ->
                 if (c.brdCmtReply == 0) {
-                    ShowComment(comment = c, comment, num, writeComment, context, repository, index)
+                    ShowComment(comment = c, comment, num, writeComment, context, index)
 
                 }
             }
@@ -107,30 +103,34 @@ fun ShowBoard(
 }
 
 @Composable
-fun ShowBoard2(board: Board, num : Int) {
+fun ShowBoard2(board: Board, num: Int) {
     val context = LocalContext.current
-    val repository = ProtoRepository(context = context)
-    val ac = read(repository)
-
     Column {
-        Text(text = board.brdTitle)
+        Text(text = board.brdTitle, fontSize = 24.sp)
         if (board.brdImg != 0) {
             val url = board.imgUrl
             println(url)
             Image(
                 painter = rememberImagePainter(url),
-                contentDescription = "schumi",
+                contentDescription = "",
                 modifier = Modifier
-                    .size(400.dp)
+                    .size(400.dp), alignment = Alignment.Center
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically){
-            IconButton(onClick = { like(context,num) }) {
-                Icon(painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24), contentDescription = "")
+        Text(text = board.brdContents)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { like(context, num) }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
+                    contentDescription = ""
+                )
             }
             Text(text = board.brdLike.toString())
             IconButton(onClick = { dislike(context, num) }) {
-                Icon(painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24), contentDescription = "")
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
+                    contentDescription = ""
+                )
             }
             Text(text = board.brdDislike.toString())
         }
@@ -145,19 +145,18 @@ fun ShowComment(
     num: Int,
     writeComment: RetrofitClass,
     context: Context,
-    repository: ProtoRepository,
     index: Int
 ) {
     var isExpanded by remember(key1 = comment.brdCmtId) { mutableStateOf(false) }
     var content by remember { mutableStateOf("") }
     Column(modifier = Modifier.clickable { isExpanded = !isExpanded }) {
+        Text(text = comment.memNickname, fontSize = 20.sp)
         Text(text = comment.brdCmtContents)
         AnimatedVisibility(visible = isExpanded) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row {
                     OutlinedTextField(value = content, onValueChange = { content = it })
                     Button(onClick = {
-                        val ac = read(repository)
                         sendComment(
                             writeComment,
                             content,
@@ -167,6 +166,7 @@ fun ShowComment(
                             comments,
                             comment.brdCmtId
                         )
+                        content = ""
                     }) {
                         Text(text = "댓글 작성")
                     }
@@ -199,6 +199,7 @@ fun sendComment(
         }
         return accountInfo
     }
+
     val ac = read()
     val rc = writeComment.api.writeComment(
         ac.authorization.toString(),
@@ -221,11 +222,19 @@ fun sendComment(
             } else {
                 getAToken(context)
                 rc.cancel()
-                Handler().postDelayed(Runnable()
-                {
-                    val acc = read()
-                    sendComment(writeComment, content, brdId, context, num, comments, commentNum)
-                }, 1000)
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        sendComment(
+                            writeComment,
+                            content,
+                            brdId,
+                            context,
+                            num,
+                            comments,
+                            commentNum
+                        )
+                    }, 1000
+                )
 
             }
 
@@ -278,7 +287,6 @@ fun getComment(num: Int, comment: SnapshotStateList<Comment>) {
 }
 
 
-
 fun read(repository: ProtoRepository): AccountInfo {
     var accountInfo: AccountInfo
     runBlocking(Dispatchers.IO) {
@@ -296,6 +304,7 @@ fun like(context: Context, num: Int) {
         }
         return accountInfo
     }
+
     val ac = read()
     val retrofitClass = RetrofitClass.api.likeBoard(ac.authorization, num)
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
@@ -311,10 +320,11 @@ fun like(context: Context, num: Int) {
             } else {
                 getAToken(context)
                 retrofitClass.cancel()
-                Handler().postDelayed(Runnable()
-                {
-                    like(context, num)
-                }, 1000)
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        like(context, num)
+                    }, 1000
+                )
             }
 
         }
@@ -336,9 +346,10 @@ fun dislike(context: Context, num: Int) {
         }
         return accountInfo
     }
+
     val ac = read()
-    val retrofitClass = RetrofitClass.api.dislikeBoard(ac.authorization,num)
-    retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
+    val retrofitClass = RetrofitClass.api.dislikeBoard(ac.authorization, num)
+    retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
             val r = response.body()!!.msg
             if (r == "OK") {
@@ -350,10 +361,11 @@ fun dislike(context: Context, num: Int) {
             } else {
                 getAToken(context)
                 retrofitClass.cancel()
-                Handler().postDelayed(Runnable()
-                {
-                    dislike(context, num)
-                }, 1000)
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        dislike(context, num)
+                    }, 1000
+                )
             }
         }
 
@@ -379,10 +391,27 @@ fun dislike(context: Context, num: Int) {
 //    })
 //}
 
+@SuppressLint("UnrememberedMutableState")
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview7() {
+    val boards = mutableStateListOf<Board>()
+    val comment = mutableStateListOf<Comment>()
+    boards.add(
+        Board(
+            0, "가나다라zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", "",
+            0, 0, 0, 0, 0, 0, 0, 0, "제목",
+            "", "", 0, "닉네임"
+        )
+    )
+    comment.add(
+        Comment(
+            0, "가나다라마바사", "",
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, "테스트닉"
+        )
+    )
     MyApplicationTheme {
-
+        ShowBoard(boards = boards, comment = comment, num = 0)
     }
 }

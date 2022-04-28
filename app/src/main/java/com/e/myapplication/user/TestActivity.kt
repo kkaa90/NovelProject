@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
@@ -20,7 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
@@ -70,9 +70,8 @@ fun DefaultPreview13() {
 @Composable
 fun WebPageView(url: String) {
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
     val repository = ProtoRepository(context = context)
-    fun AccountSave(user: User?) {
+    fun accountSave(user: User?) {
         runBlocking(Dispatchers.IO) {
             if (user != null) {
                 repository.writeAccountInfo(user)
@@ -96,13 +95,12 @@ fun WebPageView(url: String) {
                     super.onPageFinished(view, url)
                     //view?.loadUrl("javascript:window.Android.getHtml(document.getElementsByTagName('html')[0].innerHTML);")
                     view?.loadUrl("javascript:window.Android.getHtml(document.documentElement.innerHTML);")
-                    Handler().postDelayed(
-                        Runnable()
+                    Handler(Looper.getMainLooper()).postDelayed(
                         {
                             run()
                             {
                                 if (temp2.value) {
-                                    AccountSave(temp)
+                                    accountSave(temp)
                                     val intent = Intent(context, LoginActivity::class.java).apply {
                                         putExtra("lToken", temp.authorization)
                                     }

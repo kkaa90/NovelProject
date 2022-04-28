@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,8 +21,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,13 +32,10 @@ import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.Board
 import com.e.myapplication.dataclass.Boards
 import com.e.myapplication.menu.Drawer
-import com.e.myapplication.menu.DrawerMenu
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import retrofit2.Call
 import retrofit2.Response
-import java.util.ArrayList
-import javax.security.auth.callback.Callback
 
 class FreeBoardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,7 +66,7 @@ fun Greeting6(board: Board) {
         })
         .clip(RoundedCornerShape(12.dp))
         , elevation = 8.dp) {
-        Column() {
+        Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Spacer(modifier = Modifier.width(15.dp))
                 Image(
@@ -80,7 +74,7 @@ fun Greeting6(board: Board) {
                     modifier = Modifier.size(100.dp)
                 )
                 Spacer(modifier = Modifier.width(15.dp))
-                Column() {
+                Column {
                     Text(text = board.brdTitle, fontSize = 24.sp, maxLines = 1)
                     Text(text = board.memNickname, maxLines = 1)
                     Text(text = board.brdContents, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -102,7 +96,7 @@ fun ShowFreeBoardList(boards: SnapshotStateList<Board>) {
     val scope = rememberCoroutineScope()
     getBoard.enqueue(object : retrofit2.Callback<Boards> {
         override fun onResponse(call: Call<Boards>, response: Response<Boards>) {
-            var boardList = response.body()
+            val boardList = response.body()
             if (boardList != null) {
                 boards.addAll(boardList.boards)
                 println(boards)
@@ -134,7 +128,7 @@ fun ShowFreeBoardList(boards: SnapshotStateList<Board>) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            LazyColumn() {
+            LazyColumn {
                 items(boards) { board ->
                     Greeting6(board)
                 }

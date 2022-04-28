@@ -6,10 +6,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.Handler
+import android.os.*
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -100,11 +97,11 @@ fun Greeting7() {
         Row {
 
             imageUri?.let {
-                if (Build.VERSION.SDK_INT < 28) {
-                    bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                bitmap = if (Build.VERSION.SDK_INT < 28) {
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
                 } else {
                     val source = ImageDecoder.createSource(context.contentResolver, it)
-                    bitmap = ImageDecoder.decodeBitmap(source)
+                    ImageDecoder.decodeBitmap(source)
                 }
 
                 f = true
@@ -162,7 +159,7 @@ fun Greeting7() {
                             )
                             wB(context, postBoard)
                         }
-                        println("이미지 : " + response.body()!!.msg.toString())
+                        println("이미지 : " + response.body()!!.msg)
                         println(imageNum)
                     }
 
@@ -227,7 +224,7 @@ fun wB(context: Context, postBoard: PostBoard) {
                     println("토큰 만료")
                     getAToken(context)
                     wb.cancel()
-                    Handler().postDelayed(Runnable() { wB(context, postBoard) }, 1000)
+                    Handler(Looper.getMainLooper()).postDelayed({ wB(context, postBoard) }, 1000)
                 }
                 "1" -> {
                     println("글쓰기 성공")
