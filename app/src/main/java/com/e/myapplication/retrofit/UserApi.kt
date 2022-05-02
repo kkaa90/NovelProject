@@ -1,5 +1,6 @@
 package com.e.myapplication.retrofit
 
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.e.myapplication.dataclass.*
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import okhttp3.MultipartBody
@@ -92,6 +93,13 @@ interface UserApi {
     fun uploadImage(
         @Header("Authorization") authorization: String?,
         @Part images: MultipartBody.Part?
+    ): Call<ImageUpload>
+
+    @Multipart
+    @POST("/upload")
+    fun uploadImageTest(
+        @Header("Authorization") authorization: String?,
+        @Part images: SnapshotStateList<MultipartBody.Part?>
     ): Call<ImageUpload>
 
     @GET("/imgs/{num}")

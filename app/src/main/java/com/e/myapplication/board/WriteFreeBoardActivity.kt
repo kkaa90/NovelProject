@@ -14,6 +14,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -78,58 +80,90 @@ fun Greeting7() {
     val service = writeBoard.api
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var file: File?
+    var imageUri = remember { mutableStateListOf<Uri?>() }
+    var bitmap = remember { mutableStateListOf<Bitmap?>() }
+    var files = remember {
+        mutableStateListOf<File?>()
+    }
     var f = false
+    var requestBody: RequestBody
+    var body = remember {
+        mutableStateListOf<MultipartBody.Part?>()
+    }
+    var imageNum by remember {
+        mutableStateOf("")
+    }
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
-            imageUri = uri
+            imageUri.add(uri)
             println(imageUri)
+            bitmap.add(
+                if (Build.VERSION.SDK_INT < 28) {
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                } else {
+                    val source = ImageDecoder.createSource(context.contentResolver, uri!!)
+                    ImageDecoder.decodeBitmap(source)
+                }
+            )
+            files.add(bitmapToFile(bitmap[bitmap.size - 1]!!, bitmap.size.toString()+".png"))
+            println(files[bitmap.size - 1]!!.absolutePath)
+            requestBody = RequestBody.create(MediaType.parse("image/*"), files[bitmap.size - 1]!!)
+            body.add(MultipartBody.Part.createFormData("images", bitmap.size.toString()+".png", requestBody))
 
         }
-    var requestBody: RequestBody
+
     Column(modifier = Modifier.fillMaxSize()) {
         Text(text = "제목")
         OutlinedTextField(value = title, onValueChange = { title = it }, maxLines = 1)
         Text(text = "내용")
         OutlinedTextField(value = content, onValueChange = { content = it })
         Row {
-
-            imageUri?.let {
-                bitmap = if (Build.VERSION.SDK_INT < 28) {
-                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+            for (i: Int in 0 until bitmap.size) {
+                Image(
+                    bitmap = bitmap[i]!!.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onLongPress = {
+                                    imageUri.remove(imageUri[i])
+                                    bitmap.remove(bitmap[i])
+                                    files.remove(files[i])
+                                    body.remove(body[i])
+                                }
+                            )
+                        }
+                )
+            }
+            Button(onClick = {
+                if (bitmap.size > 3) {
+                    Toast.makeText(
+                        context,
+                        "이미지는 최대 3개까지 가능합니다.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 } else {
-                    val source = ImageDecoder.createSource(context.contentResolver, it)
-                    ImageDecoder.decodeBitmap(source)
+                    launcher.launch("image/*")
                 }
 
-                f = true
-
-            }
-            bitmap?.let { btm ->
-                Image(
-                    bitmap = btm.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(100.dp)
-                )
-
-            }
-            Button(onClick = { launcher.launch("image/*") }) {
+            }) {
                 Text(text = "이미지 선택")
             }
+
         }
         Button(onClick = {
+            if (bitmap.size == 0) {
+                Toast.makeText(
+                    context,
+                    "이미지가 없습니다.",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
 
-            var imageNum: String
-            val ac = read()
-            if (f) {
-                println("파일 있음")
-                file = bitmapToFile(bitmap!!, "image.jpg")
-                println(file?.absolutePath)
-                requestBody = RequestBody.create(MediaType.parse("image/*"), file)
-                val body = MultipartBody.Part.createFormData("images", "image.png", requestBody)
-                val upI = service.uploadImage(ac.authorization.toString(), body)
+                val ac = read()
+                println(body.size)
+                val upI = service.uploadImageTest(ac.authorization.toString(), body)
                 upI.enqueue(object : retrofit2.Callback<ImageUpload> {
                     override fun onResponse(
                         call: Call<ImageUpload>,
@@ -147,17 +181,6 @@ fun Greeting7() {
                             context.startActivity(intent)
                             upI.cancel()
 
-                        } else {
-                            val postBoard = PostBoard(
-                                content,
-                                "",
-                                "1",
-                                title,
-                                ac.memNick.toString(),
-                                imageNum,
-                                "0"
-                            )
-                            wB(context, postBoard)
                         }
                         println("이미지 : " + response.body()!!.msg)
                         println(imageNum)
@@ -168,6 +191,31 @@ fun Greeting7() {
                     }
 
                 })
+            }
+
+        }) {
+            Text("이미지 등록")
+        }
+        Button(onClick = { println(imageNum) }) {
+            Text(text = "테스트")
+        }
+        Button(onClick = {
+
+
+            val ac = read()
+            if (body.size!=0) {
+                println("파일 있음")
+                val postBoard = PostBoard(
+                    content,
+                    "",
+                    "1",
+                    title,
+                    ac.memNick.toString(),
+                    imageNum,
+                    "0"
+                )
+                wB(context, postBoard)
+
             } else {
                 println("파일 없음")
                 val postBoard =
@@ -226,7 +274,7 @@ fun wB(context: Context, postBoard: PostBoard) {
                     wb.cancel()
                     Handler(Looper.getMainLooper()).postDelayed({ wB(context, postBoard) }, 1000)
                 }
-                "1" -> {
+                "OK" -> {
                     println("글쓰기 성공")
                     (context as Activity).finish()
                 }

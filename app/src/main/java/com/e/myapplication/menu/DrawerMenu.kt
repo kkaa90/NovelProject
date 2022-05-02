@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -16,6 +17,7 @@ import com.e.myapplication.AccountInfo
 import com.e.myapplication.MainActivity
 import com.e.myapplication.R
 import com.e.myapplication.board.FreeBoardActivity
+import com.e.myapplication.board.TestActivity2
 import com.e.myapplication.novel.NovelCoverActivity
 import com.e.myapplication.user.ChangeProfileActivity
 import com.e.myapplication.user.LoginActivity
@@ -89,8 +91,12 @@ fun Drawer() {
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
-
-
+//        Button(onClick = {
+//            val intent = Intent(context,TestActivity2::class.java)
+//            context.startActivity(intent)
+//        }) {
+//            Text(text = "Test")
+//        }
     }
 }
 

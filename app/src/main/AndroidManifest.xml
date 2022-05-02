@@ -17,6 +17,11 @@
         android:theme="@style/Theme.MyApplication"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".board.TestActivity2"
+            android:exported="false"
+            android:label="@string/title_activity_test2"
+            android:theme="@style/Theme.MyApplication" />
+        <activity
             android:name=".search.SearchActivity"
             android:exported="false"
             android:label="@string/title_activity_search"

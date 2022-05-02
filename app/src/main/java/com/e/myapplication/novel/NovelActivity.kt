@@ -257,29 +257,30 @@ fun ShowComment(
                     }
 
                 }
-                if (comment.nvCmtReplynum != 0) {
-                    for (i: Int in index + 1 until comment.nvCmtReplynum + index + 1) {
-                        Row {
-                            Spacer(modifier = Modifier.width(20.dp))
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.schumi),
-                                        contentDescription = "",
-                                        modifier = Modifier
-                                            .clip(CircleShape)
-                                            .border(1.dp, Color.Black, CircleShape)
-                                            .size(16.dp)
-                                    )
-                                    Text(text = comments[i].memNickname)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(text = comments[i].nvCmtContents)
-                            }
-                            
+
+
+            }
+        }
+        if (comment.nvCmtReplynum != 0) {
+            for (i: Int in index + 1 until comment.nvCmtReplynum + index + 1) {
+                Row {
+                    Spacer(modifier = Modifier.width(20.dp))
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.schumi),
+                                contentDescription = "",
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .border(1.dp, Color.Black, CircleShape)
+                                    .size(16.dp)
+                            )
+                            Text(text = comments[i].memNickname)
                         }
-                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = comments[i].nvCmtContents)
                     }
+
                 }
 
             }
@@ -378,7 +379,7 @@ fun sendC(
                     getAToken(context)
                     Handler(Looper.getMainLooper()).postDelayed({ sendC(context, nNum, bNum, nCR, cmt, comments) },1000)
                 }
-                "1" -> {
+                "OK" -> {
                     getC(nNum, bNum, comments)
                 }
             }

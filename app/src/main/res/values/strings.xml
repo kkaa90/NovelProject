@@ -15,4 +15,5 @@
     <string name="gms_id">1042421259759-kfl3kh6j5vdml7n9iu3fj5nrhmfb6huj.apps.googleusercontent.com</string>
     <string name="title_activity_change_profile">ChangeProfileActivity</string>
     <string name="title_activity_search">SearchActivity</string>
+    <string name="title_activity_test2">TestActivity2</string>
 </resources>

@@ -108,14 +108,16 @@ fun ShowBoard2(board: Board, num: Int) {
     Column {
         Text(text = board.brdTitle, fontSize = 24.sp)
         if (board.brdImg != 0) {
-            val url = board.imgUrl
+            val url = board.imgUrls
             println(url)
-            Image(
-                painter = rememberImagePainter(url),
-                contentDescription = "",
-                modifier = Modifier
-                    .size(400.dp), alignment = Alignment.Center
-            )
+            for(i : Int in url.indices){
+                Image(
+                    painter = rememberImagePainter(url[i]),
+                    contentDescription = "",
+                    modifier = Modifier
+                        .size(400.dp), alignment = Alignment.Center
+                )
+            }
         }
         Text(text = board.brdContents)
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -401,7 +403,7 @@ fun DefaultPreview7() {
         Board(
             0, "가나다라zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", "",
             0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", "", 0, "닉네임"
+            "", listOf(""), 0, "닉네임"
         )
     )
     comment.add(

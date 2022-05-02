@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,17 +14,18 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
@@ -74,7 +76,8 @@ class ShowNovelListActivity : ComponentActivity() {
                 0, "", 0, 0
             )
         )
-        getNovelsList(num, novelInfo, episode, cover)
+        val test = mutableStateMapOf<Int, List<NovelsInfo.NovelInfo>>()
+        getNovelsList(num, novelInfo, episode, cover, test)
         println(episode)
         setContent {
             MyApplicationTheme {
@@ -84,7 +87,8 @@ class ShowNovelListActivity : ComponentActivity() {
                         novelInfo,
                         episode,
                         num,
-                        cover
+                        cover,
+                        test
                     )
                 }
             }
@@ -95,46 +99,157 @@ class ShowNovelListActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(novelsInfo: NovelsInfo.NovelInfo, num: Int) {
+fun Greeting(
+    novelsInfo: NovelsInfo.NovelInfo,
+    num: Int,
+    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>
+) {
     val context = LocalContext.current
-    Row(
+    var visibility = remember { mutableStateOf(false) }
+    val t = test[novelsInfo.nvId]!!
+    Card(
         modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp, horizontal = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
                 val intent = Intent(context, NovelActivity::class.java)
                 intent
                     .putExtra("boardNum", novelsInfo.nvId)
                     .putExtra("novelNum", num)
-                    .putExtra("nvTitle",novelsInfo.nvTitle)
+                    .putExtra("nvTitle", novelsInfo.nvTitle)
                 context.startActivity(intent)
-            })
-            .fillMaxWidth()
+            }),
+        elevation = 4.dp
     ) {
-        Spacer(modifier = Modifier.padding(10.0.dp))
-        Column {
-            Text(
-                text = novelsInfo.nvId.toString() + "화 " + novelsInfo.nvTitle,
-                color = MaterialTheme.colors.secondaryVariant,
-                style = MaterialTheme.typography.subtitle2
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = novelsInfo.nvWriter,
-                style = MaterialTheme.typography.body2
-            )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row() {
+                    Spacer(modifier = Modifier.padding(10.0.dp))
+                    Column {
+                        Text(
+                            text = novelsInfo.nvId.toString() + "화 " + novelsInfo.nvTitle,
+                            color = MaterialTheme.colors.secondaryVariant,
+                            style = MaterialTheme.typography.subtitle2
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = novelsInfo.nvWriter,
+                            style = MaterialTheme.typography.body2
+                        )
+                    }
+                }
 
+                if (t.size == 1) {
+                } else {
+                    IconButton(onClick = { visibility.value = !visibility.value }) {
+                        Icon(
+                            imageVector = if (visibility.value) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = ""
+                        )
+                    }
+                }
+            }
+            if (t.size != 1) {
+                AnimatedVisibility(visible = visibility.value) {
+                    Column() {
+                        for (i in 1 until t.size) {
+                            GreetingTest(novelsInfo = t[i], num = num, test = test, visibility)
+                        }
+                    }
 
+                }
+            }
         }
-
-
     }
+}
 
+@Composable
+fun GreetingTest(
+    novelsInfo: NovelsInfo.NovelInfo,
+    num: Int,
+    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>,
+    vis : MutableState<Boolean>
+) {
+    val context = LocalContext.current
+    var visibility = remember { mutableStateOf(false) }
+    val t = test[novelsInfo.nvId]!!
+    BackHandler(vis.value) {
+        vis.value = false
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp, horizontal = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
+            .clickable(onClick = {
+                val intent = Intent(context, NovelActivity::class.java)
+                intent
+                    .putExtra("boardNum", novelsInfo.nvId)
+                    .putExtra("novelNum", num)
+                    .putExtra("nvTitle", novelsInfo.nvTitle)
+                context.startActivity(intent)
+            }),
+        elevation = 4.dp
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row() {
+                    Spacer(modifier = Modifier.padding(10.0.dp))
+                    Column {
+                        Text(
+                            text = novelsInfo.nvId.toString() + "화 " + novelsInfo.nvTitle,
+                            color = MaterialTheme.colors.secondaryVariant,
+                            style = MaterialTheme.typography.subtitle2
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = novelsInfo.nvWriter,
+                            style = MaterialTheme.typography.body2
+                        )
+                    }
+                }
+
+                if (t.size == 1) {
+                } else {
+                    IconButton(onClick = { visibility.value = !visibility.value }) {
+                        Icon(
+                            imageVector = if (visibility.value) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = ""
+                        )
+                    }
+                }
+            }
+            if (t.size != 1) {
+                AnimatedVisibility(visible = visibility.value) {
+                    Column() {
+                        for (i in 1 until t.size) {
+                            GreetingTest(novelsInfo = t[i], num = num, test = test, visibility)
+                        }
+                    }
+
+                }
+            }
+        }
+    }
 }
 
 @Composable
 fun ShowPostList(
     novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>,
     episode: SnapshotStateMap<Int, List<Int>>, num: Int,
-    cover: MutableState<NovelsInfo.NovelCover>
+    cover: MutableState<NovelsInfo.NovelCover>,
+    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>
 ) {
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
@@ -379,7 +494,7 @@ fun ShowPostList(
                                 item { Text(text = "글이 없습니다.") }
                             } else {
                                 items(epList) { n ->
-                                    Greeting(n, num)
+                                    Greeting(n, num, test)
                                 }
                             }
                         }
@@ -388,7 +503,20 @@ fun ShowPostList(
                     }
 
                 }
-                1 -> Text("test")
+                1 -> Column() {
+
+                    LazyColumn {
+//                        test.forEach { (i, list) ->
+//                            items(list){ l ->
+//                                Text(l.nvId.toString())
+//                            }
+//                        }
+                        items(items = test.keys.toList()) { i ->
+
+                            Text(i.toString())
+                        }
+                    }
+                }
             }
 
         }
@@ -412,14 +540,28 @@ fun DefaultPreview() {
 
 fun getNovelsList(
     num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>,
-    episode: SnapshotStateMap<Int, List<Int>>, cover: MutableState<NovelsInfo.NovelCover>
+    episode: SnapshotStateMap<Int, List<Int>>, cover: MutableState<NovelsInfo.NovelCover>,
+    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>
 ) {
+
     val retrofitClass = RetrofitClass.api.getNovelList(num)
     retrofitClass.enqueue(object : retrofit2.Callback<NovelsInfo> {
         override fun onResponse(call: Call<NovelsInfo>, response: Response<NovelsInfo>) {
             val r = response.body()
             novelInfo.addAll(r!!.novelInfo)
             episode.putAll(r.episode)
+            for (key in episode.keys) {
+                println(key)
+                val epList = mutableListOf<NovelsInfo.NovelInfo>()
+                epList.add(novelInfo.find { it.nvId == key }!!)
+                val e = episode[key]
+                if (e!!.isNotEmpty()) {
+                    for (i in e.indices) {
+                        epList.add(novelInfo.find { it.nvId == e[i] }!!)
+                    }
+                }
+                test[key] = epList
+            }
             cover.value = r.novelCover
         }
 
@@ -440,6 +582,7 @@ fun addSubscribe(context: Context, nvc: Nvc) {
         }
         return accountInfo
     }
+
     val ac = read()
     val retrofitClass = RetrofitClass.api.subscribe(ac.authorization.toString(), nvc)
     retrofitClass.enqueue(object : retrofit2.Callback<nvcr> {
@@ -451,7 +594,10 @@ fun addSubscribe(context: Context, nvc: Nvc) {
                 "subscribe" -> message = "구독 되었습니다."
                 else -> {
                     getAToken(context)
-                    Handler(Looper.getMainLooper()).postDelayed({ addSubscribe(context, nvc) },1000)
+                    Handler(Looper.getMainLooper()).postDelayed(
+                        { addSubscribe(context, nvc) },
+                        1000
+                    )
                 }
             }
             Toast.makeText(

@@ -30,8 +30,8 @@ data class Board(
     val brdTitle: String,
     @SerializedName("brdUpdatetime")
     val brdUpdatetime: Any,
-    @SerializedName("imgUrl")
-    val imgUrl: String,
+    @SerializedName("imgUrls")
+    val imgUrls: List<String>,
     @SerializedName("memId")
     val memId: Int,
     @SerializedName("memNickname")

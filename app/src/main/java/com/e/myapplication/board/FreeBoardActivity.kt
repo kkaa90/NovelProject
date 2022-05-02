@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberImagePainter
 import com.e.myapplication.R
 import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.Board
@@ -70,7 +71,10 @@ fun Greeting6(board: Board) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Spacer(modifier = Modifier.width(15.dp))
                 Image(
-                    painter = painterResource(id = R.drawable.schumi), contentDescription = "",
+                    painter =
+                    painterResource(id = R.drawable.schumi),
+//                    if(board.imgUrls.isEmpty()) painterResource(id = R.drawable.schumi) else rememberImagePainter(board.imgUrls[0]),
+                    contentDescription = "",
                     modifier = Modifier.size(100.dp)
                 )
                 Spacer(modifier = Modifier.width(15.dp))
@@ -149,21 +153,21 @@ fun DefaultPreview6() {
         Board(
             0, "가나다라", "",
             0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", "", 0, "닉네임"
+            "", listOf(""), 0, "닉네임"
         )
     )
     boards.add(
         Board(
             0, "가나다라", "",
             0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", "", 0, "닉네임"
+            "", listOf(""), 0, "닉네임"
         )
     )
     boards.add(
         Board(
             0, "가나다라zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", "",
             0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", "", 0, "닉네임"
+            "", listOf(""), 0, "닉네임"
         )
     )
     MyApplicationTheme {
