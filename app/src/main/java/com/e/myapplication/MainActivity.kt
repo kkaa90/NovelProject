@@ -47,7 +47,9 @@ import com.e.myapplication.novel.ShowNovelListActivity
 import com.e.myapplication.search.SearchActivity
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.gray
+import com.e.myapplication.user.LoginRepository
 import com.e.myapplication.user.ProtoRepository
+import com.e.myapplication.user.getAToken
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
@@ -56,6 +58,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 lateinit var notifyDB : NotifyDB
+var lCheck : Boolean = false
 class MainActivity : ComponentActivity() {
     private val multiplePermissionsCode = 100
     private val requiredPermissions =
@@ -65,12 +68,35 @@ class MainActivity : ComponentActivity() {
         )
     private lateinit var mainActivityViewModel : MainActivityViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
+        val repository = ProtoRepository(this)
+        val repository2 = LoginRepository(this)
+        fun read(): AccountInfo {
+            var accountInfo: AccountInfo
+            runBlocking(Dispatchers.IO) {
+                accountInfo = repository.readAccountInfo()
+
+            }
+            return accountInfo
+        }
+        fun readLoginInfo() : LoginInfo{
+            var loginInfo : LoginInfo
+            runBlocking(Dispatchers.IO) {
+                loginInfo = repository2.readLoginInfo()
+            }
+            return loginInfo
+        }
+
+        val l = readLoginInfo()
+        if(l.chkAccSave){
+            getAToken(this)
+        }
 
         super.onCreate(savedInstanceState)
         checkPermissions()
         mainActivityViewModel = ViewModelProvider(this).get(MainActivityViewModel::class.java)
         mainActivityViewModel.updateNovels()
         notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java,"notifyDB").build()
+
         setContent {
             MyApplicationTheme {
                 val vmn = mainActivityViewModel.n.collectAsState()

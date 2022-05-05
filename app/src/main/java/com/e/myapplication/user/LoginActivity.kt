@@ -202,7 +202,6 @@ fun Login() {
             })
         }) {
             Text(text = "로그인")
-
         }
         val launcher =
             rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
@@ -335,6 +334,7 @@ fun getPoint(token: String) {
 
             } else {
                 point = r
+                lCheck = true
             }
         }
 
@@ -386,6 +386,7 @@ fun getAToken(context: Context){
                 accountSave(user)
             }
             else {
+                lCheck = false
                 val intent = Intent(context, LoginActivity::class.java)
                 context.startActivity(intent)
                 Toast.makeText(
@@ -394,6 +395,7 @@ fun getAToken(context: Context){
                     Toast.LENGTH_LONG
                 ).show()
             }
+            getPoint(response.headers().get("Authorization")!!)
         }
         override fun onFailure(call: Call<CallMethod>, t: Throwable) {
             t.printStackTrace()

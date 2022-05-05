@@ -95,21 +95,30 @@ fun Greeting7() {
     }
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
-            imageUri.add(uri)
-            println(imageUri)
-            bitmap.add(
-                if (Build.VERSION.SDK_INT < 28) {
-                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-                } else {
-                    val source = ImageDecoder.createSource(context.contentResolver, uri!!)
-                    ImageDecoder.decodeBitmap(source)
-                }
-            )
-            files.add(bitmapToFile(bitmap[bitmap.size - 1]!!, bitmap.size.toString()+".png"))
-            println(files[bitmap.size - 1]!!.absolutePath)
-            requestBody = RequestBody.create(MediaType.parse("image/*"), files[bitmap.size - 1]!!)
-            body.add(MultipartBody.Part.createFormData("images", bitmap.size.toString()+".png", requestBody))
-
+            if(uri!=null) {
+                imageUri.add(uri)
+                println(imageUri)
+                bitmap.add(
+                    if (Build.VERSION.SDK_INT < 28) {
+                        MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                    } else {
+                        val source =
+                            uri.let { ImageDecoder.createSource(context.contentResolver, it) }
+                        source.let { ImageDecoder.decodeBitmap(it) }
+                    }
+                )
+                files.add(bitmapToFile(bitmap[bitmap.size - 1]!!, bitmap.size.toString() + ".png"))
+                println(files[bitmap.size - 1]!!.absolutePath)
+                requestBody =
+                    RequestBody.create(MediaType.parse("image/*"), files[bitmap.size - 1]!!)
+                body.add(
+                    MultipartBody.Part.createFormData(
+                        "images",
+                        bitmap.size.toString() + ".png",
+                        requestBody
+                    )
+                )
+            }
         }
 
     Column(modifier = Modifier.fillMaxSize()) {

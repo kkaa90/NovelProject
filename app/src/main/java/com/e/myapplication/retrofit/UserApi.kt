@@ -39,8 +39,16 @@ interface UserApi {
     @Headers("Content-Type: application/json")
     @PUT("/users")
     fun changeProfile(
-        @Body body: SendBody
-    ): Call<PostBody>
+        @Header("Authorization") authorization: String?,
+        @Body body: ChangeProfile
+    ): Call<CallMethod>
+
+    @Headers("Content-Type: application/json")
+    @PUT("/users/pwd")
+    fun changePassword(
+        @Header("Authorization") authorization: String?,
+        @Body body: ChangePwd
+    ): Call<CallMethod>
 
     //포인트
     @Headers("Content-Type: application/json")
@@ -49,7 +57,7 @@ interface UserApi {
         @Header("Authorization") authorization: String?
     ): Call<Point>
 
-    // 자유게시판 글쓰기 및 불러오기
+    // 자유게시판
     @Headers("Content-Type: application/json")
     @POST("/boards")
     fun writeBoard(
@@ -66,6 +74,14 @@ interface UserApi {
     fun getBoard(
         @Path("num") num: Int
     ): Call<Board>
+
+    @POST("/boards/{num}/report")
+    fun reportBoard(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int,
+        @Body body: ReportMethod
+    ): Call<CallMethod>
+
 
     // 자유게시판 댓글 쓰기 및 불러오기
     @Headers("Content-Type: application/json")

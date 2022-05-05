@@ -27,6 +27,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
@@ -105,12 +106,11 @@ fun Greeting(
     test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>
 ) {
     val context = LocalContext.current
-    var visibility = remember { mutableStateOf(false) }
+    var visibility = rememberSaveable { mutableStateOf(false) }
     val t = test[novelsInfo.nvId]!!
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp)
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
@@ -123,7 +123,11 @@ fun Greeting(
             }),
         elevation = 4.dp
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(if (visibility.value) skyBlue else Color.White)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -146,6 +150,9 @@ fun Greeting(
                 }
 
                 if (t.size == 1) {
+                    IconButton(onClick = { }) {
+
+                    }
                 } else {
                     IconButton(onClick = { visibility.value = !visibility.value }) {
                         Icon(
@@ -159,7 +166,9 @@ fun Greeting(
                 AnimatedVisibility(visible = visibility.value) {
                     Column() {
                         for (i in 1 until t.size) {
+                            Spacer(modifier = Modifier.height(2.dp))
                             GreetingTest(novelsInfo = t[i], num = num, test = test, visibility)
+                            Spacer(modifier = Modifier.height(2.dp))
                         }
                     }
 
@@ -174,10 +183,10 @@ fun GreetingTest(
     novelsInfo: NovelsInfo.NovelInfo,
     num: Int,
     test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>,
-    vis : MutableState<Boolean>
+    vis: MutableState<Boolean>
 ) {
     val context = LocalContext.current
-    var visibility = remember { mutableStateOf(false) }
+    var visibility = rememberSaveable { mutableStateOf(false) }
     val t = test[novelsInfo.nvId]!!
     BackHandler(vis.value) {
         vis.value = false
@@ -185,7 +194,6 @@ fun GreetingTest(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp)
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
@@ -198,7 +206,11 @@ fun GreetingTest(
             }),
         elevation = 4.dp
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(if (visibility.value) skyBlue else Color.White)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -221,6 +233,9 @@ fun GreetingTest(
                 }
 
                 if (t.size == 1) {
+                    IconButton(onClick = { }) {
+
+                    }
                 } else {
                     IconButton(onClick = { visibility.value = !visibility.value }) {
                         Icon(
@@ -234,7 +249,9 @@ fun GreetingTest(
                 AnimatedVisibility(visible = visibility.value) {
                     Column() {
                         for (i in 1 until t.size) {
+                            Spacer(modifier = Modifier.height(2.dp))
                             GreetingTest(novelsInfo = t[i], num = num, test = test, visibility)
+                            Spacer(modifier = Modifier.height(2.dp))
                         }
                     }
 
@@ -458,7 +475,9 @@ fun ShowPostList(
                                                 if (novelInfo.size != 0) {
                                                     eIsEmpty = false
                                                     if (dMenuItem == "전체") {
-                                                        epList.addAll(novelInfo)
+                                                        for (key in episode.keys) {
+                                                            epList.add(novelInfo.find { it.nvId == key }!!)
+                                                        }
                                                         println(epList.size)
                                                     } else {
                                                         epList.add(novelInfo.find { it.nvId == dMenuItem.toInt() }!!)
@@ -489,7 +508,10 @@ fun ShowPostList(
                                 )
                             }
                         }
-                        LazyColumn {
+                        LazyColumn(
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             if (eIsEmpty) {
                                 item { Text(text = "글이 없습니다.") }
                             } else {

@@ -11,7 +11,7 @@ data class Board(
     @SerializedName("brdDatetime")
     val brdDatetime: String,
     @SerializedName("brdDislike")
-    val brdDislike: Int,
+    var brdDislike: Int,
     @SerializedName("brdFile")
     val brdFile: Int,
     @SerializedName("brdHit")
@@ -21,7 +21,7 @@ data class Board(
     @SerializedName("brdImg")
     val brdImg: Int,
     @SerializedName("brdLike")
-    val brdLike: Int,
+    var brdLike: Int,
     @SerializedName("brdNotice")
     val brdNotice: Int,
     @SerializedName("brdState")
