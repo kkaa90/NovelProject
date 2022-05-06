@@ -22,7 +22,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
+import com.e.myapplication.RouteAction
 import com.e.myapplication.dataclass.ImageUpload
+import com.e.myapplication.dataclass.ImageUploadSingle
 import com.e.myapplication.dataclass.SNCR
 import com.e.myapplication.dataclass.SendNCover
 import com.e.myapplication.retrofit.RetrofitClass
@@ -51,7 +53,7 @@ class WriteNCoverActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Greeting4()
+
                 }
             }
         }
@@ -59,7 +61,7 @@ class WriteNCoverActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting4() {
+fun WritingNCover(routeAction: RouteAction) {
     val context = LocalContext.current
     var title by remember { mutableStateOf("")}
     var content by remember { mutableStateOf("")}
@@ -127,11 +129,11 @@ fun Greeting4() {
                 println(file?.absolutePath)
                 requestBody = RequestBody.create(MediaType.parse("image/*"), file)
                 val body = MultipartBody.Part.createFormData("images", "image.png", requestBody)
-                sImage(context,body,content,title,tags)
+                sImage(context,body,content,title,tags, routeAction)
             } else {
                 println("파일 없음")
                 val nc = SendNCover(SendNCover.NovelCover("0","0",content,title),tags)
-                wNCover(context,nc)
+                wNCover(context,nc,routeAction)
             }
 
 
@@ -146,14 +148,14 @@ fun Greeting4() {
 @Composable
 fun DefaultPreview8() {
     MyApplicationTheme {
-        Greeting4()
+
     }
 }
 
 
 
 
-fun wNCover(context: Context, nc : SendNCover){
+fun wNCover(context: Context, nc : SendNCover, routeAction: RouteAction){
     val repository = ProtoRepository(context = context)
     fun read(): AccountInfo {
         var accountInfo: AccountInfo
@@ -171,7 +173,7 @@ fun wNCover(context: Context, nc : SendNCover){
             if(r=="JWT expiration"){
                 getAToken(context)
                 retrofitClass.cancel()
-                Handler(Looper.getMainLooper()).postDelayed({ wNCover(context, nc) },1000)
+                Handler(Looper.getMainLooper()).postDelayed({ wNCover(context, nc, routeAction) },1000)
             }
             else {
                 println(r)
@@ -180,7 +182,7 @@ fun wNCover(context: Context, nc : SendNCover){
                     "커버 작성 완료",
                     Toast.LENGTH_LONG
                 ).show()
-                (context as Activity).finish()
+                routeAction.goBack()
             }
 
         }
@@ -194,7 +196,7 @@ fun wNCover(context: Context, nc : SendNCover){
 }
 
 fun sImage(context: Context, body: MultipartBody.Part, content : String, title : String,
-    tag : List<String>){
+    tag : List<String>, routeAction: RouteAction){
     val repository = ProtoRepository(context = context)
     fun read(): AccountInfo {
         var accountInfo: AccountInfo
@@ -206,22 +208,22 @@ fun sImage(context: Context, body: MultipartBody.Part, content : String, title :
     }
     val ac =read()
     val retrofitClass = RetrofitClass.api.uploadImage(ac.authorization.toString(),body)
-    retrofitClass.enqueue(object : Callback<ImageUpload>{
-        override fun onResponse(call: Call<ImageUpload>, response: Response<ImageUpload>) {
+    retrofitClass.enqueue(object : Callback<ImageUploadSingle>{
+        override fun onResponse(call: Call<ImageUploadSingle>, response: Response<ImageUploadSingle>) {
             val r = response.body()?.msg
             if(r=="JWT expiration"){
                 getAToken(context)
                 retrofitClass.cancel()
-                Handler(Looper.getMainLooper()).postDelayed({ sImage(context, body, content, title, tag) },1000)
+                Handler(Looper.getMainLooper()).postDelayed({ sImage(context, body, content, title, tag, routeAction) },1000)
             }
             else {
                 println("사진 번호 : $r")
                 val nc = SendNCover(SendNCover.NovelCover(r!!,"0",content,title),tag)
-                wNCover(context, nc)
+                wNCover(context, nc, routeAction)
             }
         }
 
-        override fun onFailure(call: Call<ImageUpload>, t: Throwable) {
+        override fun onFailure(call: Call<ImageUploadSingle>, t: Throwable) {
             t.printStackTrace()
         }
 

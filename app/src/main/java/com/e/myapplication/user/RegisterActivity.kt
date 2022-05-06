@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.e.myapplication.RouteAction
 import com.e.myapplication.dataclass.PostBody
 import com.e.myapplication.dataclass.SendBody
 import com.e.myapplication.retrofit.RetrofitClass
@@ -27,7 +28,7 @@ class RegisterActivity : ComponentActivity() {
                     color = MaterialTheme.colors.background,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    Greeting5()
+                    //Register()
                 }
             }
         }
@@ -35,7 +36,7 @@ class RegisterActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting5() {
+fun Register(routeAction: RouteAction) {
     val login = RetrofitClass
     val service = login.api
     var id by remember { mutableStateOf("") }
@@ -58,6 +59,7 @@ fun Greeting5() {
                     println(msg)
                     if (msg != "") {
                         println(msg)
+                        routeAction.goBack()
                     } else {
                         println("회원가입 실패")
                     }

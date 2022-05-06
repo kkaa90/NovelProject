@@ -1,10 +1,5 @@
 package com.e.myapplication.board
 
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,19 +11,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberImagePainter
+import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
+import com.e.myapplication.RouteAction
 import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.Board
 import com.e.myapplication.dataclass.Boards
@@ -38,32 +33,13 @@ import com.e.myapplication.ui.theme.MyApplicationTheme
 import retrofit2.Call
 import retrofit2.Response
 
-class FreeBoardActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val boards = mutableStateListOf<Board>()
-        setContent {
-            MyApplicationTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(color = MaterialTheme.colors.background) {
-
-                    ShowFreeBoardList(boards)
-                }
-            }
-        }
-    }
-}
-
 @Composable
-fun Greeting6(board: Board) {
-    val context = LocalContext.current
+fun Greeting6(board: Board, routeAction: RouteAction) {
     Card(modifier = Modifier
         .padding(horizontal = 8.dp, vertical = 4.dp)
         .fillMaxWidth()
         .clickable(onClick = {
-            val intent = Intent(context, ShowFreeBoardActivity::class.java)
-            intent.putExtra("num", board.brdId)
-            context.startActivity(intent)
+            routeAction.navWithNum("boardDetail/${board.brdId}")
         })
         .clip(RoundedCornerShape(12.dp))
         , elevation = 8.dp) {
@@ -92,10 +68,10 @@ fun Greeting6(board: Board) {
 }
 
 @Composable
-fun ShowFreeBoardList(boards: SnapshotStateList<Board>) {
+fun ShowFreeBoardList(routeAction: RouteAction) {
 
+    val boards = remember{ mutableStateListOf<Board>() }
     val getBoard = RetrofitClass.api.getBoards(1)
-    val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     getBoard.enqueue(object : retrofit2.Callback<Boards> {
@@ -118,14 +94,13 @@ fun ShowFreeBoardList(boards: SnapshotStateList<Board>) {
         topBar = { TopMenu(scaffoldState, scope) },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                val intent = Intent(context, WriteFreeBoardActivity::class.java)
-                context.startActivity(intent)
+                routeAction.navTo(NAVROUTE.WRITINGBOARD)
             }) {
                 Icon(Icons.Filled.Add, contentDescription = "")
             }
         },
         drawerContent = {
-            Drawer()
+            Drawer(routeAction)
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState
@@ -134,7 +109,7 @@ fun ShowFreeBoardList(boards: SnapshotStateList<Board>) {
 
             LazyColumn {
                 items(boards) { board ->
-                    Greeting6(board)
+                    Greeting6(board, routeAction)
                 }
             }
         }
@@ -144,33 +119,9 @@ fun ShowFreeBoardList(boards: SnapshotStateList<Board>) {
 
 }
 
-@SuppressLint("UnrememberedMutableState")
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview6() {
-    val boards = mutableStateListOf<Board>()
-    boards.add(
-        Board(
-            0, "가나다라", "",
-            0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", listOf(""), 0, "닉네임"
-        )
-    )
-    boards.add(
-        Board(
-            0, "가나다라", "",
-            0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", listOf(""), 0, "닉네임"
-        )
-    )
-    boards.add(
-        Board(
-            0, "가나다라zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", "",
-            0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", listOf(""), 0, "닉네임"
-        )
-    )
     MyApplicationTheme {
-        ShowFreeBoardList(boards = boards)
     }
 }

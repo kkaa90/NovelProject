@@ -1,20 +1,14 @@
 package com.e.myapplication.board
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.opengl.Visibility
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.Html
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,10 +31,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.core.text.htmlEncode
 import coil.compose.rememberImagePainter
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.R
+import com.e.myapplication.RouteAction
 import com.e.myapplication.dataclass.*
 import com.e.myapplication.lCheck
 import com.e.myapplication.retrofit.RetrofitClass
@@ -53,38 +47,26 @@ import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Response
 
-class ShowFreeBoardActivity : ComponentActivity() {
-    @SuppressLint("UnrememberedMutableState")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val intent = intent
-        val num = intent.getIntExtra("num", 0)
-        val board = mutableStateOf(
-            Board(
-                0, "", "",
-                0, 0, 0, 0, 0, 0, 0, 0, "제목",
-                "", listOf(""), 0, "닉네임"
-            )
-        )
-        val comment = mutableStateListOf<Comment>()
-        getBoard(num, board)
-        getComment(num, comment)
-        setContent {
-            MyApplicationTheme {
-                Surface(color = MaterialTheme.colors.background) {
-                    ShowBoard(boards = board, comment = comment, num = num)
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun ShowBoard(
-    boards: MutableState<Board>,
-    comment: SnapshotStateList<Comment>,
+    routeAction: RouteAction,
     num: Int
 ) {
+    val board = remember {
+        mutableStateOf(Board(
+            0, "", "",
+            0, 0, 0, 0, 0, 0, 0, 0, "제목",
+            "", listOf(""), 0, "닉네임"
+        ))
+    }
+    val comment = remember {
+        mutableStateListOf<Comment>()
+    }
+    LaunchedEffect(true){
+        getBoard(num, board)
+        getComment(num, comment)
+    }
     var content by remember { mutableStateOf("") }
     val context = LocalContext.current
     val writeComment = RetrofitClass
@@ -94,7 +76,7 @@ fun ShowBoard(
     var commentVisibility by remember {
         mutableStateOf(false)
     }
-    var rdVisibility = remember {
+    val rdVisibility = remember {
         mutableStateOf(false)
     }
     Scaffold(topBar = {
@@ -105,7 +87,7 @@ fun ShowBoard(
             }
             Spacer(modifier = Modifier.width(10.dp))
             Text(
-                text = boards.value.brdTitle,
+                text = board.value.brdTitle,
                 fontSize = 24.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -126,7 +108,7 @@ fun ShowBoard(
             }
 
         }) { p ->
-        Box() {
+        Box {
             AnimatedVisibility(visible = rdVisibility.value) {
                 ShowReportDialog(num = num, visibility = rdVisibility)
             }
@@ -145,7 +127,7 @@ fun ShowBoard(
                             sendComment(
                                 writeComment,
                                 content,
-                                boards.value.brdId,
+                                board.value.brdId,
                                 context,
                                 num,
                                 comment,
@@ -175,8 +157,8 @@ fun ShowBoard(
                     .padding(p)
             ) {
 
-                LazyColumn() {
-                    items(items = boards.value.imgUrls) { url ->
+                LazyColumn {
+                    items(items = board.value.imgUrls) { url ->
                         Image(
                             painter = rememberImagePainter(url),
                             contentDescription = "",
@@ -185,7 +167,7 @@ fun ShowBoard(
                         )
                     }
                     item {
-                        Text(text = Html.fromHtml(boards.value.brdContents).toString())
+                        Text(text = Html.fromHtml(board.value.brdContents).toString())
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = {
                                 if (lCheck) {
@@ -205,7 +187,7 @@ fun ShowBoard(
                                     contentDescription = ""
                                 )
                             }
-                            Text(text = boards.value.brdLike.toString())
+                            Text(text = board.value.brdLike.toString())
                             IconButton(onClick = {
                                 if (lCheck) {
                                     dislike(context, num)
@@ -224,7 +206,7 @@ fun ShowBoard(
                                     contentDescription = ""
                                 )
                             }
-                            Text(text = boards.value.brdDislike.toString())
+                            Text(text = board.value.brdDislike.toString())
                         }
                     }
                 }
@@ -251,7 +233,7 @@ fun ShowComment(
         Text(text = comment.memNickname, fontSize = 20.sp)
         Text(text = comment.brdCmtContents)
         AnimatedVisibility(visible = isExpanded) {
-            Column() {
+            Column {
                 Row {
                     if (lCheck) {
                         OutlinedTextField(value = content, onValueChange = { content = it })
@@ -278,7 +260,7 @@ fun ShowComment(
 
         if (comment.brdCmtReplynum != 0) {
             for (i: Int in index + 1 until comment.brdCmtReplynum + index + 1) {
-                Row() {
+                Row {
                     Spacer(modifier = Modifier.width(10.dp))
                     ShowComment2(comment = comments[i])
                 }
@@ -290,7 +272,7 @@ fun ShowComment(
 
 @Composable
 fun ShowComment2(comment: Comment) {
-    Column() {
+    Column {
         Text(text = comment.memNickname)
         Text(text = comment.brdCmtContents)
     }
@@ -316,10 +298,10 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>) {
             shape = RoundedCornerShape(12.dp),
             color = Color.White
         ) {
-            Column() {
+            Column {
                 Text(text = "신고")
                 Spacer(modifier = Modifier.height(20.dp))
-                Column() {
+                Column {
                     Row(modifier = Modifier.clickable { mVisibility = !mVisibility }) {
                         Text(text = mSelected.presentState)
                         Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "")
@@ -340,7 +322,7 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>) {
                     onValueChange = { content = it },
                     label = { Text(text = "자세한 사유") })
                 Spacer(modifier = Modifier.height(20.dp))
-                Row() {
+                Row {
                     OutlinedButton(onClick = { visibility.value = false }) {
                         Text(text = "취소")
                     }
@@ -424,9 +406,6 @@ fun getBoard(num: Int, board: MutableState<Board>) {
     getBoard.enqueue(object : retrofit2.Callback<Board> {
         override fun onResponse(call: Call<Board>, response: Response<Board>) {
             response.body()?.let { board.value = it }
-            println("응답")
-            println(response.body())
-            println("보드")
         }
 
 
@@ -632,27 +611,12 @@ fun rBoard(context: Context, num: Int, reportState: ReportState, content: String
 //    })
 //}
 
-@SuppressLint("UnrememberedMutableState")
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview7() {
-    val boards = mutableStateOf(
-        Board(
-            0, "가나다라zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", "",
-            0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", listOf(""), 0, "닉네임"
-        )
-    )
-    val comment = mutableStateListOf<Comment>()
-    comment.add(
-        Comment(
-            0, "가나다라마바사", "",
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, "테스트닉"
-        )
-    )
+
     MyApplicationTheme {
-        ShowBoard(boards = boards, comment = comment, num = 0)
+
     }
 }
 

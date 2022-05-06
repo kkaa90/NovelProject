@@ -1,17 +1,17 @@
 package com.e.myapplication.board
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -19,8 +19,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -28,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
+import com.e.myapplication.RouteAction
 import com.e.myapplication.dataclass.ImageUpload
 import com.e.myapplication.dataclass.PostBoard
 import com.e.myapplication.dataclass.PostBoardResponse
@@ -47,24 +51,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
-class WriteFreeBoardActivity : ComponentActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MyApplicationTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(color = MaterialTheme.colors.background) {
-                    Greeting7()
-                }
-            }
-        }
-
-    }
-}
-
 @Composable
-fun Greeting7() {
+fun WriteBoard(routeAction: RouteAction) {
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     fun read(): AccountInfo {
@@ -78,16 +66,15 @@ fun Greeting7() {
 
     val writeBoard = RetrofitClass
     val service = writeBoard.api
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    var imageUri = remember { mutableStateListOf<Uri?>() }
-    var bitmap = remember { mutableStateListOf<Bitmap?>() }
-    var files = remember {
+    var title by rememberSaveable { mutableStateOf("") }
+    var content by rememberSaveable { mutableStateOf("") }
+    val imageUri = remember { mutableStateListOf<Uri?>() }
+    val bitmap = remember { mutableStateListOf<Bitmap?>() }
+    val files = remember {
         mutableStateListOf<File?>()
     }
-    var f = false
     var requestBody: RequestBody
-    var body = remember {
+    val body = remember {
         mutableStateListOf<MultipartBody.Part?>()
     }
     var imageNum by remember {
@@ -191,6 +178,13 @@ fun Greeting7() {
                             upI.cancel()
 
                         }
+                        else {
+                            Toast.makeText(
+                                context,
+                                "이미지가 업로드 되었습니다.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                         println("이미지 : " + response.body()!!.msg)
                         println(imageNum)
                     }
@@ -223,14 +217,17 @@ fun Greeting7() {
                     imageNum,
                     "0"
                 )
-                wB(context, postBoard)
+                wB(context, postBoard, routeAction)
 
             } else {
                 println("파일 없음")
                 val postBoard =
                     PostBoard(content, "", "0", title, ac.memNick.toString(), "1", "")
-                wB(context, postBoard)
+                wB(context, postBoard, routeAction)
             }
+            content = ""
+            title = ""
+            imageNum=""
 
 
         }) {
@@ -240,15 +237,8 @@ fun Greeting7() {
 
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview9() {
-    MyApplicationTheme {
-        Greeting7()
-    }
-}
 
-fun wB(context: Context, postBoard: PostBoard) {
+fun wB(context: Context, postBoard: PostBoard, routeAction: RouteAction) {
     val repository = ProtoRepository(context = context)
     fun read(): AccountInfo {
         var accountInfo: AccountInfo
@@ -281,11 +271,11 @@ fun wB(context: Context, postBoard: PostBoard) {
                     println("토큰 만료")
                     getAToken(context)
                     wb.cancel()
-                    Handler(Looper.getMainLooper()).postDelayed({ wB(context, postBoard) }, 1000)
+                    Handler(Looper.getMainLooper()).postDelayed({ wB(context, postBoard, routeAction) }, 1000)
                 }
                 "OK" -> {
                     println("글쓰기 성공")
-                    (context as Activity).finish()
+                    routeAction.goBack()
                 }
                 else -> {
                     println("글쓰기 오류")
@@ -323,5 +313,14 @@ fun bitmapToFile(bitmap: Bitmap, fileNameToSave: String): File? { // File name l
     } catch (e: Exception) {
         e.printStackTrace()
         file // it will return null
+    }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun DefaultPreview9() {
+    MyApplicationTheme {
+
     }
 }

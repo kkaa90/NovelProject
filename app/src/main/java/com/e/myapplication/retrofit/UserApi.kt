@@ -109,7 +109,7 @@ interface UserApi {
     fun uploadImage(
         @Header("Authorization") authorization: String?,
         @Part images: MultipartBody.Part?
-    ): Call<ImageUpload>
+    ): Call<ImageUploadSingle>
 
     @Multipart
     @POST("/upload")

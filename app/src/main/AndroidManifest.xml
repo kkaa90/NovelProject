@@ -17,19 +17,9 @@
         android:theme="@style/Theme.MyApplication"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".board.TestActivity2"
-            android:exported="false"
-            android:label="@string/title_activity_test2"
-            android:theme="@style/Theme.MyApplication" />
-        <activity
             android:name=".search.SearchActivity"
             android:exported="false"
             android:label="@string/title_activity_search"
-            android:theme="@style/Theme.MyApplication" />
-        <activity
-            android:name=".user.ChangeProfileActivity"
-            android:exported="false"
-            android:label="@string/title_activity_change_profile"
             android:theme="@style/Theme.MyApplication" />
         <activity
             android:name=".user.TestActivity"
@@ -47,40 +37,10 @@
             android:label="@string/title_activity_write_novel"
             android:theme="@style/Theme.MyApplication" />
         <activity
-            android:name=".novel.NovelCoverActivity"
-            android:exported="false"
-            android:label="@string/title_activity_novel_cover"
-            android:theme="@style/Theme.MyApplication" />
-        <activity
             android:name=".novel.WriteNCoverActivity"
             android:exported="false"
             android:label="@string/title_activity_write_ncover"
             android:theme="@style/Theme.MyApplication" />
-        <activity
-            android:name=".board.WriteFreeBoardActivity"
-            android:exported="false"
-            android:label="@string/title_activity_write_free_board"
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
-        <activity
-            android:name=".board.ShowFreeBoardActivity"
-            android:exported="false"
-            android:label="title_activity_wfree_board"
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
-        <activity
-            android:name=".board.FreeBoardActivity"
-            android:exported="false"
-            android:label="@string/title_activity_free_board"
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
-        <activity
-            android:name=".user.RegisterActivity"
-            android:exported="false"
-            android:label="@string/title_activity_register"
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
-        <activity
-            android:name=".user.LoginActivity"
-            android:exported="false"
-            android:label="@string/title_activity_login"
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -94,11 +54,6 @@
         </activity>
         <activity
             android:name=".novel.NovelActivity"
-            android:exported="false"
-            android:label=""
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
-        <activity
-            android:name=".novel.ShowNovelListActivity"
             android:exported="false"
             android:label=""
             android:theme="@style/Theme.MyApplication.NoActionBar" />

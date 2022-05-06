@@ -30,7 +30,7 @@ import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
-var temp = User("", "", "", "", "", "", "", "")
+var temp = User("", "", "", "", "", "", "", "", "")
 var temp2 = mutableStateOf(false)
 
 class TestActivity : ComponentActivity() {
@@ -148,7 +148,8 @@ class MyJavascriptInterface {
                 jsonObject.get("memNick").toString().replace("\"", ""),
                 jsonObject.get("memPoint").toString().replace("\"", ""),
                 jsonObject.get("memLastloginDatetime").toString().replace("\"", ""),
-                jsonObject.get("RefreshToken").toString().replace("\"", "")
+                jsonObject.get("RefreshToken").toString().replace("\"", ""),
+                jsonObject.get("memEmail").toString().replace("\"", "")
             )
             temp2.value = true
         }

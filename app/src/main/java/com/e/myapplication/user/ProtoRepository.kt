@@ -29,6 +29,7 @@ class ProtoRepository(context: Context) {
                 .setMemId(user.memId)
                 .setMemUserid(user.memUserid)
                 .setRefreshToken(user.refreshToken)
+                .setEmail(user.email)
                 .build()
         }
     }

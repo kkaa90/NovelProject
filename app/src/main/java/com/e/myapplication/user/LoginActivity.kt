@@ -18,9 +18,11 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -56,7 +58,7 @@ class LoginActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Column {
-                        Login()
+                        //Login()
                     }
                 }
             }
@@ -65,9 +67,11 @@ class LoginActivity : ComponentActivity() {
 }
 
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun Login() {
+fun Login(routeAction: RouteAction) {
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val repository = ProtoRepository(context = context)
     val repository2 = LoginRepository(context)
     fun accountSave(user: User?) {
@@ -97,8 +101,7 @@ fun Login() {
     }
 
     val l = readLoginInfo()
-    val login = RetrofitClass
-    val service = login.api
+
     var id by remember { mutableStateOf(l.id) }
     var pwd by rememberSaveable { mutableStateOf(l.pwd) }
     var check1 by remember { mutableStateOf(l.chkIdSave) }
@@ -158,48 +161,8 @@ fun Login() {
             }
         }
         OutlinedButton(onClick = {
-            val getResult = service.getUser(GetBody(id, pwd))
-            println(getResult.request().url())
-            println(getResult.request().toString())
-            val chkLogin = ChkLogin(check1,check2,if (check1) id else "", if(check2) pwd else "")
-            getResult.enqueue(object : retrofit2.Callback<ResponseBody> {
-                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                    t.printStackTrace()
-                }
-
-                override fun onResponse(
-                    call: Call<ResponseBody>,
-                    response: Response<ResponseBody>
-                ) {
-                    val r = response.code()
-                    val u = response.headers()
-                    val d = u.values("Set-Cookie")
-
-                    println(d)
-                    if (r == 200) {
-                        val nick = URLDecoder.decode(d[0].split("=")[1], "UTF-8")
-                        val id = d[1].split("=")[1]
-                        val userid = d[2].split("=")[1]
-                        val memicon = d[3].split("=")[1]
-                        val mempoint = d[4].split("=")[1]
-                        val ll = URLDecoder.decode(d[5].split("=")[1], "UTF-8")
-                        val user = User(
-                            userid, u.get("Authorization")!!, memicon,
-                            id, nick, mempoint, ll, u.get("RefreshToken")!!
-                        )
-                        println(nick)
-                        println(ll)
-                        accountSave(user)
-                        loginSave(chkLogin)
-                        sendT(u.get("Authorization")!!, t.value)
-                        getPoint(u.get("Authorization")!!)
-                        (context as Activity).finish()
-                    } else {
-                        println("로그인 실패")
-                    }
-                    getResult.cancel()
-                }
-            })
+            loginFun(context, id, pwd, check1, check2, t, routeAction)
+            keyboardController?.hide()
         }) {
             Text(text = "로그인")
         }
@@ -209,12 +172,11 @@ fun Login() {
                     val lToken = result.data?.getStringExtra("lToken")
                     sendT(lToken!!, t.value)
                     getPoint(lToken)
-                    (context as Activity).finish()
+                    routeAction.goBack()
                 }
             }
         OutlinedButton(onClick = {
-            val intent = Intent(context, RegisterActivity::class.java)
-            context.startActivity(intent)
+            routeAction.navTo(NAVROUTE.REGISTER)
         }) {
             Text(text = "회원가입")
         }
@@ -267,7 +229,7 @@ fun Login() {
 @Composable
 fun DefaultPreview4() {
     MyApplicationTheme {
-        Login()
+        //Login()
     }
 }
 
@@ -382,11 +344,13 @@ fun getAToken(context: Context){
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
             if(response.body()!!.msg=="OK"){
                 val r= response.headers()
-                val user = User(ac.memUserid,r.get("Authorization")!!,ac.memIcon,ac.memId,ac.memNick,"0","",ac.refreshToken)
+                val user = User(ac.memUserid,r.get("Authorization")!!,ac.memIcon,ac.memId,ac.memNick,"0","",ac.refreshToken, ac.email)
                 accountSave(user)
             }
             else {
                 lCheck = false
+                val user = User("","","","","","","","", "")
+                accountSave(user)
                 val intent = Intent(context, LoginActivity::class.java)
                 context.startActivity(intent)
                 Toast.makeText(
@@ -405,3 +369,75 @@ fun getAToken(context: Context){
 
 }
 
+fun loginFun(context: Context, id: String, pwd: String, check1: Boolean, check2:Boolean, t : MutableState<String>, routeAction: RouteAction){
+    val repository = ProtoRepository(context = context)
+    val repository2 = LoginRepository(context)
+    fun accountSave(user: User?) {
+        runBlocking(Dispatchers.IO) {
+            if (user != null) {
+                repository.writeAccountInfo(user)
+            }
+        }
+        return
+    }
+
+    fun loginSave(chkLogin: ChkLogin?){
+        runBlocking(Dispatchers.IO){
+            if(chkLogin!=null){
+                repository2.writeLoginInfo(chkLogin)
+            }
+        }
+        return
+    }
+
+    val login = RetrofitClass
+    val service = login.api
+    val getResult = service.getUser(GetBody(id, pwd))
+    println(getResult.request().url())
+    println(getResult.request().toString())
+    val chkLogin = ChkLogin(check1,check2,if (check1) id else "", if(check2) pwd else "")
+    getResult.enqueue(object : retrofit2.Callback<ResponseBody> {
+        override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+        override fun onResponse(
+            call: Call<ResponseBody>,
+            response: Response<ResponseBody>
+        ) {
+            val r = response.code()
+            val u = response.headers()
+            val d = u.values("Set-Cookie")
+
+            println(d)
+            if (r == 200) {
+                val nick = URLDecoder.decode(d[0].split("=")[1], "UTF-8")
+                val id = d[1].split("=")[1]
+                val userid = d[2].split("=")[1]
+                val memicon = d[3].split("=")[1]
+                val mempoint = d[5].split("=")[1]
+                val ll = URLDecoder.decode(d[6].split("=")[1], "UTF-8")
+                val email = URLDecoder.decode(d[4].split("=")[1], "UTF-8")
+                val user = User(
+                    userid, u.get("Authorization")!!, memicon,
+                    id, nick, mempoint, ll, u.get("RefreshToken")!!,
+                    email
+                )
+                println(nick)
+                println(ll)
+                accountSave(user)
+                loginSave(chkLogin)
+                sendT(u.get("Authorization")!!, t.value)
+                getPoint(u.get("Authorization")!!)
+                routeAction.goBack()
+            } else {
+                Toast.makeText(
+                    context,
+                    "존재하지 않는 ID 이거나\n비밀번호가 다릅니다.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            getResult.cancel()
+        }
+    })
+}

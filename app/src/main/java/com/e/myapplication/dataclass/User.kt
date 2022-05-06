@@ -16,7 +16,8 @@ data class User(
     @SerializedName("memNick") val memNick: String,
     @SerializedName("attendancePoint") val aPoint : String,
     @SerializedName("memLastloginDatetime") val lastLogin : String,
-    @SerializedName("refreshToken") val refreshToken: String
+    @SerializedName("refreshToken") val refreshToken: String,
+    @SerializedName("email") val email: String
 )
 
 data class PostBody(

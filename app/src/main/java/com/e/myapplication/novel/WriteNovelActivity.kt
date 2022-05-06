@@ -34,10 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.AccountInfo
-import com.e.myapplication.dataclass.ImageUpload
-import com.e.myapplication.dataclass.NovelsInfo
-import com.e.myapplication.dataclass.PostNovelsDetail
-import com.e.myapplication.dataclass.SNCR
+import com.e.myapplication.dataclass.*
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.user.ProtoRepository
@@ -298,8 +295,8 @@ fun nImage(
     }
     val ac = read()
     val retrofitClass = RetrofitClass.api.uploadImage(ac.authorization.toString(), body)
-    retrofitClass.enqueue(object : retrofit2.Callback<ImageUpload> {
-        override fun onResponse(call: Call<ImageUpload>, response: Response<ImageUpload>) {
+    retrofitClass.enqueue(object : retrofit2.Callback<ImageUploadSingle> {
+        override fun onResponse(call: Call<ImageUploadSingle>, response: Response<ImageUploadSingle>) {
             val r = response.body()?.msg
             if (r == "JWT expiration") {
                 getAToken(context)
@@ -315,7 +312,7 @@ fun nImage(
             }
         }
 
-        override fun onFailure(call: Call<ImageUpload>, t: Throwable) {
+        override fun onFailure(call: Call<ImageUploadSingle>, t: Throwable) {
             t.printStackTrace()
         }
 

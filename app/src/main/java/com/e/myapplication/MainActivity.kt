@@ -36,20 +36,25 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import coil.compose.rememberImagePainter
+import com.e.myapplication.board.ShowBoard
+import com.e.myapplication.board.ShowFreeBoardList
+import com.e.myapplication.board.WriteBoard
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.notification.NotificationActivity
 import com.e.myapplication.notification.NotifyDB
-import com.e.myapplication.novel.NovelCoverActivity
-import com.e.myapplication.novel.ShowNovelListActivity
+import com.e.myapplication.novel.*
 import com.e.myapplication.search.SearchActivity
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.gray
-import com.e.myapplication.user.LoginRepository
-import com.e.myapplication.user.ProtoRepository
-import com.e.myapplication.user.getAToken
+import com.e.myapplication.user.*
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
@@ -58,7 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 lateinit var notifyDB : NotifyDB
-var lCheck : Boolean = false
+var lCheck = false
 class MainActivity : ComponentActivity() {
     private val multiplePermissionsCode = 100
     private val requiredPermissions =
@@ -66,47 +71,6 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
-    private lateinit var mainActivityViewModel : MainActivityViewModel
-    override fun onCreate(savedInstanceState: Bundle?) {
-        val repository = ProtoRepository(this)
-        val repository2 = LoginRepository(this)
-        fun read(): AccountInfo {
-            var accountInfo: AccountInfo
-            runBlocking(Dispatchers.IO) {
-                accountInfo = repository.readAccountInfo()
-
-            }
-            return accountInfo
-        }
-        fun readLoginInfo() : LoginInfo{
-            var loginInfo : LoginInfo
-            runBlocking(Dispatchers.IO) {
-                loginInfo = repository2.readLoginInfo()
-            }
-            return loginInfo
-        }
-
-        val l = readLoginInfo()
-        if(l.chkAccSave){
-            getAToken(this)
-        }
-
-        super.onCreate(savedInstanceState)
-        checkPermissions()
-        mainActivityViewModel = ViewModelProvider(this).get(MainActivityViewModel::class.java)
-        mainActivityViewModel.updateNovels()
-        notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java,"notifyDB").build()
-
-        setContent {
-            MyApplicationTheme {
-                val vmn = mainActivityViewModel.n.collectAsState()
-                val vmt = mainActivityViewModel.t.collectAsState()
-                Surface(color = MaterialTheme.colors.background) {
-                    ShowNovelList(vmn, vmt)
-                }
-            }
-        }
-    }
 
     private fun checkPermissions() {
         //거절되었거나 아직 수락하지 않은 권한(퍼미션)을 저장할 문자열 배열 리스트
@@ -154,11 +118,136 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    private lateinit var mainActivityViewModel : MainActivityViewModel
+    override fun onCreate(savedInstanceState: Bundle?) {
+        val repository = ProtoRepository(this)
+        val repository2 = LoginRepository(this)
+        fun read(): AccountInfo {
+            var accountInfo: AccountInfo
+            runBlocking(Dispatchers.IO) {
+                accountInfo = repository.readAccountInfo()
+
+            }
+            return accountInfo
+        }
+        fun readLoginInfo() : LoginInfo{
+            var loginInfo : LoginInfo
+            runBlocking(Dispatchers.IO) {
+                loginInfo = repository2.readLoginInfo()
+            }
+            return loginInfo
+        }
+
+        val l = readLoginInfo()
+        if(l.chkAccSave){
+            getAToken(this)
+        }
+
+        super.onCreate(savedInstanceState)
+        checkPermissions()
+        mainActivityViewModel = ViewModelProvider(this).get(MainActivityViewModel::class.java)
+        mainActivityViewModel.updateNovels()
+        notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java,"notifyDB").build()
+
+        setContent {
+            MyApplicationTheme {
+                val vmn = mainActivityViewModel.n.collectAsState()
+                val vmt = mainActivityViewModel.t.collectAsState()
+                Surface(color = MaterialTheme.colors.background) {
+                    //ShowNovelList(vmn, vmt)
+                    NavigationGraph()
+                }
+            }
+        }
+    }
+
 }
 
+enum class NAVROUTE(val routeName: String, val description: String){
+    MAIN("main","메인"),
+    LOGIN("login","로그인"),
+    REGISTER("register","회원가입"),
+    PROFILE("profile","회원정보"),
+    BOARD("board","자유게시판 목록"),
+    BOARDDETAIL("boardDetail","자유게시판"),
+    WRITINGBOARD("writingBoard","자유게시판 글쓰기"),
+    WRITINGNOVELCOVER("writingNovelCover","소설 커버 작성"),
+    NOVELCOVERLIST("novelCoverList","소설 커버 목록"),
+    NOVELDETAILSLIST("novelDetailsList","소설 세부 목록"),
+    NOVELDETAIL("novelDetail","소설 보기"),
+    WRITINGNOVELDETAIL("writingNovelDetail","소설 쓰기")
+}
+
+// 네비게이션 라우트 액션
+class RouteAction(navHostController: NavHostController){
+    // 특정 화면으로 이동
+    val navTo: (NAVROUTE) -> Unit = {route ->
+        navHostController.navigate(route.routeName)
+    }
+    // 특정 화수, 소설로 이동
+    val navWithNum: (String) -> Unit = {route ->
+        navHostController.navigate(route)
+    }
+    // 뒤로 가기
+    val goBack: () -> Unit = {
+        navHostController.popBackStack()
+    }
+}
 
 @Composable
-fun ShowNovelList(novels: State<List<Novels.Content>>, tags: State<List<List<String>>>) {
+fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
+    // 내비게이션 컨트롤러
+    val navController = rememberNavController()
+
+    // 내비게이션 라우트 액션
+    val routeAction = remember(navController) { RouteAction(navController) }
+    val mainViewModel : MainActivityViewModel = viewModel()
+    val novelViewModel : NovelCoverViewModel = viewModel()
+
+    // NavHost로 내비게이션 결정
+    // 내비게이션 연결 설정
+    NavHost(navController, starting) {
+        composable(NAVROUTE.MAIN.routeName){
+            ShowNovelList(routeAction,mainViewModel)
+        }
+        composable(NAVROUTE.LOGIN.routeName){
+            Login(routeAction)
+        }
+        composable(NAVROUTE.REGISTER.routeName){
+            Register(routeAction)
+        }
+        composable(NAVROUTE.PROFILE.routeName){
+            ProfileView(routeAction)
+        }
+        composable(NAVROUTE.BOARD.routeName){
+            ShowFreeBoardList(routeAction)
+        }
+        composable(NAVROUTE.BOARDDETAIL.routeName+"/{num}"){ nav ->
+            val num = nav.arguments?.getString("num")!!.toInt()
+            ShowBoard(routeAction, num)
+        }
+        composable(NAVROUTE.WRITINGBOARD.routeName){
+            WriteBoard(routeAction)
+        }
+        composable(NAVROUTE.WRITINGNOVELCOVER.routeName){
+            WritingNCover(routeAction)
+        }
+        composable(NAVROUTE.NOVELCOVERLIST.routeName){
+            NovelCovers(routeAction, novelViewModel)
+        }
+        composable(NAVROUTE.NOVELDETAILSLIST.routeName+"/{num}"){ nav ->
+            val num = nav.arguments?.getString("num")!!.toInt()
+            ShowPostList(routeAction, num)
+        }
+    }
+
+}
+
+@Composable
+fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
+    viewModel.updateNovels()
+    val novels = viewModel.n.collectAsState()
+    val tags = viewModel.t.collectAsState()
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     fun read(): String {
@@ -175,7 +264,7 @@ fun ShowNovelList(novels: State<List<Novels.Content>>, tags: State<List<List<Str
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope) },
         scaffoldState = scaffoldState,
-        drawerContent = { Drawer() },
+        drawerContent = { Drawer(routeAction) },
         drawerGesturesEnabled = true
     ) {
         BackHandler {
@@ -212,8 +301,7 @@ fun ShowNovelList(novels: State<List<Novels.Content>>, tags: State<List<List<Str
                     Text(
                         text = "더보기 ", fontSize = 14.sp, modifier = Modifier
                             .clickable(onClick = {
-                                val intent = Intent(context, NovelCoverActivity::class.java)
-                                context.startActivity(intent)
+                                routeAction.navTo(NAVROUTE.NOVELCOVERLIST)
                             })
                             .padding(4.0.dp)
                     )
@@ -222,7 +310,7 @@ fun ShowNovelList(novels: State<List<Novels.Content>>, tags: State<List<List<Str
                 LazyColumn {
                     itemsIndexed(novels.value) { index, novel ->
                         Spacer(modifier = Modifier.padding(8.dp))
-                        Greeting3(novel, tags.value[index])
+                        Greeting3(novel, tags.value[index],routeAction)
                     }
 
                 }
@@ -280,7 +368,7 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
 }
 
 @Composable
-fun Greeting3(novel: Novels.Content, tag: List<String>) {
+fun Greeting3(novel: Novels.Content, tag: List<String>, routeAction: RouteAction) {
     var t = ""
     if(tag.isNotEmpty()){
         t+=tag[0]
@@ -295,9 +383,7 @@ fun Greeting3(novel: Novels.Content, tag: List<String>) {
         verticalAlignment = CenterVertically, modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                val intent = Intent(context, ShowNovelListActivity::class.java)
-                intent.putExtra("novelNum", novel.nvcId)
-                context.startActivity(intent)
+                routeAction.navWithNum(NAVROUTE.NOVELDETAILSLIST.routeName + "/${novel.nvcId}")
             })
     ) {
         Text("-", modifier = Modifier.padding(16.dp), fontSize = 24.sp)

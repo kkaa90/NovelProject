@@ -5,7 +5,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -42,9 +41,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
-import com.e.myapplication.AccountInfo
+import com.e.myapplication.*
 import com.e.myapplication.R
-import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.NovelsInfo
 import com.e.myapplication.dataclass.Nvc
 import com.e.myapplication.dataclass.nvcr
@@ -67,30 +65,12 @@ import retrofit2.Response
 class ShowNovelListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val intent = intent
-        val num = intent.getIntExtra("novelNum", 0)
-        val novelInfo = mutableStateListOf<NovelsInfo.NovelInfo>()
-        val episode = mutableStateMapOf<Int, List<Int>>()
-        val cover = mutableStateOf(
-            NovelsInfo.NovelCover(
-                "1", "", 0, 0,
-                0, "", 0, 0
-            )
-        )
-        val test = mutableStateMapOf<Int, List<NovelsInfo.NovelInfo>>()
-        getNovelsList(num, novelInfo, episode, cover, test)
-        println(episode)
+
         setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    ShowPostList(
-                        novelInfo,
-                        episode,
-                        num,
-                        cover,
-                        test
-                    )
+
                 }
             }
         }
@@ -100,7 +80,7 @@ class ShowNovelListActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(
+fun NovelDetailListItem1(
     novelsInfo: NovelsInfo.NovelInfo,
     num: Int,
     test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>
@@ -167,7 +147,7 @@ fun Greeting(
                     Column() {
                         for (i in 1 until t.size) {
                             Spacer(modifier = Modifier.height(2.dp))
-                            GreetingTest(novelsInfo = t[i], num = num, test = test, visibility)
+                            NovelDetailListItem2(novelsInfo = t[i], num = num, test = test, visibility)
                             Spacer(modifier = Modifier.height(2.dp))
                         }
                     }
@@ -179,7 +159,7 @@ fun Greeting(
 }
 
 @Composable
-fun GreetingTest(
+fun NovelDetailListItem2(
     novelsInfo: NovelsInfo.NovelInfo,
     num: Int,
     test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>,
@@ -250,7 +230,7 @@ fun GreetingTest(
                     Column() {
                         for (i in 1 until t.size) {
                             Spacer(modifier = Modifier.height(2.dp))
-                            GreetingTest(novelsInfo = t[i], num = num, test = test, visibility)
+                            NovelDetailListItem2(novelsInfo = t[i], num = num, test = test, visibility)
                             Spacer(modifier = Modifier.height(2.dp))
                         }
                     }
@@ -263,11 +243,25 @@ fun GreetingTest(
 
 @Composable
 fun ShowPostList(
-    novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>,
-    episode: SnapshotStateMap<Int, List<Int>>, num: Int,
-    cover: MutableState<NovelsInfo.NovelCover>,
-    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>
+    routeAction: RouteAction,
+    num: Int
 ) {
+    val novelInfo = remember { mutableStateListOf<NovelsInfo.NovelInfo>() }
+    val episode = remember { mutableStateMapOf<Int, List<Int>>() }
+    val cover = remember {
+        mutableStateOf(
+            NovelsInfo.NovelCover(
+                "1", "", 0, 0,
+                0, "", 0, 0
+            )
+        )
+    }
+    val test = remember {
+        mutableStateMapOf<Int, List<NovelsInfo.NovelInfo>>()
+    }
+    LaunchedEffect(true){
+        getNovelsList(num, novelInfo, episode, cover, test)
+    }
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
@@ -279,21 +273,19 @@ fun ShowPostList(
         topBar = { TopMenu(scaffoldState, scope) },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                val intent = Intent(context, WriteNovelActivity::class.java)
-                intent.putExtra("num", num)
-                context.startActivity(intent)
+                routeAction.navTo(NAVROUTE.WRITINGNOVELDETAIL)
             }) {
                 Icon(Icons.Filled.Add, contentDescription = "")
             }
         },
         drawerContent = {
-            Drawer()
+            Drawer(routeAction)
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState
     ) {
         BackHandler {
-            if (scaffoldState.drawerState.isClosed) (context as Activity).finish()
+            if (scaffoldState.drawerState.isClosed) routeAction.goBack()
             else {
                 scope.launch {
                     scaffoldState.drawerState.apply {
@@ -516,7 +508,7 @@ fun ShowPostList(
                                 item { Text(text = "글이 없습니다.") }
                             } else {
                                 items(epList) { n ->
-                                    Greeting(n, num, test)
+                                    NovelDetailListItem1(n, num, test)
                                 }
                             }
                         }
@@ -572,17 +564,19 @@ fun getNovelsList(
             val r = response.body()
             novelInfo.addAll(r!!.novelInfo)
             episode.putAll(r.episode)
-            for (key in episode.keys) {
-                println(key)
-                val epList = mutableListOf<NovelsInfo.NovelInfo>()
-                epList.add(novelInfo.find { it.nvId == key }!!)
-                val e = episode[key]
-                if (e!!.isNotEmpty()) {
-                    for (i in e.indices) {
-                        epList.add(novelInfo.find { it.nvId == e[i] }!!)
+            if (novelInfo.size != 0) {
+                for (key in episode.keys) {
+                    println(key)
+                    val epList = mutableListOf<NovelsInfo.NovelInfo>()
+                    epList.add(novelInfo.find { it.nvId == key }!!)
+                    val e = episode[key]
+                    if (e!!.isNotEmpty()) {
+                        for (i in e.indices) {
+                            epList.add(novelInfo.find { it.nvId == e[i] }!!)
+                        }
                     }
+                    test[key] = epList
                 }
-                test[key] = epList
             }
             cover.value = r.novelCover
         }

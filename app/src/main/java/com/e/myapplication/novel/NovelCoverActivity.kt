@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import com.e.myapplication.Greeting3
+import com.e.myapplication.RouteAction
 import com.e.myapplication.TopMenu
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
@@ -42,7 +43,7 @@ class NovelCoverActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Greeting8(novels, tags)
+
                 }
             }
         }
@@ -50,10 +51,12 @@ class NovelCoverActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting8(
-    novels: State<List<Novels.Content>>,
-    tags: State<List<List<String>>>
+fun NovelCovers(
+    routeAction: RouteAction, viewModel: NovelCoverViewModel
 ) {
+    viewModel.updateNovels()
+    val novels = viewModel.n.collectAsState()
+    val tags = viewModel.t.collectAsState()
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
@@ -68,7 +71,7 @@ fun Greeting8(
             }
         },
         drawerContent = {
-            Drawer()
+            Drawer(routeAction)
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState
@@ -104,7 +107,7 @@ fun Greeting8(
                 LazyColumn {
                     itemsIndexed(novels.value) { index, novel ->
                         Spacer(modifier = Modifier.padding(8.dp))
-                        Greeting3(novel, tags.value[index])
+                        Greeting3(novel, tags.value[index], routeAction)
                     }
 
                 }

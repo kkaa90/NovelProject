@@ -149,7 +149,7 @@ fun Greeting13() {
                 if(bResult.size!=0){
                     LazyColumn {
                         items(bResult){ board ->
-                            Greeting6(board = board)
+                            //Greeting6(board = board)
                         }
                     }
                 }

@@ -19,7 +19,7 @@ class NovelCoverViewModel : ViewModel(){
 
 
     fun updateNovels(){
-        val gNovels = RetrofitClass.api.getNovels("nvcid,ASC")
+        val gNovels = RetrofitClass.api.getNovels("nvcId,ASC")
         gNovels.enqueue(object :retrofit2.Callback<Novels>{
             override fun onResponse(call: Call<Novels>, response: Response<Novels>) {
                 _n.value = response.body()!!.content

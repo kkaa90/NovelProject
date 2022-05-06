@@ -11,4 +11,5 @@ message AccountInfo{
   string mem_id = 4;
   string mem_nick = 5;
   string refreshToken =6;
+  string email = 7;
 }
