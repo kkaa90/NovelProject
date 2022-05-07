@@ -16,11 +16,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberImagePainter
 import com.e.myapplication.*
 import com.e.myapplication.R
 import com.e.myapplication.dataclass.ChkLogin
 import com.e.myapplication.dataclass.User
-import com.e.myapplication.user.ChangeProfileActivity
 import com.e.myapplication.user.LoginRepository
 import com.e.myapplication.user.ProtoRepository
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +55,7 @@ fun Drawer(routeAction: RouteAction) {
 
     var userId by remember { mutableStateOf("") }
     var userNick by remember { mutableStateOf("") }
+    var memIcon by remember { mutableStateOf("1") }
     var p by remember { mutableStateOf(point) }
     var count = remember {
         mutableStateOf(0)
@@ -67,6 +68,7 @@ fun Drawer(routeAction: RouteAction) {
         }
         userId = accountInfo.memUserid
         userNick = accountInfo.memNick
+        memIcon = accountInfo.memIcon
         p = point
         count.value++
     }
@@ -82,14 +84,25 @@ fun Drawer(routeAction: RouteAction) {
 
     Column {
         if (lCheck) {
-            Image(
-                painter = painterResource(id = R.drawable.schumi), contentDescription = "",
-                modifier = Modifier
-                    .height(100.dp)
-                    .fillMaxWidth()
-                    .padding(10.dp)
+            if(memIcon=="1"){
+                Image(
+                    painter = painterResource(id = R.drawable.schumi), contentDescription = "",
+                    modifier = Modifier
+                        .height(100.dp)
+                        .fillMaxWidth()
+                        .padding(10.dp)
+                )
+            }
+            else {
+                Image(
+                    painter = rememberImagePainter(memIcon), contentDescription = "",
+                    modifier = Modifier
+                        .height(100.dp)
+                        .fillMaxWidth()
+                        .padding(10.dp)
+                )
+            }
 
-            )
         } else {
             Column(
                 modifier = Modifier
@@ -118,8 +131,7 @@ fun Drawer(routeAction: RouteAction) {
         Row() {
             if (lCheck) {
                 OutlinedButton(onClick = {
-                    val intent = Intent(context, ChangeProfileActivity::class.java)
-                    context.startActivity(intent)
+                    routeAction.navTo(NAVROUTE.PROFILE)
                 }) {
                     Text(text = "회원정보")
                 }
@@ -155,18 +167,6 @@ fun Drawer(routeAction: RouteAction) {
 
 
         Text(text = count.value.toString(), color = Color.White)
-//        Button(onClick = {
-//            val intent = Intent(context,TestActivity2::class.java)
-//            context.startActivity(intent)
-//        }) {
-//            Text(text = "Test")
-//        }
 
     }
-}
-
-@Preview
-@Composable
-fun PreviewDrawer() {
-    //Drawer()
 }

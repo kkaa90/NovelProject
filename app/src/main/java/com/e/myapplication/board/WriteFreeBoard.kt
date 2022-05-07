@@ -24,6 +24,7 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -36,8 +37,6 @@ import com.e.myapplication.dataclass.ImageUpload
 import com.e.myapplication.dataclass.PostBoard
 import com.e.myapplication.dataclass.PostBoardResponse
 import com.e.myapplication.retrofit.RetrofitClass
-import com.e.myapplication.ui.theme.MyApplicationTheme
-import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
@@ -63,9 +62,6 @@ fun WriteBoard(routeAction: RouteAction) {
         }
         return accountInfo
     }
-
-    val writeBoard = RetrofitClass
-    val service = writeBoard.api
     var title by rememberSaveable { mutableStateOf("") }
     var content by rememberSaveable { mutableStateOf("") }
     val imageUri = remember { mutableStateListOf<Uri?>() }
@@ -77,7 +73,7 @@ fun WriteBoard(routeAction: RouteAction) {
     val body = remember {
         mutableStateListOf<MultipartBody.Part?>()
     }
-    var imageNum by remember {
+    var imageNum = remember {
         mutableStateOf("")
     }
     val launcher =
@@ -156,44 +152,7 @@ fun WriteBoard(routeAction: RouteAction) {
                     Toast.LENGTH_LONG
                 ).show()
             } else {
-
-                val ac = read()
-                println(body.size)
-                val upI = service.uploadImageTest(ac.authorization.toString(), body)
-                upI.enqueue(object : retrofit2.Callback<ImageUpload> {
-                    override fun onResponse(
-                        call: Call<ImageUpload>,
-                        response: Response<ImageUpload>
-                    ) {
-                        imageNum = response.body()?.msg.toString()
-                        println(imageNum)
-                        if (imageNum == "JWT expiration") {
-                            Toast.makeText(
-                                context,
-                                "토큰이 만료되었습니다.\n 다시 로그인 해주세요.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            val intent = Intent(context, LoginActivity::class.java)
-                            context.startActivity(intent)
-                            upI.cancel()
-
-                        }
-                        else {
-                            Toast.makeText(
-                                context,
-                                "이미지가 업로드 되었습니다.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                        println("이미지 : " + response.body()!!.msg)
-                        println(imageNum)
-                    }
-
-                    override fun onFailure(call: Call<ImageUpload>, t: Throwable) {
-                        t.printStackTrace()
-                    }
-
-                })
+                uploadImages(context,body,routeAction,imageNum)
             }
 
         }) {
@@ -214,7 +173,7 @@ fun WriteBoard(routeAction: RouteAction) {
                     "1",
                     title,
                     ac.memNick.toString(),
-                    imageNum,
+                    imageNum.value,
                     "0"
                 )
                 wB(context, postBoard, routeAction)
@@ -227,7 +186,7 @@ fun WriteBoard(routeAction: RouteAction) {
             }
             content = ""
             title = ""
-            imageNum=""
+            imageNum.value=""
 
 
         }) {
@@ -236,7 +195,48 @@ fun WriteBoard(routeAction: RouteAction) {
     }
 
 }
+fun uploadImages(context: Context, body: SnapshotStateList<MultipartBody.Part?>, routeAction: RouteAction, imageNum : MutableState<String>){
+    val repository = ProtoRepository(context = context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
 
+        }
+        return accountInfo
+    }
+
+    val ac = read()
+    val retrofitClass = RetrofitClass.api.uploadImageTest(ac.authorization.toString(), body)
+    retrofitClass.enqueue(object : retrofit2.Callback<ImageUpload> {
+        override fun onResponse(
+            call: Call<ImageUpload>,
+            response: Response<ImageUpload>
+        ) {
+            imageNum.value = response.body()?.msg.toString()
+            println(imageNum)
+            if (imageNum.value == "JWT expiration") {
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler(Looper.getMainLooper()).postDelayed({ uploadImages(context, body, routeAction, imageNum) }, 1000)
+            }
+            else {
+                Toast.makeText(
+                    context,
+                    "이미지가 업로드 되었습니다.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            println("이미지 : " + response.body()!!.msg)
+            println(imageNum)
+        }
+
+        override fun onFailure(call: Call<ImageUpload>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+}
 
 fun wB(context: Context, postBoard: PostBoard, routeAction: RouteAction) {
     val repository = ProtoRepository(context = context)
@@ -316,11 +316,3 @@ fun bitmapToFile(bitmap: Bitmap, fileNameToSave: String): File? { // File name l
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview9() {
-    MyApplicationTheme {
-
-    }
-}

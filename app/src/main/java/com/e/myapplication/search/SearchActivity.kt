@@ -1,7 +1,6 @@
 package com.e.myapplication.search
 
 import android.app.Activity
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,60 +16,56 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
+import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
-import com.e.myapplication.board.Greeting6
+import com.e.myapplication.RouteAction
+import com.e.myapplication.board.FreeBoardListItem
 import com.e.myapplication.dataclass.Board
 import com.e.myapplication.dataclass.Boards
 import com.e.myapplication.dataclass.Novels
-import com.e.myapplication.novel.ShowNovelListActivity
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import retrofit2.Call
 import retrofit2.Response
 
-class SearchActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MyApplicationTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    Greeting13()
-                }
-            }
-        }
-    }
-}
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun Greeting13() {
+fun SearchView(routeAction: RouteAction) {
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val sMenu: List<String> = listOf("제목", "글쓴이", "전체")
     var sMenuExpanded by remember { mutableStateOf(false) }
-    var sMenuName: String by remember { mutableStateOf(sMenu[0]) }
-    var sKeyword by remember { mutableStateOf("") }
-    var tabIndex by remember { mutableStateOf(0) }
+    var sMenuName: String by rememberSaveable { mutableStateOf(sMenu[0]) }
+    var sKeyword by rememberSaveable { mutableStateOf("") }
+    var tabIndex by rememberSaveable { mutableStateOf(0) }
     val tabs = listOf("소설", "게시판")
     val nResult = remember { mutableStateListOf<Novels.Content>() }
     val bResult = remember { mutableStateListOf<Board>() }
+    LaunchedEffect(true){
+        if(sKeyword!="") {
+            getNSearch(sKeyword, nResult)
+            val t = if (sMenuName == "제목") "title" else if (sMenuName == "글쓴이") "" else ""
+            getBSearch(t, sKeyword, bResult)
+        }
+    }
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { (context as Activity).finish() }) {
+            IconButton(onClick = { routeAction.goBack() }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
             Text(text = "검색")
@@ -105,8 +100,9 @@ fun Greeting13() {
                 Spacer(modifier = Modifier.width(4.dp))
                 OutlinedButton(onClick = {
                     getNSearch(sKeyword, nResult)
-                    val t = if (sMenuName=="제목") "title" else if(sMenuName=="글쓴이") "" else ""
-                    getBSearch(t,sKeyword,bResult)
+                    val t = if (sMenuName == "제목") "title" else if (sMenuName == "글쓴이") "" else ""
+                    getBSearch(t, sKeyword, bResult)
+                    keyboardController?.hide()
                 }) {
                     Text(text = "검색")
                 }
@@ -134,26 +130,24 @@ fun Greeting13() {
         }
         when (tabIndex) {
             0 -> {
-                if(nResult.size!=0){
+                if (nResult.size != 0) {
                     LazyColumn {
-                        items(nResult){ novel ->
-                            SNResult(novel = novel)
+                        items(nResult) { novel ->
+                            SNResult(novel = novel, routeAction)
                         }
                     }
-                }
-                else {
+                } else {
                     Text("검색 결과가 없습니다.")
                 }
             }
             1 -> {
-                if(bResult.size!=0){
+                if (bResult.size != 0) {
                     LazyColumn {
-                        items(bResult){ board ->
-                            //Greeting6(board = board)
+                        items(bResult) { board ->
+                            FreeBoardListItem(board = board, routeAction)
                         }
                     }
-                }
-                else {
+                } else {
                     Text("검색 결과가 없습니다.")
                 }
             }
@@ -162,19 +156,17 @@ fun Greeting13() {
 }
 
 @Composable
-fun SNResult(novel: Novels.Content){
+fun SNResult(novel: Novels.Content, routeAction: RouteAction) {
     val context = LocalContext.current
     Row(
         verticalAlignment = Alignment.CenterVertically, modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                val intent = Intent(context, ShowNovelListActivity::class.java)
-                intent.putExtra("novelNum", novel.nvcId)
-                context.startActivity(intent)
+                routeAction.navWithNum(NAVROUTE.NOVELDETAILSLIST.routeName + "/${novel.nvcId}")
             })
     ) {
         Text("-", modifier = Modifier.padding(16.dp), fontSize = 24.sp)
-        if(novel.imgUrl=="1"||novel.imgUrl=="23"){
+        if (novel.imgUrl == "1" || novel.imgUrl == "23") {
             Image(
                 painter = painterResource(R.drawable.schumi), contentDescription = "schumi",
                 modifier = Modifier
@@ -183,8 +175,7 @@ fun SNResult(novel: Novels.Content){
                     .border(1.5.dp, MaterialTheme.colors.secondary, RectangleShape),
 
                 )
-        }
-        else {
+        } else {
             Image(
                 painter = rememberImagePainter(novel.imgUrl), contentDescription = "schumi",
                 modifier = Modifier
@@ -204,13 +195,6 @@ fun SNResult(novel: Novels.Content){
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview15() {
-    MyApplicationTheme {
-        Greeting13()
-    }
-}
 
 fun getNSearch(keyword: String, list: SnapshotStateList<Novels.Content>) {
     list.removeAll(list)

@@ -101,7 +101,7 @@ fun WebPageView(url: String) {
                             {
                                 if (temp2.value) {
                                     accountSave(temp)
-                                    val intent = Intent(context, LoginActivity::class.java).apply {
+                                    val intent = Intent().apply {
                                         putExtra("lToken", temp.authorization)
                                     }
                                     (context as Activity).setResult(Activity.RESULT_OK, intent)

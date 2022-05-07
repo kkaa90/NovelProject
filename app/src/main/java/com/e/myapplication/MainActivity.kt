@@ -3,7 +3,6 @@ package com.e.myapplication
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues.TAG
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -22,7 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -35,12 +37,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.room.Room
 import coil.compose.rememberImagePainter
 import com.e.myapplication.board.ShowBoard
@@ -48,10 +51,10 @@ import com.e.myapplication.board.ShowFreeBoardList
 import com.e.myapplication.board.WriteBoard
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
-import com.e.myapplication.notification.NotificationActivity
+import com.e.myapplication.notification.NotificationsView
 import com.e.myapplication.notification.NotifyDB
 import com.e.myapplication.novel.*
-import com.e.myapplication.search.SearchActivity
+import com.e.myapplication.search.SearchView
 import com.e.myapplication.ui.theme.MyApplicationTheme
 import com.e.myapplication.ui.theme.gray
 import com.e.myapplication.user.*
@@ -118,7 +121,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    private lateinit var mainActivityViewModel : MainActivityViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         val repository = ProtoRepository(this)
         val repository2 = LoginRepository(this)
@@ -145,14 +147,10 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         checkPermissions()
-        mainActivityViewModel = ViewModelProvider(this).get(MainActivityViewModel::class.java)
-        mainActivityViewModel.updateNovels()
         notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java,"notifyDB").build()
 
         setContent {
             MyApplicationTheme {
-                val vmn = mainActivityViewModel.n.collectAsState()
-                val vmt = mainActivityViewModel.t.collectAsState()
                 Surface(color = MaterialTheme.colors.background) {
                     //ShowNovelList(vmn, vmt)
                     NavigationGraph()
@@ -175,7 +173,9 @@ enum class NAVROUTE(val routeName: String, val description: String){
     NOVELCOVERLIST("novelCoverList","소설 커버 목록"),
     NOVELDETAILSLIST("novelDetailsList","소설 세부 목록"),
     NOVELDETAIL("novelDetail","소설 보기"),
-    WRITINGNOVELDETAIL("writingNovelDetail","소설 쓰기")
+    WRITINGNOVELDETAIL("writingNovelDetail","소설 쓰기"),
+    SEARCH("search","검색"),
+    NOTIFICATION("notification","알림")
 }
 
 // 네비게이션 라우트 액션
@@ -239,8 +239,31 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
             val num = nav.arguments?.getString("num")!!.toInt()
             ShowPostList(routeAction, num)
         }
+        composable(NAVROUTE.NOVELDETAIL.routeName+"?nNum={nNum}&bNum={bNum}",
+            arguments = listOf(
+                navArgument("nNum"){
+                    defaultValue = "0"
+                    type = NavType.StringType
+                }, navArgument("bNum"){
+                    defaultValue = "0"
+                    type = NavType.StringType
+                }
+            )){ nav ->
+            val nNum = nav.arguments?.getString("nNum")!!.toInt()
+            val bNum = nav.arguments?.getString("bNum")!!.toInt()
+            NovelDetailView(nNum, bNum, routeAction)
+        }
+        composable(NAVROUTE.WRITINGNOVELDETAIL.routeName+"/{num}"){nav ->
+            val num = nav.arguments?.getString("num")!!.toInt()
+            WritingNovelDetail(num = num, routeAction = routeAction)
+        }
+        composable(NAVROUTE.SEARCH.routeName){
+            SearchView(routeAction)
+        }
+        composable(NAVROUTE.NOTIFICATION.routeName){
+            NotificationsView(routeAction)
+        }
     }
-
 }
 
 @Composable
@@ -250,19 +273,19 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
     val tags = viewModel.t.collectAsState()
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
-    fun read(): String {
+    fun read(): AccountInfo {
         var accountInfo: AccountInfo
         runBlocking(Dispatchers.IO) {
             accountInfo = repository.readAccountInfo()
 
         }
-        return accountInfo.authorization
+        return accountInfo
     }
 
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     Scaffold(
-        topBar = { TopMenu(scaffoldState, scope) },
+        topBar = { TopMenu(scaffoldState, scope, routeAction) },
         scaffoldState = scaffoldState,
         drawerContent = { Drawer(routeAction) },
         drawerGesturesEnabled = true
@@ -284,7 +307,10 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
                         .fillMaxWidth()
                         .height(180.dp)
                         .clickable(onClick = {
-                            println(read())
+                            val ac = read()
+                            println("토큰 : ${ac.authorization}")
+                            println("리프레시 : ${ac.refreshToken}")
+                            println("아이콘 : ${ac.memIcon}")
                             getToken()
                         })
                 )
@@ -310,7 +336,7 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
                 LazyColumn {
                     itemsIndexed(novels.value) { index, novel ->
                         Spacer(modifier = Modifier.padding(8.dp))
-                        Greeting3(novel, tags.value[index],routeAction)
+                        NovelCoverListItem(novel, tags.value[index],routeAction)
                     }
 
                 }
@@ -322,17 +348,13 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
 }
 
 @Composable
-fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
-    val context = LocalContext.current
-
+fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope, routeAction: RouteAction) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
             .fillMaxWidth()
             .background(gray)
     ) {
         IconButton(onClick = {
-//            val intent = Intent(context, LoginActivity::class.java)
-//            context.startActivity(intent)
             scope.launch {
                 scaffoldState.drawerState.apply {
                     if (isClosed) open() else close()
@@ -346,8 +368,7 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
         }
         Row {
             IconButton(onClick = {
-                val intent = Intent(context, NotificationActivity::class.java)
-                context.startActivity(intent)
+                routeAction.navTo(NAVROUTE.NOTIFICATION)
             }) {
                 Icon(
                     Icons.Default.Notifications,
@@ -355,8 +376,7 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
                 )
             }
             IconButton(onClick = {
-                val intent = Intent(context, SearchActivity::class.java)
-                context.startActivity(intent)
+                routeAction.navTo(NAVROUTE.SEARCH)
             }) {
                 Icon(
                     Icons.Default.Search,
@@ -368,7 +388,7 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope) {
 }
 
 @Composable
-fun Greeting3(novel: Novels.Content, tag: List<String>, routeAction: RouteAction) {
+fun NovelCoverListItem(novel: Novels.Content, tag: List<String>, routeAction: RouteAction) {
     var t = ""
     if(tag.isNotEmpty()){
         t+=tag[0]

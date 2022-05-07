@@ -15,31 +15,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication"
-        android:usesCleartextTraffic="true">
-        <activity
-            android:name=".search.SearchActivity"
-            android:exported="false"
-            android:label="@string/title_activity_search"
-            android:theme="@style/Theme.MyApplication" />
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true">
         <activity
             android:name=".user.TestActivity"
             android:exported="false"
             android:label="@string/title_activity_test"
-            android:theme="@style/Theme.MyApplication" />
-        <activity
-            android:name=".notification.NotificationActivity"
-            android:exported="false"
-            android:label="@string/title_activity_notification"
-            android:theme="@style/Theme.MyApplication" />
-        <activity
-            android:name=".novel.WriteNovelActivity"
-            android:exported="false"
-            android:label="@string/title_activity_write_novel"
-            android:theme="@style/Theme.MyApplication" />
-        <activity
-            android:name=".novel.WriteNCoverActivity"
-            android:exported="false"
-            android:label="@string/title_activity_write_ncover"
             android:theme="@style/Theme.MyApplication" />
         <activity
             android:name=".MainActivity"
@@ -48,16 +29,9 @@
             android:theme="@style/Theme.MyApplication.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".novel.NovelActivity"
-            android:exported="false"
-            android:label=""
-            android:theme="@style/Theme.MyApplication.NoActionBar" />
-
         <service
             android:name=".MyFirebaseMessagingService"
             android:enabled="true"

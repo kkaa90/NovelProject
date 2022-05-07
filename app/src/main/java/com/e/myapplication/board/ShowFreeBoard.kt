@@ -32,14 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.rememberImagePainter
-import com.e.myapplication.AccountInfo
+import com.e.myapplication.*
 import com.e.myapplication.R
-import com.e.myapplication.RouteAction
 import com.e.myapplication.dataclass.*
-import com.e.myapplication.lCheck
 import com.e.myapplication.retrofit.RetrofitClass
-import com.e.myapplication.ui.theme.MyApplicationTheme
-import com.e.myapplication.user.LoginActivity
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
@@ -82,7 +78,7 @@ fun ShowBoard(
     Scaffold(topBar = {
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { (context as Activity).finish() }) {
+            IconButton(onClick = { routeAction.goBack() }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
             Spacer(modifier = Modifier.width(10.dp))
@@ -178,8 +174,7 @@ fun ShowBoard(
                                         "로그인이 필요합니다.",
                                         Toast.LENGTH_LONG
                                     ).show()
-                                    val intent = Intent(context, LoginActivity::class.java)
-                                    context.startActivity(intent)
+                                    routeAction.navTo(NAVROUTE.LOGIN)
                                 }
                             }) {
                                 Icon(
@@ -197,8 +192,7 @@ fun ShowBoard(
                                         "로그인이 필요합니다.",
                                         Toast.LENGTH_LONG
                                     ).show()
-                                    val intent = Intent(context, LoginActivity::class.java)
-                                    context.startActivity(intent)
+                                    routeAction.navTo(NAVROUTE.LOGIN)
                                 }
                             }) {
                                 Icon(
@@ -610,13 +604,3 @@ fun rBoard(context: Context, num: Int, reportState: ReportState, content: String
 //        }
 //    })
 //}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview7() {
-
-    MyApplicationTheme {
-
-    }
-}
-
