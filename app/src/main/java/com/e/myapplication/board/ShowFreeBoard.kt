@@ -1,28 +1,32 @@
 package com.e.myapplication.board
 
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.text.Html
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -31,44 +35,45 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
-import com.e.myapplication.*
+import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
-import com.e.myapplication.dataclass.*
-import com.e.myapplication.retrofit.RetrofitClass
-import com.e.myapplication.user.ProtoRepository
-import com.e.myapplication.user.getAToken
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import retrofit2.Call
-import retrofit2.Response
+import com.e.myapplication.RouteAction
+import com.e.myapplication.dataclass.BoardList
+import com.e.myapplication.dataclass.Comment
+import com.e.myapplication.dataclass.reportState
+import com.e.myapplication.lCheck
+import com.e.myapplication.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun ShowBoard(
+    viewModel: FreeBoardViewModel,
     routeAction: RouteAction,
     num: Int
 ) {
-    val board = remember {
-        mutableStateOf(Board(
-            0, "", "",
-            0, 0, 0, 0, 0, 0, 0, 0, "제목",
-            "", listOf(""), 0, "닉네임"
-        ))
-    }
+    val board by viewModel.board.collectAsState()
     val comment = remember {
         mutableStateListOf<Comment>()
     }
-    LaunchedEffect(true){
-        getBoard(num, board)
-        getComment(num, comment)
+    LaunchedEffect(true) {
+        viewModel.updateBoard(num)
+        viewModel.updateComments(num,1)
+        Handler(Looper.getMainLooper()).postDelayed(
+            {
+                viewModel.viewModelScope.launch {
+                    viewModel.comments.collect {
+                        comment.addAll(it)
+                    }
+                }
+            }, 1000
+        )
     }
-    var content by remember { mutableStateOf("") }
     val context = LocalContext.current
-    val writeComment = RetrofitClass
-//    var visibility by remember {
-//        mutableStateOf(false)
-//    }
     var commentVisibility by remember {
         mutableStateOf(false)
     }
@@ -83,7 +88,7 @@ fun ShowBoard(
             }
             Spacer(modifier = Modifier.width(10.dp))
             Text(
-                text = board.value.brdTitle,
+                text = board.board.brdTitle,
                 fontSize = 24.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -106,55 +111,57 @@ fun ShowBoard(
         }) { p ->
         Box {
             AnimatedVisibility(visible = rdVisibility.value) {
-                ShowReportDialog(num = num, visibility = rdVisibility)
+                ShowReportDialog(num = num, visibility = rdVisibility, viewModel)
             }
 
         }
-        if (commentVisibility) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(p)
-            ) {
-                Row {
-                    if (lCheck) {
-                        OutlinedTextField(value = content, onValueChange = { content = it })
-                        Button(onClick = {
-                            sendComment(
-                                writeComment,
-                                content,
-                                board.value.brdId,
-                                context,
-                                num,
-                                comment,
-                                0
-                            )
-                            content = ""
-                        }) {
-                            Text(text = "댓글 작성")
-                        }
-                    } else {
-                        Text("댓글을 작성하시려면 로그인 하셔야 합니다.")
-                    }
-                }
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    itemsIndexed(comment) { index, c ->
-                        if (c.brdCmtReply == 0) {
-                            ShowComment(comment = c, comment, num, writeComment, context, index)
-
-                        }
-                    }
-                }
+        BackHandler {
+            if (viewModel.currentCommentPosition != -1) {
+                viewModel.currentCommentPosition = -1
+            } else {
+                viewModel.comment = ""
+                routeAction.goBack()
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(p)
-            ) {
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(p)
+        ) {
 
-                LazyColumn {
-                    items(items = board.value.imgUrls) { url ->
+            LazyColumn(Modifier.fillMaxWidth(), state = viewModel.scrollState) {
+                item {
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_baseline_person_24),
+                            contentDescription = "",
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, Color.White, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Column(verticalArrangement = Arrangement.Center) {
+                            Text(text = board.user.memNick, fontSize = 14.sp)
+                            Text(
+                                text = board.board.brdDatetime.split(".")[0] + " 조회 ${board.board.brdHit}",
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                    Divider(thickness = 1.dp, color = Color(0xFFA0A0A0))
+
+                }
+                items(items = board.board.imgUrls) { url ->
+                    Column(
+                        Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
                         Image(
                             painter = rememberImagePainter(url),
                             contentDescription = "",
@@ -162,103 +169,323 @@ fun ShowBoard(
                                 .size(300.dp), alignment = Alignment.Center
                         )
                     }
-                    item {
-                        Text(text = Html.fromHtml(board.value.brdContents).toString())
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = {
-                                if (lCheck) {
-                                    like(context, num)
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "로그인이 필요합니다.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                    routeAction.navTo(NAVROUTE.LOGIN)
-                                }
-                            }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
-                                    contentDescription = ""
-                                )
-                            }
-                            Text(text = board.value.brdLike.toString())
-                            IconButton(onClick = {
-                                if (lCheck) {
-                                    dislike(context, num)
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "로그인이 필요합니다.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                    routeAction.navTo(NAVROUTE.LOGIN)
-                                }
-                            }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
-                                    contentDescription = ""
-                                )
-                            }
-                            Text(text = board.value.brdDislike.toString())
+                }
+                item {
+                    Column {
+                        Text(text = Html.fromHtml(board.board.brdContents).toString())
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            FreeBoardIconButton(
+                                context = context,
+                                num = num,
+                                routeAction = routeAction,
+                                l = true,
+                                icon = R.drawable.ic_baseline_thumb_up_24,
+                                count = board.board.brdLike.toString(),
+                                viewModel = viewModel
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            FreeBoardIconButton(
+                                context = context,
+                                num = num,
+                                routeAction = routeAction,
+                                l = false,
+                                icon = R.drawable.ic_baseline_thumb_down_24,
+                                count = board.board.brdDislike.toString(),
+                                viewModel = viewModel
+                            )
+
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            OutlinedTextField(
+                                value = viewModel.comment,
+                                onValueChange = {
+                                    if (!lCheck) {
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "로그인이 필요합니다.",
+                                                Toast.LENGTH_LONG
+                                            )
+                                            .show()
+                                        routeAction.navTo(NAVROUTE.LOGIN)
+                                    } else {
+                                        viewModel.comment = it
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(4.dp)
+                            )
+                            OutlinedButton(onClick = {
+                                viewModel.sendComment(viewModel.comment, "0", num)
+//                            sendComment(
+//                                writeComment,
+//                                content,
+//                                board.board.brdId,
+//                                context,
+//                                num,
+//                                comment,
+//                                0
+//                            )
+                                viewModel.comment = ""
+                                Handler(Looper.getMainLooper()).postDelayed(
+                                    {
+                                        comment.clear()
+                                        viewModel.viewModelScope.launch {
+                                            viewModel.comments.collect {
+                                                comment.addAll(it)
+                                            }
+                                        }
+                                    }, 1000
+                                )
+
+                            }, enabled = (viewModel.comment != "")) {
+                                Text(text = "작성")
+                            }
+
+                        }
+                        Divider(thickness = 1.dp, color = Color(0xFFA0A0A0))
+                        Row(Modifier.padding(8.dp)) {
+
+                            Text(text = "댓글(${board.board.brdCommentCount})")
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Icon(imageVector = Icons.Default.Refresh, contentDescription = "", Modifier.clickable {
+                                Handler(Looper.getMainLooper()).postDelayed(
+                                    {
+                                        comment.clear()
+                                        viewModel.viewModelScope.launch {
+                                            viewModel.comments.collect {
+                                                comment.addAll(it)
+                                            }
+                                        }
+                                    }, 1000
+                                )
+                            })
+                        }
+                        Divider(thickness = 1.dp, color = Color(0xFFA0A0A0))
+                    }
+
+                }
+                itemsIndexed(comment) { index, c ->
+                    if (c.brdCmtReply == 0) {
+                        ShowComment(
+                            comment = c,
+                            comment,
+                            num,
+                            context,
+                            index,
+                            viewModel,
+                            routeAction
+                        )
                     }
                 }
-
             }
+
         }
+
     }
+}
+
+@Composable
+fun FreeBoardIconButton(
+    context: Context,
+    num: Int,
+    routeAction: RouteAction,
+    l: Boolean,
+    icon: Int,
+    count: String,
+    viewModel: FreeBoardViewModel
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .border(1.dp, Color.Black)
+            .clickable {
+                if (lCheck) {
+                    if (l) {
+                        viewModel.likeClick(num)
+                    } else {
+                        viewModel.dislikeClick(num)
+                    }
+
+                } else {
+                    Toast
+                        .makeText(
+                            context,
+                            "로그인이 필요합니다.",
+                            Toast.LENGTH_LONG
+                        )
+                        .show()
+                    routeAction.navTo(NAVROUTE.LOGIN)
+                }
+            }
+    ) {
+
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = "",
+            modifier = Modifier.padding(all = 12.dp)
+        )
+
+        Text(count, fontSize = 20.sp)
+    }
+
 }
 
 @Composable
 fun ShowComment(
     comment: Comment,
-    comments: SnapshotStateList<Comment>,
+    comments: MutableList<Comment>,
     num: Int,
-    writeComment: RetrofitClass,
     context: Context,
-    index: Int
+    index: Int,
+    viewModel: FreeBoardViewModel,
+    routeAction: RouteAction
 ) {
     var isExpanded by remember(key1 = comment.brdCmtId) { mutableStateOf(false) }
-    var content by remember { mutableStateOf("") }
-    Column(modifier = Modifier
-        .clickable { isExpanded = !isExpanded }
-        .fillMaxWidth()) {
-        Text(text = comment.memNickname, fontSize = 20.sp)
-        Text(text = comment.brdCmtContents)
-        AnimatedVisibility(visible = isExpanded) {
-            Column {
-                Row {
-                    if (lCheck) {
-                        OutlinedTextField(value = content, onValueChange = { content = it })
-                        Button(onClick = {
-                            sendComment(
-                                writeComment,
-                                content,
-                                comment.brdId,
-                                context,
-                                num,
-                                comments,
-                                comment.brdCmtId
+    Card(modifier = Modifier
+        .clickable {
+            isExpanded = !isExpanded
+            viewModel.comment2 = ""
+            if (viewModel.currentCommentPosition == index) {
+                viewModel.currentCommentPosition = -1
+            } else {
+                viewModel.currentCommentPosition = index
+            }
+        }
+        .fillMaxWidth()
+        .border(0.25.dp, Color.Gray)) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row() {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = comment.memNickname, fontSize = 16.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {  }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
+                            contentDescription = "",
+                            modifier = Modifier.size(16.sp.value.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(comment.brdCmtLike.toString(), fontSize = 16.sp)
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {  }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
+                            contentDescription = "",
+                            modifier = Modifier.size(16.sp.value.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(comment.brdCmtDislike.toString(), fontSize = 16.sp)
+                    }
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
+                    }
+                }
+
+            }
+            Row() {
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = comment.brdCmtContents, fontSize = 18.sp)
+            }
+            Row() {
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = comment.brdCmtDatetime, fontSize = 14.sp, color = Color.Gray)
+            }
+
+            AnimatedVisibility(visible = (viewModel.currentCommentPosition == index)) {
+                Column {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+
+                    ) {
+                        OutlinedTextField(
+                            value = viewModel.comment2,
+                            onValueChange = {
+                                if (!lCheck) {
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "로그인이 필요합니다.",
+                                            Toast.LENGTH_LONG
+                                        )
+                                        .show()
+                                    routeAction.navTo(NAVROUTE.LOGIN)
+                                } else {
+                                    viewModel.comment2 = it
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                        )
+                        OutlinedButton(onClick = {
+                            viewModel.sendComment(
+                                viewModel.comment2,
+                                comment.brdCmtId.toString(),
+                                num
                             )
-                            content = ""
-                        }) {
-                            Text(text = "댓글 작성")
+//                        sendComment(
+//                            writeComment,
+//                            content,
+//                            comment.brdId,
+//                            context,
+//                            num,
+//                            comments,
+//                            comment.brdCmtId
+//                        )
+                            viewModel.comment2 = ""
+                            Handler(Looper.getMainLooper()).postDelayed(
+                                {
+                                    viewModel.currentCommentPosition = -1
+                                    comments.clear()
+                                    viewModel.viewModelScope.launch {
+                                        viewModel.comments.collect {
+                                            comments.addAll(it)
+                                        }
+                                    }
+                                }, 1000
+                            )
+                        }, enabled = (viewModel.comment2 != "")) {
+                            Text(text = "작성")
                         }
-                    } else {
-                        Text("댓글을 작성하시려면 로그인 하셔야 합니다.")
+
                     }
                 }
             }
-        }
 
-        if (comment.brdCmtReplynum != 0) {
-            for (i: Int in index + 1 until comment.brdCmtReplynum + index + 1) {
-                Row {
-                    Spacer(modifier = Modifier.width(10.dp))
+            if (comment.brdCmtReplynum != 0) {
+                for (i: Int in index + 1 until comment.brdCmtReplynum + index + 1) {
+
+
                     ShowComment2(comment = comments[i])
-                }
 
+
+                }
             }
         }
     }
@@ -266,23 +493,50 @@ fun ShowComment(
 
 @Composable
 fun ShowComment2(comment: Comment) {
-    Column {
-        Text(text = comment.memNickname)
-        Text(text = comment.brdCmtContents)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(0.5.dp, Color.Gray)
+    ) {
+        Row(Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.width(20.dp))
+            Column(Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row() {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = comment.memNickname, fontSize = 16.sp)
+                    }
+
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
+                    }
+                }
+                Row() {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = comment.brdCmtContents, fontSize = 18.sp)
+                }
+                Row() {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = comment.brdCmtDatetime, fontSize = 14.sp, color = Color.Gray)
+                }
+            }
+        }
+
     }
+
 }
 
 @Composable
-fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>) {
-    val context = LocalContext.current
+fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel) {
     var mSelected by remember {
         mutableStateOf(reportState[0])
     }
     var mVisibility by remember {
         mutableStateOf(false)
-    }
-    var content by remember {
-        mutableStateOf("")
     }
     Dialog(onDismissRequest = { visibility.value = false }) {
         Surface(
@@ -312,8 +566,8 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>) {
                 }
                 Spacer(modifier = Modifier.height(20.dp))
                 TextField(
-                    value = content,
-                    onValueChange = { content = it },
+                    value = viewModel.reportContent,
+                    onValueChange = { viewModel.reportContent = it },
                     label = { Text(text = "자세한 사유") })
                 Spacer(modifier = Modifier.height(20.dp))
                 Row {
@@ -322,7 +576,7 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>) {
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     OutlinedButton(onClick = {
-                        rBoard(context, num, mSelected, content)
+                        viewModel.reportingBoard(num, mSelected, viewModel.reportContent)
                         visibility.value = false
                     }) {
                         Text(text = "확인")
@@ -334,273 +588,62 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>) {
     }
 }
 
-fun sendComment(
-    writeComment: RetrofitClass, content: String, brdId: Int,
-    context: Context, num: Int, comments: SnapshotStateList<Comment>,
-    commentNum: Int
-) {
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-        }
-        return accountInfo
-    }
-
-    val ac = read()
-    val rc = writeComment.api.writeComment(
-        ac.authorization.toString(),
-        PostComments(
-            content,
-            commentNum.toString(),
-            "0",
-            ac.memNick.toString()
-        ), brdId
-    )
-    rc.enqueue(object : retrofit2.Callback<PostBoardResponse> {
-        override fun onResponse(
-            call: Call<PostBoardResponse>,
-            response: Response<PostBoardResponse>
-        ) {
-            val result = response.body()?.msg
-            println(result)
-            if (result == "OK") {
-                getComment(num, comments)
-            } else {
-                getAToken(context)
-                rc.cancel()
-                Handler(Looper.getMainLooper()).postDelayed(
-                    {
-                        sendComment(
-                            writeComment,
-                            content,
-                            brdId,
-                            context,
-                            num,
-                            comments,
-                            commentNum
-                        )
-                    }, 1000
+@Composable
+@Preview
+fun Test2() {
+    val context = LocalContext.current
+    MyApplicationTheme() {
+        Surface(color = MaterialTheme.colors.background) {
+            Column(Modifier.fillMaxSize()) {
+                ShowComment(
+                    comment = Comment(
+                        0,
+                        "테스트중",
+                        "2222-22-22",
+                        2,
+                        0,
+                        2,
+                        0,
+                        0,
+                        0,
+                        "2222-22-22",
+                        0,
+                        0,
+                        "가나다라"
+                    ),
+                    comments = mutableListOf(),
+                    num = 0,
+                    context = context,
+                    index = 0,
+                    viewModel = FreeBoardViewModel(),
+                    routeAction = RouteAction(NavHostController(context))
                 )
-
+                ShowComment(
+                    comment = Comment(
+                        0,
+                        "테스트중가나다라마바사\n가나다라마바사\n1234567890",
+                        "2222-22-22",
+                        2,
+                        0,
+                        2,
+                        0,
+                        0,
+                        0,
+                        "2222-22-22",
+                        0,
+                        0,
+                        "가나다라"
+                    ),
+                    comments = mutableListOf(),
+                    num = 0,
+                    context = context,
+                    index = 0,
+                    viewModel = FreeBoardViewModel(),
+                    routeAction = RouteAction(NavHostController(context))
+                )
             }
 
+
         }
-
-        override fun onFailure(call: Call<PostBoardResponse>, t: Throwable) {
-            t.printStackTrace()
-        }
-    })
-}
-
-fun getBoard(num: Int, board: MutableState<Board>) {
-    val getBoard = RetrofitClass.api.getBoard(num)
-
-    getBoard.enqueue(object : retrofit2.Callback<Board> {
-        override fun onResponse(call: Call<Board>, response: Response<Board>) {
-            response.body()?.let { board.value = it }
-        }
-
-
-        override fun onFailure(call: Call<Board>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-}
-
-fun getComment(num: Int, comment: SnapshotStateList<Comment>) {
-    if (comment.size != 0) {
-        comment.removeAll(comment)
     }
-    val getComment = RetrofitClass.api.getComment(num)
-    getComment.enqueue(object : retrofit2.Callback<Comments> {
-        override fun onResponse(call: Call<Comments>, response: Response<Comments>) {
-            if (response.body()?.pagenum != 0) {
-                for (i: Int in 0 until response.body()?.comments?.size!!) {
-                    let { comment.addAll(response.body()?.comments!![i]) }
-                }
-            }
-        }
-
-        override fun onFailure(call: Call<Comments>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
 }
-
-
-fun read(repository: ProtoRepository): AccountInfo {
-    var accountInfo: AccountInfo
-    runBlocking(Dispatchers.IO) {
-        accountInfo = repository.readAccountInfo()
-    }
-    return accountInfo
-}
-
-fun like(context: Context, num: Int) {
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-        }
-        return accountInfo
-    }
-
-    val ac = read()
-    val retrofitClass = RetrofitClass.api.likeBoard(ac.authorization, num)
-    retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
-        override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
-            when (response.body()!!.msg) {
-                "OK" -> {
-                    Toast.makeText(
-                        context,
-                        "추천을 누르셨습니다.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                "reduplication" -> {
-                    Toast.makeText(
-                        context,
-                        "이미 추천을 누르셨습니다.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                else -> {
-                    getAToken(context)
-                    retrofitClass.cancel()
-                    Handler(Looper.getMainLooper()).postDelayed(
-                        {
-                            like(context, num)
-                        }, 1000
-                    )
-                }
-            }
-
-        }
-
-        override fun onFailure(call: Call<CallMethod>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-
-}
-
-fun dislike(context: Context, num: Int) {
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-        }
-        return accountInfo
-    }
-
-    val ac = read()
-    val retrofitClass = RetrofitClass.api.dislikeBoard(ac.authorization, num)
-    retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
-        override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
-            when (response.body()!!.msg) {
-                "OK" -> {
-                    Toast.makeText(
-                        context,
-                        "비추천을 누르셨습니다.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                "reduplication" -> {
-                    Toast.makeText(
-                        context,
-                        "이미 비추천을 누르셨습니다.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                else -> {
-                    getAToken(context)
-                    retrofitClass.cancel()
-                    Handler(Looper.getMainLooper()).postDelayed(
-                        {
-                            dislike(context, num)
-                        }, 1000
-                    )
-                }
-            }
-        }
-
-        override fun onFailure(call: Call<CallMethod>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-}
-
-fun rBoard(context: Context, num: Int, reportState: ReportState, content: String) {
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-        }
-        return accountInfo
-    }
-    val ac = read()
-    val retrofitClass = RetrofitClass.api.reportBoard(
-        ac.authorization,
-        num,
-        ReportMethod(reportState.sendState, content)
-    )
-    retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
-        override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
-            when (response.body()!!.msg) {
-                "OK" -> {
-                    Toast.makeText(
-                        context,
-                        "신고가 완료되었습니다.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                "reduplication" -> {
-                    Toast.makeText(
-                        context,
-                        "이미 신고한 게시물입니다.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                else -> {
-                    getAToken(context)
-                    retrofitClass.cancel()
-                    Handler(Looper.getMainLooper()).postDelayed(
-                        {
-                            rBoard(context, num, reportState, content)
-                        }, 1000
-                    )
-                }
-            }
-        }
-
-        override fun onFailure(call: Call<CallMethod>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-}
-
-//fun getImage(brdImg: Int, iUrl: SnapshotStateList<ImageUrl>) {
-//    val getImage = RetrofitClass.api.getImageUrl(brdImg)
-//    getImage.enqueue(object : retrofit2.Callback<ImageUrl> {
-//        override fun onResponse(
-//            call: Call<ImageUrl>,
-//            response: Response<ImageUrl>
-//        ) {
-//            response.body()?.let { iUrl.add(it) }
-//        }
-//
-//        override fun onFailure(call: Call<ImageUrl>, t: Throwable) {
-//            t.printStackTrace()
-//        }
-//    })
-//}

@@ -21,10 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -46,9 +43,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.room.Room
 import coil.compose.rememberImagePainter
+import com.e.myapplication.board.FreeBoardViewModel
 import com.e.myapplication.board.ShowBoard
 import com.e.myapplication.board.ShowFreeBoardList
-import com.e.myapplication.board.WriteBoard
+import com.e.myapplication.board.WritingBoard
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.notification.NotificationsView
@@ -202,7 +200,8 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
     // 내비게이션 라우트 액션
     val routeAction = remember(navController) { RouteAction(navController) }
     val mainViewModel : MainActivityViewModel = viewModel()
-    val novelViewModel : NovelCoverViewModel = viewModel()
+    val novelViewModel : NovelViewModel = viewModel()
+    val boardViewModel : FreeBoardViewModel = viewModel()
 
     // NavHost로 내비게이션 결정
     // 내비게이션 연결 설정
@@ -220,17 +219,17 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
             ProfileView(routeAction)
         }
         composable(NAVROUTE.BOARD.routeName){
-            ShowFreeBoardList(routeAction)
+            ShowFreeBoardList(boardViewModel, routeAction)
         }
         composable(NAVROUTE.BOARDDETAIL.routeName+"/{num}"){ nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
-            ShowBoard(routeAction, num)
+            ShowBoard(boardViewModel, routeAction, num)
         }
         composable(NAVROUTE.WRITINGBOARD.routeName){
-            WriteBoard(routeAction)
+            WritingBoard(boardViewModel, routeAction)
         }
         composable(NAVROUTE.WRITINGNOVELCOVER.routeName){
-            WritingNCover(routeAction)
+            WritingNCover(novelViewModel, routeAction)
         }
         composable(NAVROUTE.NOVELCOVERLIST.routeName){
             NovelCovers(routeAction, novelViewModel)
@@ -268,9 +267,7 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
 
 @Composable
 fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
-    viewModel.updateNovels()
-    val novels = viewModel.n.collectAsState()
-    val tags = viewModel.t.collectAsState()
+    println("ShowNovelList")
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     fun read(): AccountInfo {
@@ -281,13 +278,17 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
         }
         return accountInfo
     }
-
+    LaunchedEffect(true){
+        viewModel.updateNovels()
+    }
+    val novels = viewModel.n.collectAsState()
+    val tags = viewModel.t.collectAsState()
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
         scaffoldState = scaffoldState,
-        drawerContent = { Drawer(routeAction) },
+        drawerContent = { Drawer(routeAction,scaffoldState) },
         drawerGesturesEnabled = true
     ) {
         BackHandler {
@@ -349,6 +350,7 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
 
 @Composable
 fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope, routeAction: RouteAction) {
+    println("TopMenu")
     Row(
         horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
             .fillMaxWidth()

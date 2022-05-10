@@ -5,18 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,8 +22,7 @@ import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
 import com.e.myapplication.RouteAction
 import com.e.myapplication.TopMenu
-import com.e.myapplication.dataclass.Board
-import com.e.myapplication.dataclass.Boards
+import com.e.myapplication.dataclass.BoardList
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
@@ -38,27 +31,14 @@ import retrofit2.Response
 
 
 @Composable
-fun ShowFreeBoardList(routeAction: RouteAction) {
-    val boards = remember{ mutableStateListOf<Board>() }
-    val getBoard = RetrofitClass.api.getBoards(1)
+fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteAction) {
+
+    LaunchedEffect(true){
+        boardViewModel.updateBoardList()
+    }
+    val boards = boardViewModel.boards.collectAsState().value
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
-    getBoard.enqueue(object : retrofit2.Callback<Boards> {
-        override fun onResponse(call: Call<Boards>, response: Response<Boards>) {
-            val boardList = response.body()
-            if (boardList != null) {
-                boards.addAll(boardList.boards)
-                println(boards)
-            }
-
-        }
-
-        override fun onFailure(call: Call<Boards>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
         floatingActionButton = {
@@ -69,7 +49,7 @@ fun ShowFreeBoardList(routeAction: RouteAction) {
             }
         },
         drawerContent = {
-            Drawer(routeAction)
+            Drawer(routeAction,scaffoldState)
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState
@@ -87,7 +67,7 @@ fun ShowFreeBoardList(routeAction: RouteAction) {
     }
 }
 @Composable
-fun FreeBoardListItem(board: Board, routeAction: RouteAction) {
+fun FreeBoardListItem(board: BoardList.BoardListItem, routeAction: RouteAction) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -139,14 +119,14 @@ fun Test(){
     MyApplicationTheme() {
         Surface(color = MaterialTheme.colors.background){
             Column(Modifier.fillMaxSize()) {
-                FreeBoardListItem(board = Board(1, "테스트", "2222-22-22", 3, 0,
+                FreeBoardListItem(board = BoardList.BoardListItem(1, "테스트", "2222-22-22", 3, 0,
                     10,0,1,10,0,0,"제목입니다1234","2222-22-22",
-                    listOf(),1,"닉네임_123"),
+                    "",1,"닉네임_123"),
                     routeAction = RouteAction(NavHostController(context)))
 
-                FreeBoardListItem(board = Board(0, "테스트", "2222-22-22", 3, 0,
+                FreeBoardListItem(board = BoardList.BoardListItem(0, "테스트", "2222-22-22", 3, 0,
                     10,0,0,10,0,0,"제목입니다1234","2222-22-22",
-                    listOf(),1,"닉네임_123"),
+                    "",1,"닉네임_123"),
                     routeAction = RouteAction(NavHostController(context)))
             }
             

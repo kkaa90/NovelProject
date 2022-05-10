@@ -1,6 +1,5 @@
 package com.e.myapplication.novel
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,7 +23,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun NovelCovers(
-    routeAction: RouteAction, viewModel: NovelCoverViewModel
+    routeAction: RouteAction, viewModel: NovelViewModel
 ) {
     viewModel.updateNovels()
     val novels = viewModel.n.collectAsState()
@@ -42,7 +41,7 @@ fun NovelCovers(
             }
         },
         drawerContent = {
-            Drawer(routeAction)
+            Drawer(routeAction,scaffoldState)
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState

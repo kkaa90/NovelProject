@@ -1,9 +1,5 @@
 package com.e.myapplication.search
 
-import android.app.Activity
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,11 +30,10 @@ import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
 import com.e.myapplication.RouteAction
 import com.e.myapplication.board.FreeBoardListItem
-import com.e.myapplication.dataclass.Board
+import com.e.myapplication.dataclass.BoardList
 import com.e.myapplication.dataclass.Boards
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.retrofit.RetrofitClass
-import com.e.myapplication.ui.theme.MyApplicationTheme
 import retrofit2.Call
 import retrofit2.Response
 
@@ -55,7 +50,7 @@ fun SearchView(routeAction: RouteAction) {
     var tabIndex by rememberSaveable { mutableStateOf(0) }
     val tabs = listOf("소설", "게시판")
     val nResult = remember { mutableStateListOf<Novels.Content>() }
-    val bResult = remember { mutableStateListOf<Board>() }
+    val bResult = remember { mutableStateListOf<BoardList.BoardListItem>() }
     LaunchedEffect(true){
         if(sKeyword!="") {
             getNSearch(sKeyword, nResult)
@@ -211,16 +206,16 @@ fun getNSearch(keyword: String, list: SnapshotStateList<Novels.Content>) {
     })
 }
 
-fun getBSearch(srcType: String, keyword: String, list: SnapshotStateList<Board>) {
+fun getBSearch(srcType: String, keyword: String, list: SnapshotStateList<BoardList.BoardListItem>) {
     list.removeAll(list)
     val retrofitClass = RetrofitClass.api.searchBoard(srcType, keyword)
-    retrofitClass.enqueue(object : retrofit2.Callback<Boards> {
-        override fun onResponse(call: Call<Boards>, response: Response<Boards>) {
+    retrofitClass.enqueue(object : retrofit2.Callback<BoardList> {
+        override fun onResponse(call: Call<BoardList>, response: Response<BoardList>) {
             val r = response.body()!!.boards
             list.addAll(r)
         }
 
-        override fun onFailure(call: Call<Boards>, t: Throwable) {
+        override fun onFailure(call: Call<BoardList>, t: Throwable) {
             t.printStackTrace()
         }
 

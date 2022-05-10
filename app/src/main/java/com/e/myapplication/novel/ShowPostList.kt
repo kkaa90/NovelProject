@@ -92,7 +92,7 @@ fun ShowPostList(
             }
         },
         drawerContent = {
-            Drawer(routeAction)
+            Drawer(routeAction,scaffoldState)
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState

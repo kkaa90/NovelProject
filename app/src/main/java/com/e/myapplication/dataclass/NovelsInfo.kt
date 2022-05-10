@@ -13,21 +13,21 @@ data class NovelsInfo(
 ) {
     data class NovelCover(
         @SerializedName("imgUrl")
-        val imgUrl: String,
+        val imgUrl: String = "",
         @SerializedName("nvcContents")
-        val nvcContents: String,
+        val nvcContents: String = "",
         @SerializedName("nvcHit")
-        val nvcHit: Int,
+        val nvcHit: Int = 0,
         @SerializedName("nvcReviewcount")
-        val nvcReviewcount: Int,
+        val nvcReviewcount: Int = 0,
         @SerializedName("nvcReviewpoint")
-        val nvcReviewpoint: Int,
+        val nvcReviewpoint: Int = 0,
         @SerializedName("nvcTitle")
-        val nvcTitle: String,
+        val nvcTitle: String = "",
         @SerializedName("nvcId")
-        val nvcId: Int,
+        val nvcId: Int = 0,
         @SerializedName("nvId")
-        val nvId: Int
+        val nvId: Int = 0
     )
     data class NovelInfo(
         @SerializedName("imgUrl")

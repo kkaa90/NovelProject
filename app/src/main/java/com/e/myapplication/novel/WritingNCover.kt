@@ -1,207 +1,184 @@
 package com.e.myapplication.novel
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.e.myapplication.AccountInfo
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.e.myapplication.RouteAction
-import com.e.myapplication.dataclass.ImageUploadSingle
-import com.e.myapplication.dataclass.SNCR
-import com.e.myapplication.dataclass.SendNCover
-import com.e.myapplication.retrofit.RetrofitClass
-import com.e.myapplication.user.ProtoRepository
-import com.e.myapplication.user.getAToken
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
 @Composable
-fun WritingNCover(routeAction: RouteAction) {
+fun WritingNCover(viewModel: NovelViewModel, routeAction: RouteAction) {
     val context = LocalContext.current
-    var title by remember { mutableStateOf("")}
-    var content by remember { mutableStateOf("")}
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var tag by remember { mutableStateOf("") }
-    val tags = remember {mutableListOf<String>()}
-    var file: File?
-    var f = false
+    var requestBody: RequestBody
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
-            imageUri = uri
-            println(imageUri)
+            if (uri != null) {
+                viewModel.nCImageUri = uri
+                viewModel.nCBitmap = if (Build.VERSION.SDK_INT < 28) {
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                } else {
+                    val source =
+                        uri.let { ImageDecoder.createSource(context.contentResolver, it) }
+                    source.let { ImageDecoder.decodeBitmap(it) }
+                }
+                viewModel.nCFile = bitmapToFile(viewModel.nCBitmap!!, "nC.png")
+                requestBody = RequestBody.create(MediaType.parse("image/*"), viewModel.nCFile!!)
+                viewModel.nCBody = MultipartBody.Part.createFormData(
+                    "images",
+                    viewModel.nCFile!!.name,
+                    requestBody
+                )
+            }
 
         }
-    var requestBody: RequestBody
+    Box(){
+        AnimatedVisibility(visible = viewModel.nCBackVisibility) {
+            NCBackAskingDialog(viewModel = viewModel, routeAction = routeAction)
+        }
+    }
+    BackHandler() {
+        viewModel.nCBackVisibility = true
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Text(text = "제목")
-        OutlinedTextField(value = title, onValueChange = { title = it }, maxLines = 1)
+        OutlinedTextField(
+            value = viewModel.nCTitle,
+            onValueChange = { viewModel.nCTitle = it },
+            maxLines = 1
+        )
         Text(text = "내용")
-        OutlinedTextField(value = content, onValueChange = { content = it })
+        OutlinedTextField(value = viewModel.nCContent, onValueChange = { viewModel.nCContent = it })
         Row {
-
-            imageUri?.let {
-                bitmap = if (Build.VERSION.SDK_INT < 28) {
-                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-                } else {
-                    val source = ImageDecoder.createSource(context.contentResolver, it)
-                    ImageDecoder.decodeBitmap(source)
-                }
-
-                f = true
-
-            }
-            bitmap?.let { btm ->
-                Image(
-                    bitmap = btm.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(100.dp)
-                )
-
+            if (viewModel.nCBitmap != null) {
+                Image(bitmap = viewModel.nCBitmap!!.asImageBitmap(),
+                    contentDescription = "",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onLongPress = {
+                                    viewModel.nCImageUri = null
+                                    viewModel.nCBitmap = null
+                                    viewModel.nCFile = null
+                                    viewModel.nCBody = null
+                                }
+                            )
+                        })
             }
             Button(onClick = { launcher.launch("image/*") }) {
                 Text(text = "이미지 선택")
             }
         }
-        Text(text = "태그 : $tags")
-        Button(onClick = { tags.removeAll(tags) }) {
+        Button(onClick = {
+            if (viewModel.nCBitmap==null) {
+                Toast.makeText(
+                    context,
+                    "이미지가 없습니다.",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                viewModel.uploadNCImage()
+            }
+
+        }) {
+            Text("이미지 등록")
+        }
+        Row() {
+            Text(text = "태그 : ")
+            for(i in viewModel.tags.indices){
+                Text(text = "#${viewModel.tags[i]} ")
+            }
+        }
+        
+        Button(onClick = { viewModel.tags.clear() }) {
             Text("태그 초기화")
         }
         Row(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(value = tag, onValueChange = {tag = it}, maxLines = 1)
+            OutlinedTextField(
+                value = viewModel.tag,
+                onValueChange = { viewModel.tag = it },
+                maxLines = 1
+            )
             Button(onClick = {
-                tags.add(tag)
-                tag=""
+                viewModel.tags.add(viewModel.tag)
+                viewModel.tag = ""
             }) {
                 Text("태그 추가")
             }
         }
 
         Button(onClick = {
-            if (f) {
-                println("파일 있음")
-                file = bitmapToFile(bitmap!!, "image.jpg")
-                println(file?.absolutePath)
-                requestBody = RequestBody.create(MediaType.parse("image/*"), file)
-                val body = MultipartBody.Part.createFormData("images", "image.png", requestBody)
-                sImage(context,body,content,title,tags, routeAction)
-            } else {
-                println("파일 없음")
-                val nc = SendNCover(SendNCover.NovelCover("0","0",content,title),tags)
-                wNCover(context,nc,routeAction)
-            }
-
-
+            viewModel.writeNCover(routeAction)
         }) {
             Text(text = "작성")
         }
     }
-
 }
+@Composable
+fun NCBackAskingDialog(viewModel: NovelViewModel, routeAction: RouteAction) {
+    Dialog(onDismissRequest = { viewModel.nCBackVisibility=false }) {
+        Surface(
+            modifier = Modifier
+                .wrapContentSize(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "커버 작성 취소", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(text = "커버 작성을 취소하시겠습니까?\n입력한 내용은 삭제됩니다.")
+                Spacer(modifier = Modifier.height(20.dp))
+                Column(
+                    Modifier
+                        .fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row {
+                        OutlinedButton(onClick = { viewModel.nCBackVisibility=false }) {
+                            Text(text = "취소")
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        OutlinedButton(onClick = {
+                            viewModel.nCBackPressed(routeAction)
+                        }) {
+                            Text(text = "확인")
+                        }
+                    }
+                }
 
-
-fun wNCover(context: Context, nc : SendNCover, routeAction: RouteAction){
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-
+            }
         }
-        return accountInfo
+
     }
-    val ac =read()
-    val retrofitClass = RetrofitClass.api.writeNCover(ac.authorization.toString(),nc)
-    retrofitClass.enqueue(object : Callback<SNCR>{
-        override fun onResponse(call: Call<SNCR>, response: Response<SNCR>) {
-            val r = response.body()?.msg
-            if(r=="JWT expiration"){
-                getAToken(context)
-                retrofitClass.cancel()
-                Handler(Looper.getMainLooper()).postDelayed({ wNCover(context, nc, routeAction) },1000)
-            }
-            else {
-                println(r)
-                Toast.makeText(
-                    context,
-                    "커버 작성 완료",
-                    Toast.LENGTH_LONG
-                ).show()
-                routeAction.goBack()
-            }
-
-        }
-
-        override fun onFailure(call: Call<SNCR>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-
-    })
 }
 
-fun sImage(context: Context, body: MultipartBody.Part, content : String, title : String,
-    tag : List<String>, routeAction: RouteAction){
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-
-        }
-        return accountInfo
-    }
-    val ac =read()
-    val retrofitClass = RetrofitClass.api.uploadImage(ac.authorization.toString(),body)
-    retrofitClass.enqueue(object : Callback<ImageUploadSingle>{
-        override fun onResponse(call: Call<ImageUploadSingle>, response: Response<ImageUploadSingle>) {
-            val r = response.body()?.msg
-            if(r=="JWT expiration"){
-                getAToken(context)
-                retrofitClass.cancel()
-                Handler(Looper.getMainLooper()).postDelayed({ sImage(context, body, content, title, tag, routeAction) },1000)
-            }
-            else {
-                println("사진 번호 : $r")
-                val nc = SendNCover(SendNCover.NovelCover(r!!,"0",content,title),tag)
-                wNCover(context, nc, routeAction)
-            }
-        }
-
-        override fun onFailure(call: Call<ImageUploadSingle>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-
-}
 
 
 

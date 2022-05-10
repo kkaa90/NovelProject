@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.OutlinedButton
+import androidx.compose.material.ScaffoldState
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +25,7 @@ import com.e.myapplication.dataclass.User
 import com.e.myapplication.user.LoginRepository
 import com.e.myapplication.user.ProtoRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.*
 
@@ -31,7 +33,7 @@ import java.util.*
 var point: Int = 0
 
 @Composable
-fun Drawer(routeAction: RouteAction) {
+fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
     val repository2 = LoginRepository(context)
@@ -52,15 +54,11 @@ fun Drawer(routeAction: RouteAction) {
         }
         return
     }
-
+    val scope = rememberCoroutineScope()
     var userId by remember { mutableStateOf("") }
     var userNick by remember { mutableStateOf("") }
     var memIcon by remember { mutableStateOf("1") }
     var p by remember { mutableStateOf(point) }
-    var count = remember {
-        mutableStateOf(0)
-    }
-
     fun read() {
         var accountInfo: AccountInfo
         runBlocking(Dispatchers.IO) {
@@ -70,17 +68,11 @@ fun Drawer(routeAction: RouteAction) {
         userNick = accountInfo.memNick
         memIcon = accountInfo.memIcon
         p = point
-        count.value++
     }
 
-
-    val timer = Timer()
-    timer.schedule(object : TimerTask() {
-        override fun run() {
-            read()
-        }
-    }, 1000, 1000)
-
+    LaunchedEffect(scaffoldState.drawerState.isOpen){
+        read()
+    }
 
     Column {
         if (lCheck) {
@@ -111,9 +103,15 @@ fun Drawer(routeAction: RouteAction) {
                     .padding(10.dp)
                     .clickable(onClick = {
                         routeAction.navTo(NAVROUTE.LOGIN)
+                        scope.launch {
+                            scaffoldState.drawerState.apply {
+                                close()
+                            }
+                        }
                     }),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
+
             ) {
                 Text("로그인이 필요합니다.", fontSize = 30.sp)
             }
@@ -141,6 +139,7 @@ fun Drawer(routeAction: RouteAction) {
                     accountSave(User("", "", "", "", "", "", "", "", ""))
                     loginSave(ChkLogin(chkIdSave = false, chkAutoLogin = false, id = "", pwd = ""))
                     point = 0
+                    read()
                 }) {
                     Text(text = "로그아웃")
                 }
@@ -165,8 +164,6 @@ fun Drawer(routeAction: RouteAction) {
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-
-        Text(text = count.value.toString(), color = Color.White)
 
     }
 }

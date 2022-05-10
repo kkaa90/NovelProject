@@ -68,12 +68,12 @@ interface UserApi {
     @GET("/boards")
     fun getBoards(
         @Query("page") page: Int
-    ): Call<Boards>
+    ): Call<BoardList>
 
     @GET("/boards/{num}")
     fun getBoard(
         @Path("num") num: Int
-    ): Call<Board>
+    ): Call<Boards>
 
     @POST("/boards/{num}/report")
     fun reportBoard(
@@ -209,7 +209,7 @@ interface UserApi {
     fun searchBoard(
         @Query("srctype") srctype : String,
         @Query("keyword") keyword: String
-    ) : Call<Boards>
+    ) : Call<BoardList>
 
 
     //좋아요 싫어요

@@ -55,10 +55,11 @@ fun NovelDetailView(
     }
     val novel =
         remember {
-            mutableStateOf(NovelsDetail(
-                    0, 0, 0, "",
-                    "", 0, 0, 0, 0,
-                    0, "", "", "", "")
+            mutableStateOf(NovelsDetail(NovelsDetail.Novel(
+                listOf(), 0, 0, "",
+                "", 0, 0, 0, 0,
+                0, 0, "", "", ""),
+            NovelsDetail.User("","",""),"")
             )
         }
     val comments = remember{ mutableStateListOf<NvComments.Comment>() }
@@ -83,7 +84,7 @@ fun NovelDetailView(
                         Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "")
                     }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text(text = novel.value.nvTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(text = novel.value.novel.nvTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
 
@@ -194,7 +195,7 @@ fun NovelDetailView(
 @Composable
 fun ShowBoard(board: NovelsDetail) {
     Column {
-        Text(text = board.nvContents)
+        Text(text = board.novel.nvContents)
     }
 }
 
