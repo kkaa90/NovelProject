@@ -15,14 +15,21 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -37,6 +44,7 @@ import java.io.FileOutputStream
 @Composable
 fun WritingNCover(viewModel: NovelViewModel, routeAction: RouteAction) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     var requestBody: RequestBody
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -59,93 +67,146 @@ fun WritingNCover(viewModel: NovelViewModel, routeAction: RouteAction) {
             }
 
         }
-    Box(){
-        AnimatedVisibility(visible = viewModel.nCBackVisibility) {
-            NCBackAskingDialog(viewModel = viewModel, routeAction = routeAction)
-        }
-    }
-    BackHandler() {
-        viewModel.nCBackVisibility = true
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text(text = "제목")
-        OutlinedTextField(
-            value = viewModel.nCTitle,
-            onValueChange = { viewModel.nCTitle = it },
-            maxLines = 1
-        )
-        Text(text = "내용")
-        OutlinedTextField(value = viewModel.nCContent, onValueChange = { viewModel.nCContent = it })
-        Row {
-            if (viewModel.nCBitmap != null) {
-                Image(bitmap = viewModel.nCBitmap!!.asImageBitmap(),
-                    contentDescription = "",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onLongPress = {
-                                    viewModel.nCImageUri = null
-                                    viewModel.nCBitmap = null
-                                    viewModel.nCFile = null
-                                    viewModel.nCBody = null
-                                }
-                            )
-                        })
+    Scaffold(topBar = {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { routeAction.goBack() }) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
-            Button(onClick = { launcher.launch("image/*") }) {
-                Text(text = "이미지 선택")
-            }
-        }
-        Button(onClick = {
-            if (viewModel.nCBitmap==null) {
-                Toast.makeText(
-                    context,
-                    "이미지가 없습니다.",
-                    Toast.LENGTH_LONG
-                ).show()
-            } else {
-                viewModel.uploadNCImage()
-            }
-
-        }) {
-            Text("이미지 등록")
-        }
-        Row() {
-            Text(text = "태그 : ")
-            for(i in viewModel.tags.indices){
-                Text(text = "#${viewModel.tags[i]} ")
-            }
-        }
-        
-        Button(onClick = { viewModel.tags.clear() }) {
-            Text("태그 초기화")
-        }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = viewModel.tag,
-                onValueChange = { viewModel.tag = it },
-                maxLines = 1
-            )
-            Button(onClick = {
-                viewModel.tags.add(viewModel.tag)
-                viewModel.tag = ""
+            TextButton(onClick = {
+                viewModel.writeNCover(routeAction)
             }) {
-                Text("태그 추가")
+                Text(text = "작성")
             }
         }
+    }) { p ->
+        Box() {
+            AnimatedVisibility(visible = viewModel.nCBackVisibility) {
+                NCBackAskingDialog(viewModel = viewModel, routeAction = routeAction)
+            }
+        }
+        BackHandler() {
+            viewModel.nCBackVisibility = true
+        }
 
-        Button(onClick = {
-            viewModel.writeNCover(routeAction)
-        }) {
-            Text(text = "작성")
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(p)) {
+            OutlinedTextField(
+                value = viewModel.nCTitle,
+                onValueChange = { viewModel.nCTitle = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("제목") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(onNext = {
+                    focusManager.moveFocus(FocusDirection.Down)
+                })
+            )
+            Divider(thickness = 1.dp, color = Color.Gray)
+            OutlinedTextField(
+                value = viewModel.nCContent,
+                onValueChange = { viewModel.nCContent = it },
+                label = { Text("내용") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                })
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = viewModel.tag,
+                    onValueChange = { viewModel.tag = it },
+                    label = { Text(text = "태그 입력")},
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Send
+                    ),
+                    keyboardActions = KeyboardActions(onSend = {
+                        if (viewModel.tag != "") {
+                            viewModel.tags.add(viewModel.tag)
+                            viewModel.tag = ""
+                        }
+                    })
+                )
+                TextButton(onClick = {
+                    if (viewModel.tag != "") {
+                        viewModel.tags.add(viewModel.tag)
+                        viewModel.tag = ""
+                    }
+                }) {
+                    Text("태그 추가")
+                }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = "태그 : ")
+                for (i in viewModel.tags.indices) {
+                    Text(text = "#${viewModel.tags[i]} ")
+                }
+                TextButton(onClick = { viewModel.tags.clear() }) {
+                    Text("태그 초기화")
+                }
+            }
+            Row {
+                if (viewModel.nCBitmap != null) {
+                    Image(bitmap = viewModel.nCBitmap!!.asImageBitmap(),
+                        contentDescription = "",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onLongPress = {
+                                        viewModel.nCImageUri = null
+                                        viewModel.nCBitmap = null
+                                        viewModel.nCFile = null
+                                        viewModel.nCBody = null
+                                    }
+                                )
+                            })
+                }
+            }
+            Row() {
+                TextButton(onClick = { launcher.launch("image/*") }) {
+                    Text(text = "이미지 선택")
+                }
+                TextButton(onClick = {
+                    if (viewModel.nCBitmap == null) {
+                        Toast.makeText(
+                            context,
+                            "이미지가 없습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        viewModel.uploadNCImage()
+                    }
+
+                }) {
+                    Text("이미지 등록")
+                }
+            }
         }
     }
+
 }
+
 @Composable
 fun NCBackAskingDialog(viewModel: NovelViewModel, routeAction: RouteAction) {
-    Dialog(onDismissRequest = { viewModel.nCBackVisibility=false }) {
+    Dialog(onDismissRequest = { viewModel.nCBackVisibility = false }) {
         Surface(
             modifier = Modifier
                 .wrapContentSize(),
@@ -159,9 +220,10 @@ fun NCBackAskingDialog(viewModel: NovelViewModel, routeAction: RouteAction) {
                 Spacer(modifier = Modifier.height(20.dp))
                 Column(
                     Modifier
-                        .fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        .fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Row {
-                        OutlinedButton(onClick = { viewModel.nCBackVisibility=false }) {
+                        OutlinedButton(onClick = { viewModel.nCBackVisibility = false }) {
                             Text(text = "취소")
                         }
                         Spacer(modifier = Modifier.width(10.dp))
@@ -178,8 +240,6 @@ fun NCBackAskingDialog(viewModel: NovelViewModel, routeAction: RouteAction) {
 
     }
 }
-
-
 
 
 fun bitmapToFile(bitmap: Bitmap, fileNameToSave: String): File? { // File name like "image.png"

@@ -57,6 +57,7 @@ class NovelViewModel : ViewModel(){
 
 
 
+
     //계정 정보 읽기
     fun read(): AccountInfo {
         val context = MyApplication.ApplicationContext()
@@ -100,7 +101,7 @@ class NovelViewModel : ViewModel(){
                     Handler(Looper.getMainLooper()).postDelayed({uploadNCImage()},1000)
                 }
                 else {
-                    nCImageNum=r
+                    nCImageNum=response.body()!!.imgUrl
                     Toast.makeText(
                         context,
                         "이미지가 업로드 되었습니다.",
@@ -120,7 +121,9 @@ class NovelViewModel : ViewModel(){
         val context = MyApplication.ApplicationContext()
         val ac = read()
         val nc = SendNCover(SendNCover.NovelCover(nCImageNum, "1", nCContent, nCTitle), tags)
+
         val retrofitClass = RetrofitClass.api.writeNCover(ac.authorization,nc)
+        println(retrofitClass.request().toString())
         retrofitClass.enqueue(object : retrofit2.Callback<SNCR>{
             override fun onResponse(call: Call<SNCR>, response: Response<SNCR>) {
                 val r = response.body()?.msg

@@ -172,7 +172,7 @@ fun ShowBoard(
                 }
                 item {
                     Column {
-                        Text(text = Html.fromHtml(board.board.brdContents).toString())
+                        Text(text = Html.fromHtml(board.board.brdContents).toString().replace("<br>","\n"))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth(),

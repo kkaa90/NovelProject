@@ -74,8 +74,8 @@ data class SendNCover(
         val imgUrl: String,
         @SerializedName("nvId")
         val nvId: String,
-        @SerializedName("nvcContent")
-        val nvcContent: String,
+        @SerializedName("nvcContents")
+        val nvcContents: String,
         @SerializedName("nvcTitle")
         val nvcTitle: String
     )

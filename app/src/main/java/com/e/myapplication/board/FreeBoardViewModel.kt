@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.text.Html
+import android.text.TextUtils
 import android.widget.Toast
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.*
@@ -329,7 +331,7 @@ class FreeBoardViewModel : ViewModel() {
         val service = writeBoard.api
         val wb = service.writeBoard(
             ac.authorization.toString(),
-            PostBoard(content,"",i,title,ac.memNick,imageNum,"0")
+            PostBoard(content.replace("\n","<br>"),"",i,title,ac.memNick,imageNum,"0")
         )
 
         wb.enqueue(object : retrofit2.Callback<PostBoardResponse> {
