@@ -87,10 +87,10 @@ fun SearchView(routeAction: RouteAction) {
                     }
                 }
             }
-            Row {
+            Row(Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = sKeyword, onValueChange = { sKeyword = it },
-                    Modifier.width(220.dp)
+                    singleLine = true, modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 OutlinedButton(onClick = {

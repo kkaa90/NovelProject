@@ -181,8 +181,6 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
                             }
                     )
                 }
-
-
             }
             Row(){
                 TextButton(onClick = {

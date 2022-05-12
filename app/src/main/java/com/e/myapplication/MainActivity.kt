@@ -3,6 +3,7 @@ package com.e.myapplication
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues.TAG
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -254,7 +256,7 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
         }
         composable(NAVROUTE.WRITINGNOVELDETAIL.routeName+"/{num}"){nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
-            WritingNovelDetail(num = num, routeAction = routeAction)
+            WritingNovelDetail(num = num, routeAction = routeAction, novelViewModel)
         }
         composable(NAVROUTE.SEARCH.routeName){
             SearchView(routeAction)
@@ -323,7 +325,7 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
                 ) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text("실시간 랭킹", fontSize = 32.sp, modifier = Modifier.padding(4.0.dp))
-                        Text("좋아요 순", fontSize = 18.sp, modifier = Modifier.padding(4.0.dp))
+                        Text("조회수 순", fontSize = 18.sp, modifier = Modifier.padding(4.0.dp))
                     }
                     Text(
                         text = "더보기 ", fontSize = 14.sp, modifier = Modifier
@@ -350,7 +352,6 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
 
 @Composable
 fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope, routeAction: RouteAction) {
-    println("TopMenu")
     Row(
         horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
             .fillMaxWidth()
@@ -385,6 +386,11 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope, routeAction: Ro
                     contentDescription = null
                 )
             }
+        }
+    }
+    Box(Modifier.fillMaxWidth(), contentAlignment = Center){
+        TextButton(onClick = { routeAction.navTo(NAVROUTE.MAIN) }) {
+            Text(text = "Tree Novel")
         }
     }
 }

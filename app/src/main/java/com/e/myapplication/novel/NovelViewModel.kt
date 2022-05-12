@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.MyApplication
@@ -54,6 +55,16 @@ class NovelViewModel : ViewModel(){
     var nCImageNum by mutableStateOf("0")
     var nCBackVisibility by mutableStateOf(false)
 
+
+    //소설 게시물 작성
+    var nDTitle by mutableStateOf("")
+    var nDContent by mutableStateOf("")
+    var nDImageUri = mutableStateListOf<Uri?>()
+    var nDBitmap = mutableStateListOf<Bitmap?>()
+    var nDFiles = mutableStateListOf<File?>()
+    var nDBody = mutableStateListOf<MultipartBody.Part?>()
+    var nDImageNum by mutableStateOf("1")
+    var nDPoint by mutableStateOf("0")
 
 
 

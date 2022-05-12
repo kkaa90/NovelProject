@@ -92,9 +92,11 @@ fun WritingNCover(viewModel: NovelViewModel, routeAction: RouteAction) {
             viewModel.nCBackVisibility = true
         }
 
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(p)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(p)
+        ) {
             OutlinedTextField(
                 value = viewModel.nCTitle,
                 onValueChange = { viewModel.nCTitle = it },
@@ -124,11 +126,14 @@ fun WritingNCover(viewModel: NovelViewModel, routeAction: RouteAction) {
                 })
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 OutlinedTextField(
                     value = viewModel.tag,
                     onValueChange = { viewModel.tag = it },
-                    label = { Text(text = "태그 입력")},
+                    label = { Text(text = "태그 입력") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions.Default.copy(
                         imeAction = ImeAction.Send
@@ -154,9 +159,11 @@ fun WritingNCover(viewModel: NovelViewModel, routeAction: RouteAction) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "태그 : ")
-                for (i in viewModel.tags.indices) {
-                    Text(text = "#${viewModel.tags[i]} ")
+                Row() {
+                    Text(text = "태그 : ")
+                    for (i in viewModel.tags.indices) {
+                        Text(text = "#${viewModel.tags[i]} ")
+                    }
                 }
                 TextButton(onClick = { viewModel.tags.clear() }) {
                     Text("태그 초기화")

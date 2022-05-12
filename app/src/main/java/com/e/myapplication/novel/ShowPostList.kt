@@ -8,10 +8,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -54,6 +51,7 @@ import retrofit2.Call
 import retrofit2.Response
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShowPostList(
     routeAction: RouteAction,
@@ -72,7 +70,7 @@ fun ShowPostList(
     val test = remember {
         mutableStateMapOf<Int, List<NovelsInfo.NovelInfo>>()
     }
-    LaunchedEffect(true){
+    LaunchedEffect(true) {
         getNovelsList(num, novelInfo, episode, cover, test)
     }
     val context = LocalContext.current
@@ -81,18 +79,34 @@ fun ShowPostList(
     val m = remember {
         mutableStateOf("")
     }
+    var tabIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("목록", "댓글")
+    val dMenu: MutableList<String> = ArrayList()
+    dMenu.add("전체")
+    for (key in episode.keys) {
+        dMenu.add(key.toString())
+    }
+    var dMenuExpanded by remember { mutableStateOf(false) }
+    var dMenuName: String by remember { mutableStateOf(dMenu[0]) }
+    val epList = remember {
+        mutableStateListOf<NovelsInfo.NovelInfo>()
+    }
+    if (epList.size == 0) {
+        epList.addAll(novelInfo)
+    }
+    var eIsEmpty by remember { mutableStateOf(false) }
     getToken(m)
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName+"/${num}")
+                routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName + "/${num}")
             }) {
                 Icon(Icons.Filled.Add, contentDescription = "")
             }
         },
         drawerContent = {
-            Drawer(routeAction,scaffoldState)
+            Drawer(routeAction, scaffoldState)
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState
@@ -107,122 +121,114 @@ fun ShowPostList(
                 }
             }
         }
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(skyBlue)
+        LazyColumn() {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(skyBlue)
 
-            ) {
-                Row {
+                ) {
+                    Row {
 
-                    Image(
-                        painter = rememberImagePainter(cover.value.imgUrl),
-                        contentDescription = "schumi",
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(RectangleShape)
-                            .padding(8.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Spacer(modifier = Modifier.padding(8.dp))
-                            Text(
-                                cover.value.nvcTitle,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(cover.value.nvId.toString(), color = dimGray, fontSize = 18.sp)
-                            Spacer(modifier = Modifier.padding(4.dp))
-                            Row {
-                                NovelsIconButton(icon = R.drawable.ic_baseline_remove_red_eye_24, count = cover.value.nvcHit.toString())
-                                Spacer(modifier = Modifier.padding(4.0.dp))
-                                NovelsIconButton(icon = R.drawable.ic_baseline_thumb_up_24,
-                                    count = if(cover.value.nvcReviewcount!=0) (cover.value.nvcReviewpoint/cover.value.nvcReviewcount).toString() else "0"
+                        Image(
+                            painter = rememberImagePainter(cover.value.imgUrl),
+                            contentDescription = "schumi",
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(RectangleShape)
+                                .padding(8.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Spacer(modifier = Modifier.padding(8.dp))
+                                Text(
+                                    cover.value.nvcTitle,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold
                                 )
-                                Spacer(modifier = Modifier.padding(4.0.dp))
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    IconButton(onClick = {
-                                        println(m)
-                                        val nvc = Nvc(
-                                            num.toString(),
-                                            m.value
-                                        )
-                                        addSubscribe(context, nvc)
-                                    }) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.ic_baseline_notifications_24),
-                                            contentDescription = null
-                                        )
+                                Text(cover.value.nvId.toString(), color = dimGray, fontSize = 18.sp)
+                                Spacer(modifier = Modifier.padding(4.dp))
+                                Row {
+                                    NovelsIconButton(
+                                        icon = R.drawable.ic_baseline_remove_red_eye_24,
+                                        count = cover.value.nvcHit.toString()
+                                    )
+                                    Spacer(modifier = Modifier.padding(4.0.dp))
+                                    NovelsIconButton(
+                                        icon = R.drawable.ic_baseline_thumb_up_24,
+                                        count = if (cover.value.nvcReviewcount != 0) (cover.value.nvcReviewpoint / cover.value.nvcReviewcount).toString() else "0"
+                                    )
+                                    Spacer(modifier = Modifier.padding(4.0.dp))
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        IconButton(onClick = {
+                                            println(m)
+                                            val nvc = Nvc(
+                                                num.toString(),
+                                                m.value
+                                            )
+                                            addSubscribe(context, nvc)
+                                        }) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_baseline_notifications_24),
+                                                contentDescription = null
+                                            )
+                                        }
+                                        Text("1000", fontSize = 12.sp)
                                     }
-                                    Text("1000", fontSize = 12.sp)
                                 }
                             }
+                            IconButton(onClick = {}) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "")
+                            }
                         }
-                        IconButton(onClick = {}) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "")
-                        }
-                    }
 
-                }
-                Row {
-                    Spacer(modifier = Modifier.padding(8.dp))
-                    Column {
-                        Text(cover.value.nvcContents, fontSize = 21.sp)
-                        Spacer(modifier = Modifier.padding(4.dp))
-                        Text(
-                            "장르 : " + cover.value.nvcReviewcount,
-                            color = dimGray,
-                            fontSize = 14.sp
-                        )
-                        Text("태그 : #아무거나", color = dimGray, fontSize = 14.sp)
-                        Spacer(modifier = Modifier.padding(4.dp))
                     }
-                }
-            }
-            var tabIndex by remember { mutableStateOf(0) }
-            val tabs = listOf("목록", "댓글")
-            TabRow(
-                selectedTabIndex = tabIndex,
-                modifier = Modifier.height(36.dp),
-                contentColor = Color.Black
-
-            ) {
-                tabs.forEachIndexed { index, text ->
-                    Tab(
-                        selected = tabIndex == index,
-                        onClick = { tabIndex = index },
-                        text = {
+                    Row {
+                        Spacer(modifier = Modifier.padding(8.dp))
+                        Column {
+                            Text(cover.value.nvcContents, fontSize = 21.sp)
+                            Spacer(modifier = Modifier.padding(4.dp))
                             Text(
-                                text,
-                                color = if (tabIndex == index) Color.White else Color.Black
+                                "장르 : " + cover.value.nvcReviewcount,
+                                color = dimGray,
+                                fontSize = 14.sp
                             )
-                        },
-                        modifier = Modifier.background(if (tabIndex == index) Color.Black else Color.White)
-                    )
+                            Text("태그 : #아무거나", color = dimGray, fontSize = 14.sp)
+                            Spacer(modifier = Modifier.padding(4.dp))
+                        }
+                    }
                 }
             }
-            val dMenu: MutableList<String> = ArrayList()
-            dMenu.add("전체")
-            for (key in episode.keys) {
-                dMenu.add(key.toString())
+            stickyHeader{
+                TabRow(
+                    selectedTabIndex = tabIndex,
+                    modifier = Modifier.height(36.dp),
+                    contentColor = Color.Black
+
+                ) {
+                    tabs.forEachIndexed { index, text ->
+                        Tab(
+                            selected = tabIndex == index,
+                            onClick = { tabIndex = index },
+                            text = {
+                                Text(
+                                    text,
+                                    color = if (tabIndex == index) Color.White else Color.Black
+                                )
+                            },
+                            modifier = Modifier.background(if (tabIndex == index) Color.Black else Color.White)
+                        )
+                    }
+                }
             }
-            var dMenuExpanded by remember { mutableStateOf(false) }
-            var dMenuName: String by remember { mutableStateOf(dMenu[0]) }
-            val epList = remember {
-                mutableStateListOf<NovelsInfo.NovelInfo>()
-            }
-            if (epList.size == 0) {
-                epList.addAll(novelInfo)
-            }
-            var eIsEmpty by remember { mutableStateOf(false) }
             when (tabIndex) {
                 0 -> {
-                    Column {
+                    item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -278,7 +284,6 @@ fun ShowPostList(
                                     }
                                 }
                             }
-
                             IconButton(onClick = { }) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_baseline_sort_24),
@@ -286,45 +291,35 @@ fun ShowPostList(
                                 )
                             }
                         }
-                        LazyColumn(
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            if (eIsEmpty) {
-                                item { Text(text = "글이 없습니다.") }
-                            } else {
-                                items(epList) { n ->
-                                    NovelDetailListItem1(n, num, test, routeAction)
-                                }
-                            }
-                        }
-
-
                     }
+                    if (eIsEmpty) {
+                        item { Text(text = "글이 없습니다.") }
+                    } else {
+                        items(epList) { n ->
+                            Column(
+                                modifier = Modifier.padding(
+                                    horizontal = 8.dp,
+                                    vertical = 4.dp
+                                )
+                            ) {
+                                NovelDetailListItem1(n, num, test, routeAction)
+                            }
 
-                }
-                1 -> Column() {
-
-                    LazyColumn {
-//                        test.forEach { (i, list) ->
-//                            items(list){ l ->
-//                                Text(l.nvId.toString())
-//                            }
-//                        }
-                        items(items = test.keys.toList()) { i ->
-
-                            Text(i.toString())
                         }
+                    }
+                }
+                1 -> {
+                    items(items = test.keys.toList()) { i ->
+                        Text(i.toString())
                     }
                 }
             }
-
         }
     }
 }
 
 @Composable
-fun NovelsIconButton(icon : Int, count : String){
+fun NovelsIconButton(icon: Int, count: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(onClick = {}) {
             Icon(
@@ -345,7 +340,7 @@ fun NovelDetailListItem1(
 ) {
     val context = LocalContext.current
     var visibility = rememberSaveable { mutableStateOf(false) }
-    val t = test[novelsInfo.nvId]!!
+    val t = test[novelsInfo.nvId]
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -382,7 +377,7 @@ fun NovelDetailListItem1(
                     }
                 }
 
-                if (t.size == 1) {
+                if (t?.size == 1) {
                     IconButton(onClick = { }) {
 
                     }
@@ -395,12 +390,18 @@ fun NovelDetailListItem1(
                     }
                 }
             }
-            if (t.size != 1) {
+            if (t?.size != 1) {
                 AnimatedVisibility(visible = visibility.value) {
                     Column() {
-                        for (i in 1 until t.size) {
+                        for (i in 1 until t?.size!!) {
                             Spacer(modifier = Modifier.height(2.dp))
-                            NovelDetailListItem2(novelsInfo = t[i], num = num, test = test, visibility,routeAction)
+                            NovelDetailListItem2(
+                                novelsInfo = t[i],
+                                num = num,
+                                test = test,
+                                visibility,
+                                routeAction
+                            )
                             Spacer(modifier = Modifier.height(2.dp))
                         }
                     }
@@ -479,7 +480,13 @@ fun NovelDetailListItem2(
                     Column() {
                         for (i in 1 until t.size) {
                             Spacer(modifier = Modifier.height(2.dp))
-                            NovelDetailListItem2(novelsInfo = t[i], num = num, test = test, visibility, routeAction)
+                            NovelDetailListItem2(
+                                novelsInfo = t[i],
+                                num = num,
+                                test = test,
+                                visibility,
+                                routeAction
+                            )
                             Spacer(modifier = Modifier.height(2.dp))
                         }
                     }
@@ -489,7 +496,6 @@ fun NovelDetailListItem2(
         }
     }
 }
-
 
 
 fun getNovelsList(

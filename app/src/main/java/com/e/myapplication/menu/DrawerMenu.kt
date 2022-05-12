@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +55,7 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
         }
         return
     }
+
     val scope = rememberCoroutineScope()
     var userId by remember { mutableStateOf("") }
     var userNick by remember { mutableStateOf("") }
@@ -70,13 +72,13 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
         p = point
     }
 
-    LaunchedEffect(scaffoldState.drawerState.isOpen){
+    LaunchedEffect(scaffoldState.drawerState.isOpen) {
         read()
     }
 
     Column {
         if (lCheck) {
-            if(memIcon=="1"){
+            if (memIcon == "1") {
                 Image(
                     painter = painterResource(id = R.drawable.schumi), contentDescription = "",
                     modifier = Modifier
@@ -84,8 +86,7 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
                         .fillMaxWidth()
                         .padding(10.dp)
                 )
-            }
-            else {
+            } else {
                 Image(
                     painter = rememberImagePainter(memIcon), contentDescription = "",
                     modifier = Modifier
@@ -163,7 +164,5 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
             Text(text = NAVROUTE.NOVELCOVERLIST.description)
             Spacer(modifier = Modifier.height(20.dp))
         }
-
-
     }
 }
