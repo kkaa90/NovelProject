@@ -17,6 +17,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.List
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.R
 import com.e.myapplication.RouteAction
@@ -78,13 +80,32 @@ fun NovelDetailView(
             AnimatedVisibility(visible = visibility) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(onClick = { routeAction.goBack() }) {
-                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { routeAction.goBack() }) {
+                            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "")
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(text = novel.value.novel.nvTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(text = novel.value.novel.nvTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+
+
+                    Row(verticalAlignment = Alignment.CenterVertically){
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Default.List, contentDescription = "", modifier = Modifier.size(14.sp.value.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("목록", fontSize = 14.sp)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(painter = painterResource(R.drawable.ic_baseline_report_24), contentDescription = "", modifier = Modifier.size(14.sp.value.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("신고", fontSize = 14.sp)
+                        }
+                    }
+
                 }
             }
 
@@ -104,7 +125,7 @@ fun NovelDetailView(
                             .padding(8.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "리뷰 점수")
+                            Text(text = "평점")
                             Spacer(modifier = Modifier.width(4.0.dp))
                             Column {
                                 Row(
@@ -134,7 +155,7 @@ fun NovelDetailView(
                                 }
                             }
                             Spacer(modifier = Modifier.width(4.0.dp))
-                            Button(onClick = { sendR(context, bNum, nNum, rName) }) {
+                            TextButton(onClick = { sendR(context, bNum, nNum, rName) }) {
                                 Text(text = "리뷰 전송")
                             }
                         }

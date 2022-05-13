@@ -175,4 +175,91 @@ class NovelViewModel : ViewModel(){
         routeAction.goBack()
     }
 
+    //이미지 업로드
+    fun uploadNDImages(){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.uploadImageTest(ac.authorization.toString(), nDBody)
+        retrofitClass.enqueue(object : retrofit2.Callback<ImageUpload> {
+            override fun onResponse(
+                call: Call<ImageUpload>,
+                response: Response<ImageUpload>
+            ) {
+                nDImageNum = response.body()?.msg.toString()
+                println(nDImageNum)
+                if (nDImageNum == "JWT expiration") {
+                    getAToken(context)
+                    retrofitClass.cancel()
+                    Handler(Looper.getMainLooper()).postDelayed({ uploadNDImages() }, 1000)
+                }
+                else {
+                    Toast.makeText(
+                        context,
+                        "이미지가 업로드 되었습니다.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                println("이미지 : " + response.body()!!.msg)
+            }
+
+            override fun onFailure(call: Call<ImageUpload>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+
+    //소설 게시물 작성
+    fun writeNovelDetail(routeAction: RouteAction, num : Int, parent : String){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.writeNovel(ac.authorization, num,
+            PostNovelsDetail(PostNovelsDetail.Novel(nDImageNum, nDContent, "0", nDTitle,ac.memNick,nDPoint), parent)
+        )
+
+        retrofitClass.enqueue(object : retrofit2.Callback<SNCR> {
+            override fun onResponse(
+                call: Call<SNCR>,
+                response: Response<SNCR>
+            ) {
+                val r = response.body()?.msg
+                println(response.body().toString())
+                println(r)
+                when (r) {
+                    "JWT expiration" -> {
+                        println("토큰 만료")
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed({ writeNovelDetail(routeAction, num, parent) }, 1000)
+                    }
+                    "OK" -> {
+                        println("글쓰기 성공")
+                        nDBackPressed(routeAction)
+                    }
+                    else -> {
+                        println("글쓰기 오류")
+                    }
+                }
+                retrofitClass.cancel()
+            }
+
+            override fun onFailure(call: Call<SNCR>, t: Throwable) {
+                t.printStackTrace()
+            }
+        })
+    }
+
+    fun nDBackPressed(routeAction: RouteAction){
+        nDTitle=""
+        nDContent=""
+        nDImageUri.clear()
+        nDBitmap.clear()
+        nDFiles.clear()
+        nDBody.clear()
+        nDPoint="0"
+        nDImageNum = "1"
+
+        routeAction.goBack()
+    }
+
 }

@@ -9,7 +9,7 @@ data class U(
 )
 
 data class User(
-    @SerializedName("memUserid") val memUserid : String,
+    @SerializedName("memUserId") val memUserId : String,
     @SerializedName("Authorization") val authorization: String,
     @SerializedName("memIcon") val memIcon: String,
     @SerializedName("memId") val memId: String,
@@ -25,7 +25,7 @@ data class PostBody(
 )
 
 data class SendBody(
-    @SerializedName("memUserid") val memUserid: String,
+    @SerializedName("memUserId") val memUserId: String,
     @SerializedName("memPassword") val memPassword: String,
     @SerializedName("memEmail") val memEmail: String,
     @SerializedName("memNick") val memNick: String,

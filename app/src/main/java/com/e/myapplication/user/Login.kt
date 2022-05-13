@@ -272,6 +272,7 @@ fun getPoint(token: String) {
     val retrofitClass = RetrofitClass.api.getPoint(token)
     retrofitClass.enqueue(object : retrofit2.Callback<Point> {
         override fun onResponse(call: Call<Point>, response: Response<Point>) {
+            println(response.body().toString())
             val r = response.body()!!.point.toInt()
             if (r == -1) {
 

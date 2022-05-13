@@ -278,7 +278,7 @@ fun ShowBoard(
                     }
 
                 }
-                itemsIndexed(comment) { index, c ->
+                itemsIndexed(comment.reversed()) { index, c ->
                     if (c.brdCmtReply == 0) {
                         ShowComment(
                             comment = c,
@@ -355,10 +355,9 @@ fun ShowComment(
     viewModel: FreeBoardViewModel,
     routeAction: RouteAction
 ) {
-    var isExpanded by remember(key1 = comment.brdCmtId) { mutableStateOf(false) }
+    println("index : ${index}")
     Card(modifier = Modifier
         .clickable {
-            isExpanded = !isExpanded
             viewModel.comment2 = ""
             if (viewModel.currentCommentPosition == index) {
                 viewModel.currentCommentPosition = -1
@@ -479,12 +478,9 @@ fun ShowComment(
             }
 
             if (comment.brdCmtReplynum != 0) {
-                for (i: Int in index + 1 until comment.brdCmtReplynum + index + 1) {
-
-
-                    ShowComment2(comment = comments[i])
-
-
+                for (i: Int in index - comment.brdCmtReplynum until index) {
+                    println(i)
+                    ShowComment2(comment = comments.reversed()[i])
                 }
             }
         }

@@ -60,40 +60,44 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val novelInfo = remember { mutableStateListOf<NovelsInfo.NovelInfo>() }
-    LaunchedEffect(true){
+    LaunchedEffect(true) {
         getNovelEpisode(num, novelInfo)
     }
     val dMenu: MutableList<String> = ArrayList()
     dMenu.add("첫화")
-    if(novelInfo.size!=0){
-        for(i in novelInfo.indices){
-            dMenu.add(novelInfo[i].nvId.toString()+"화 : "+novelInfo[i].nvTitle)
+    if (novelInfo.size != 0) {
+        for (i in novelInfo.indices) {
+            dMenu.add(novelInfo[i].nvId.toString() + "화 : " + novelInfo[i].nvTitle)
         }
         dMenu.removeAt(0)
     }
     var dMenuExpanded by remember { mutableStateOf(false) }
     var dMenuName: String by remember { mutableStateOf("선택") }
-    var dMenuIndex : Int by remember { mutableStateOf(0) }
+    var dMenuIndex: Int by remember { mutableStateOf(0) }
     var requestBody: RequestBody
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
-            if(uri!=null){
+            if (uri != null) {
                 viewModel.nDImageUri.add(uri)
                 viewModel.nDBitmap.add(
-                    if (Build.VERSION.SDK_INT < 28){
-                        MediaStore.Images.Media.getBitmap(context.contentResolver,uri)
-                    } else{
+                    if (Build.VERSION.SDK_INT < 28) {
+                        MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                    } else {
                         val source =
-                            uri.let { ImageDecoder.createSource(context.contentResolver,it) }
+                            uri.let { ImageDecoder.createSource(context.contentResolver, it) }
                         source.let { ImageDecoder.decodeBitmap(it) }
                     }
                 )
                 viewModel.nDFiles.add(
                     bitmapToFile(
-                        viewModel.nDBitmap[viewModel.nDBitmap.size-1]!!, viewModel.nDBitmap.size.toString() + ".png"
+                        viewModel.nDBitmap[viewModel.nDBitmap.size - 1]!!,
+                        viewModel.nDBitmap.size.toString() + ".png"
                     )
                 )
-                requestBody = RequestBody.create(MediaType.parse("image/*"), viewModel.nDFiles[viewModel.nDBitmap.size-1]!!)
+                requestBody = RequestBody.create(
+                    MediaType.parse("image/*"),
+                    viewModel.nDFiles[viewModel.nDBitmap.size - 1]!!
+                )
                 viewModel.nDBody.add(
                     MultipartBody.Part.createFormData(
                         "images", viewModel.nDBitmap.size.toString() + ".png",
@@ -112,24 +116,39 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
             TextButton(onClick = {
-                if (viewModel.nDBody.size != 0) {
-                    println("파일 있음")
-
+                val parent: String = when (dMenuName) {
+                    "첫화" -> {
+                        "0"
+                    }
+                    "선택" -> {
+                        "-"
+                    }
+                    else -> {
+                        novelInfo[dMenuIndex].nvId.toString()
+                    }
+                }
+                if (parent == "-") {
+                    Toast.makeText(
+                        context,
+                        "부모 화를 선택해야 합니다.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 } else {
-                    println("파일 없음")
-
+                    viewModel.writeNovelDetail(routeAction, num, parent)
                 }
             }) {
                 Text(text = "글쓰기")
             }
         }
-    }) { p->
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(p)) {
+    }) { p ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(p)
+        ) {
             OutlinedTextField(
                 value = viewModel.nDTitle,
-                onValueChange = {viewModel.nDTitle = it},
+                onValueChange = { viewModel.nDTitle = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions.Default.copy(
@@ -138,7 +157,7 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                 keyboardActions = KeyboardActions(onNext = {
                     focusManager.moveFocus(FocusDirection.Down)
                 }),
-                label = { Text(text = "제목")}
+                label = { Text(text = "제목") }
             )
             Divider(thickness = 1.dp, color = Color.Gray)
             OutlinedTextField(
@@ -164,7 +183,7 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                     onValueChange = {
                         val d = it.toIntOrNull()
                         if (d == null) {
-                            viewModel.nDPoint =  "0"
+                            viewModel.nDPoint = "0"
                         } else {
                             if (d > 50) {
                                 viewModel.nDPoint = "0"
@@ -175,8 +194,7 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                                 ).show()
                                 viewModel.nDPoint = "0"
 
-                            }
-                            else {
+                            } else {
                                 viewModel.nDPoint = it
                             }
                         }
@@ -185,7 +203,13 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                 )
 
             }
-            Row(Modifier.fillMaxWidth().border(0.5.dp,Color.Gray).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .border(0.5.dp, Color.Gray)
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(text = "부모 화 선택 [")
                 Column {
                     Row(Modifier.clickable { dMenuExpanded = !dMenuExpanded }) {
@@ -195,7 +219,7 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                     DropdownMenu(
                         expanded = dMenuExpanded,
                         onDismissRequest = { dMenuExpanded = false }) {
-                        dMenu.forEachIndexed { index ,dMenuItem ->
+                        dMenu.forEachIndexed { index, dMenuItem ->
                             DropdownMenuItem(onClick = {
                                 dMenuExpanded = false; dMenuName = dMenuItem
                                 dMenuIndex = index
@@ -232,162 +256,14 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                 TextButton(onClick = { launcher.launch("image/*") }) {
                     Text(text = "이미지 선택")
                 }
-                TextButton(onClick = { /*TODO*/ }) {
+                TextButton(onClick = { viewModel.uploadNDImages() }) {
                     Text(text = "이미지 업로드")
                 }
             }
         }
     }
-
-//    Column(modifier = Modifier.fillMaxSize()) {
-//
-//
-//
-//
-//
-//
-//        Button(onClick = {
-//            val ac = read()
-//            val parent : String = when (dMenuName) {
-//                "첫화" -> {
-//                    "0"
-//                }
-//                "선택" -> {
-//                    "-"
-//                }
-//                else -> {
-//                    novelInfo[dMenuIndex].nvId.toString()
-//                }
-//            }
-//            if(parent=="-"){
-//                Toast.makeText(
-//                    context,
-//                    "부모 화를 선택해야 합니다.",
-//                    Toast.LENGTH_LONG
-//                ).show()
-//            }
-//            else{
-//                if (f) {
-//                    println("파일 있음")
-//                    file = bitmapToFile(bitmap!!, "image.jpg")
-//                    println(file?.absolutePath)
-//                    requestBody = RequestBody.create(MediaType.parse("image/*"), file)
-//                    val body = MultipartBody.Part.createFormData("images", "image.png", requestBody)
-//                    nImage(context, body, content, title, num, point, routeAction)
-//                } else {
-//                    println("파일 없음")
-//                    val novel = PostNovelsDetail(
-//                        PostNovelsDetail.Novel(
-//                            "0",
-//                            content,
-//                            "0",
-//                            title,
-//                            ac.memNick,
-//                            point
-//                        ), parent
-//                    )
-//                    writeNovel(context, num, novel, routeAction)
-//                }
-//            }
-//        }) {
-//            Text(text = "작성")
-//        }
-//    }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview11() {
-    MyApplicationTheme {
-    }
-}
-
-fun writeNovel(
-    context: Context,
-    num: Int,
-    novel: PostNovelsDetail,
-    routeAction: RouteAction
-) {
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-
-        }
-        return accountInfo
-    }
-    val ac = read()
-    val retrofitClass = RetrofitClass.api.writeNovel(ac.authorization, num, novel)
-    retrofitClass.enqueue(object : retrofit2.Callback<SNCR> {
-        override fun onResponse(call: Call<SNCR>, response: Response<SNCR>) {
-            when (response.body()!!.msg) {
-                "JWT expiration" -> {
-                    getAToken(context)
-                    retrofitClass.cancel()
-                    Handler(Looper.getMainLooper()).postDelayed({ writeNovel(context, num, novel, routeAction) },1000)
-                }
-                "1" -> {
-                    routeAction.goBack()
-                }
-                else -> {
-
-                }
-            }
-        }
-
-        override fun onFailure(call: Call<SNCR>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-
-}
-
-fun nImage(
-    context: Context,
-    body: MultipartBody.Part,
-    content: String,
-    title: String,
-    num: Int,
-    point: String,
-    routeAction: RouteAction
-) {
-    val repository = ProtoRepository(context = context)
-    fun read(): AccountInfo {
-        var accountInfo: AccountInfo
-        runBlocking(Dispatchers.IO) {
-            accountInfo = repository.readAccountInfo()
-
-        }
-        return accountInfo
-    }
-    val ac = read()
-    val retrofitClass = RetrofitClass.api.uploadImage(ac.authorization.toString(), body)
-    retrofitClass.enqueue(object : retrofit2.Callback<ImageUploadSingle> {
-        override fun onResponse(call: Call<ImageUploadSingle>, response: Response<ImageUploadSingle>) {
-            val r = response.body()?.msg
-            if (r == "JWT expiration") {
-                getAToken(context)
-                retrofitClass.cancel()
-                Handler(Looper.getMainLooper()).postDelayed({ nImage(context, body, content, title, num, point, routeAction) },1000)
-            } else {
-                println("사진 번호 : $r")
-                val novel = PostNovelsDetail(
-                    PostNovelsDetail.Novel(r!!, content, "0", title, ac.memNick, point),
-                    "0"
-                )
-                writeNovel(context, num, novel, routeAction)
-            }
-        }
-
-        override fun onFailure(call: Call<ImageUploadSingle>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
-
-}
 fun getNovelEpisode(
     num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>
 ) {
