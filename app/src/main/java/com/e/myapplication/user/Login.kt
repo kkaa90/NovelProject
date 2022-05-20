@@ -285,7 +285,6 @@ fun getPoint(token: String) {
         override fun onFailure(call: Call<Point>, t: Throwable) {
             t.printStackTrace()
         }
-
     })
 }
 
@@ -328,6 +327,7 @@ fun getAToken(context: Context){
                 val r= response.headers()
                 val user = User(ac.memUserid,r.get("Authorization")!!,ac.memIcon,ac.memId,ac.memNick,"0","",ac.refreshToken, ac.email)
                 accountSave(user)
+                getPoint(response.headers().get("Authorization")!!)
             }
             else {
                 lCheck = false
@@ -339,7 +339,7 @@ fun getAToken(context: Context){
                     Toast.LENGTH_LONG
                 ).show()
             }
-            getPoint(response.headers().get("Authorization")!!)
+
         }
         override fun onFailure(call: Call<CallMethod>, t: Throwable) {
             t.printStackTrace()

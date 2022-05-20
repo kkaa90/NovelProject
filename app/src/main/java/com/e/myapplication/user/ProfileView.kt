@@ -375,6 +375,7 @@ fun uploadIcon(
             call: Call<ImageUploadSingle>,
             response: Response<ImageUploadSingle>
         ) {
+            println(response.body().toString())
             val r = response.body()!!.imgUrl
             cIcon.value = r
             uploadCheck.value=false

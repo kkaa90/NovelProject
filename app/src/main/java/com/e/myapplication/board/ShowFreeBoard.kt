@@ -20,10 +20,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,12 +39,10 @@ import coil.compose.rememberImagePainter
 import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
 import com.e.myapplication.RouteAction
-import com.e.myapplication.dataclass.BoardList
 import com.e.myapplication.dataclass.Comment
 import com.e.myapplication.dataclass.reportState
 import com.e.myapplication.lCheck
 import com.e.myapplication.ui.theme.MyApplicationTheme
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 
@@ -62,7 +58,7 @@ fun ShowBoard(
     }
     LaunchedEffect(true) {
         viewModel.updateBoard(num)
-        viewModel.updateComments(num,1)
+        viewModel.updateComments(num, 1)
         Handler(Looper.getMainLooper()).postDelayed(
             {
                 viewModel.viewModelScope.launch {
@@ -74,44 +70,38 @@ fun ShowBoard(
         )
     }
     val context = LocalContext.current
-    var commentVisibility by remember {
+    val rdVisibility = remember {
         mutableStateOf(false)
     }
-    val rdVisibility = remember {
+    val rcVisibility = remember {
         mutableStateOf(false)
     }
     Scaffold(topBar = {
 
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { routeAction.goBack() }) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { routeAction.goBack() }) {
+                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = board.board.brdTitle,
+                    fontSize = 24.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = board.board.brdTitle,
-                fontSize = 24.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
+            TextButton(onClick = { rdVisibility.value = true }) {
+                Text(text = "신고")
+            }
         }
-
-    },
-        bottomBar = {
-
-            Row(Modifier.fillMaxWidth()) {
-                TextButton(onClick = { commentVisibility = !commentVisibility }) {
-                    Text(text = "댓글")
-                }
-                TextButton(onClick = { rdVisibility.value = true }) {
-                    Text(text = "신고")
-                }
-            }
-
-        }) { p ->
+    }) { p ->
         Box {
             AnimatedVisibility(visible = rdVisibility.value) {
                 ShowReportDialog(num = num, visibility = rdVisibility, viewModel)
+            }
+            AnimatedVisibility(visible = rcVisibility.value) {
+                ShowCReportDialog(bNum = num, visibility = rcVisibility, viewModel = viewModel)
             }
 
         }
@@ -172,7 +162,10 @@ fun ShowBoard(
                 }
                 item {
                     Column {
-                        Text(text = Html.fromHtml(board.board.brdContents).toString().replace("<br>","\n"))
+                        Text(
+                            text = Html.fromHtml(board.board.brdContents).toString()
+                                .replace("<br>", "\n")
+                        )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth(),
@@ -261,18 +254,21 @@ fun ShowBoard(
 
                             Text(text = "댓글(${board.board.brdCommentCount})")
                             Spacer(modifier = Modifier.width(12.dp))
-                            Icon(imageVector = Icons.Default.Refresh, contentDescription = "", Modifier.clickable {
-                                Handler(Looper.getMainLooper()).postDelayed(
-                                    {
-                                        comment.clear()
-                                        viewModel.viewModelScope.launch {
-                                            viewModel.comments.collect {
-                                                comment.addAll(it)
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "",
+                                Modifier.clickable {
+                                    Handler(Looper.getMainLooper()).postDelayed(
+                                        {
+                                            comment.clear()
+                                            viewModel.viewModelScope.launch {
+                                                viewModel.comments.collect {
+                                                    comment.addAll(it)
+                                                }
                                             }
-                                        }
-                                    }, 1000
-                                )
-                            })
+                                        }, 1000
+                                    )
+                                })
                         }
                         Divider(thickness = 1.dp, color = Color(0xFFA0A0A0))
                     }
@@ -287,7 +283,8 @@ fun ShowBoard(
                             context,
                             index,
                             viewModel,
-                            routeAction
+                            routeAction,
+                            rcVisibility
                         )
                     }
                 }
@@ -353,9 +350,10 @@ fun ShowComment(
     context: Context,
     index: Int,
     viewModel: FreeBoardViewModel,
-    routeAction: RouteAction
+    routeAction: RouteAction,
+    visibility: MutableState<Boolean>
 ) {
-    println("index : ${index}")
+    println("index : $index")
     Card(modifier = Modifier
         .clickable {
             viewModel.comment2 = ""
@@ -373,12 +371,14 @@ fun ShowComment(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row() {
+                Row {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = comment.memNickname, fontSize = 16.sp)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {  }) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { viewModel.likeComment(comment.brdId,comment.brdCmtId) }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
                             contentDescription = "",
@@ -388,7 +388,9 @@ fun ShowComment(
                         Text(comment.brdCmtLike.toString(), fontSize = 16.sp)
                     }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {  }) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { viewModel.dislikeComment(comment.brdId,comment.brdCmtId) }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
                             contentDescription = "",
@@ -397,17 +399,19 @@ fun ShowComment(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(comment.brdCmtDislike.toString(), fontSize = 16.sp)
                     }
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
+                    IconButton(onClick = {
+                        viewModel.reportComment=comment.brdCmtId
+                        visibility.value=true}) {
+                        Icon(painter = painterResource(id = R.drawable.ic_baseline_report_24), contentDescription = "")
                     }
                 }
 
             }
-            Row() {
+            Row {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = comment.brdCmtContents, fontSize = 18.sp)
             }
-            Row() {
+            Row {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = comment.brdCmtDatetime, fontSize = 14.sp, color = Color.Gray)
             }
@@ -448,15 +452,6 @@ fun ShowComment(
                                 comment.brdCmtId.toString(),
                                 num
                             )
-//                        sendComment(
-//                            writeComment,
-//                            content,
-//                            comment.brdId,
-//                            context,
-//                            num,
-//                            comments,
-//                            comment.brdCmtId
-//                        )
                             viewModel.comment2 = ""
                             Handler(Looper.getMainLooper()).postDelayed(
                                 {
@@ -480,7 +475,7 @@ fun ShowComment(
             if (comment.brdCmtReplynum != 0) {
                 for (i: Int in index - comment.brdCmtReplynum until index) {
                     println(i)
-                    ShowComment2(comment = comments.reversed()[i])
+                    ShowComment2(comment = comments.reversed()[i], visibility, viewModel)
                 }
             }
         }
@@ -488,7 +483,7 @@ fun ShowComment(
 }
 
 @Composable
-fun ShowComment2(comment: Comment) {
+fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -502,20 +497,48 @@ fun ShowComment2(comment: Comment) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row() {
+                    Row {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = comment.memNickname, fontSize = 16.sp)
                     }
 
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { viewModel.likeComment(comment.brdId,comment.brdCmtId) }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
+                                contentDescription = "",
+                                modifier = Modifier.size(16.sp.value.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(comment.brdCmtLike.toString(), fontSize = 16.sp)
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { viewModel.dislikeComment(comment.brdId,comment.brdCmtId) }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
+                                contentDescription = "",
+                                modifier = Modifier.size(16.sp.value.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(comment.brdCmtDislike.toString(), fontSize = 16.sp)
+                        }
+                        IconButton(onClick = {
+                            viewModel.reportComment=comment.brdCmtId
+                            visibility.value=true
+                        }) {
+                            Icon(painter = painterResource(id = R.drawable.ic_baseline_report_24), contentDescription = "")
+                        }
                     }
                 }
-                Row() {
+                Row {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = comment.brdCmtContents, fontSize = 18.sp)
                 }
-                Row() {
+                Row {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = comment.brdCmtDatetime, fontSize = 14.sp, color = Color.Gray)
                 }
@@ -534,20 +557,22 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>, viewModel: Fre
     var mVisibility by remember {
         mutableStateOf(false)
     }
-    Dialog(onDismissRequest = { visibility.value = false }) {
+    Dialog(onDismissRequest = {
+        viewModel.reportContent = ""
+        visibility.value = false
+    }) {
         Surface(
             modifier = Modifier
-                .width(240.dp)
-                .height(400.dp),
+                .wrapContentSize(),
             shape = RoundedCornerShape(12.dp),
             color = Color.White
         ) {
-            Column {
-                Text(text = "신고")
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "신고", fontSize = 24.sp)
                 Spacer(modifier = Modifier.height(20.dp))
                 Column {
                     Row(modifier = Modifier.clickable { mVisibility = !mVisibility }) {
-                        Text(text = mSelected.presentState)
+                        Text(text = "  ${mSelected.presentState}")
                         Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "")
                     }
                     DropdownMenu(
@@ -561,18 +586,21 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>, viewModel: Fre
                     }
                 }
                 Spacer(modifier = Modifier.height(20.dp))
-                TextField(
+                OutlinedTextField(
                     value = viewModel.reportContent,
                     onValueChange = { viewModel.reportContent = it },
-                    label = { Text(text = "자세한 사유") })
+                    label = { Text(text = "자세한 사유") },
+                    modifier = Modifier.fillMaxWidth().height(100.dp))
                 Spacer(modifier = Modifier.height(20.dp))
-                Row {
-                    OutlinedButton(onClick = { visibility.value = false }) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    OutlinedButton(onClick = {
+                        viewModel.reportContent = ""
+                        visibility.value = false }) {
                         Text(text = "취소")
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     OutlinedButton(onClick = {
-                        viewModel.reportingBoard(num, mSelected, viewModel.reportContent)
+                        viewModel.reportingBoard(num, mSelected)
                         visibility.value = false
                     }) {
                         Text(text = "확인")
@@ -580,66 +608,66 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>, viewModel: Fre
                 }
             }
         }
-
     }
 }
-
 @Composable
-@Preview
-fun Test2() {
-    val context = LocalContext.current
-    MyApplicationTheme() {
-        Surface(color = MaterialTheme.colors.background) {
-            Column(Modifier.fillMaxSize()) {
-                ShowComment(
-                    comment = Comment(
-                        0,
-                        "테스트중",
-                        "2222-22-22",
-                        2,
-                        0,
-                        2,
-                        0,
-                        0,
-                        0,
-                        "2222-22-22",
-                        0,
-                        0,
-                        "가나다라"
-                    ),
-                    comments = mutableListOf(),
-                    num = 0,
-                    context = context,
-                    index = 0,
-                    viewModel = FreeBoardViewModel(),
-                    routeAction = RouteAction(NavHostController(context))
-                )
-                ShowComment(
-                    comment = Comment(
-                        0,
-                        "테스트중가나다라마바사\n가나다라마바사\n1234567890",
-                        "2222-22-22",
-                        2,
-                        0,
-                        2,
-                        0,
-                        0,
-                        0,
-                        "2222-22-22",
-                        0,
-                        0,
-                        "가나다라"
-                    ),
-                    comments = mutableListOf(),
-                    num = 0,
-                    context = context,
-                    index = 0,
-                    viewModel = FreeBoardViewModel(),
-                    routeAction = RouteAction(NavHostController(context))
-                )
+fun ShowCReportDialog(bNum: Int, visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel) {
+    var mSelected by remember {
+        mutableStateOf(reportState[0])
+    }
+    var mVisibility by remember {
+        mutableStateOf(false)
+    }
+    Dialog(onDismissRequest = {
+        viewModel.reportContent = ""
+        visibility.value = false }) {
+        Surface(
+            modifier = Modifier
+                .wrapContentSize(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "신고", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Column {
+                    Row(modifier = Modifier.clickable { mVisibility = !mVisibility }) {
+                        Text(text = "  ${mSelected.presentState}")
+                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "")
+                    }
+                    DropdownMenu(
+                        expanded = mVisibility,
+                        onDismissRequest = { mVisibility = false }) {
+                        reportState.forEach {
+                            DropdownMenuItem(onClick = { mSelected = it; mVisibility = false }) {
+                                Text(text = it.presentState)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+                OutlinedTextField(
+                    value = viewModel.reportContent,
+                    onValueChange = { viewModel.reportContent = it },
+                    label = { Text(text = "자세한 사유") },
+                    modifier = Modifier.fillMaxWidth().height(100.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    OutlinedButton(onClick = {
+                        viewModel.reportContent = ""
+                        visibility.value = false }) {
+                        Text(text = "취소")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    OutlinedButton(onClick = {
+                        viewModel.reportingComment(bNum, mSelected)
+                        visibility.value = false
+                    }) {
+                        Text(text = "확인")
+                    }
+                }
             }
-
-
         }
     }
 }
+

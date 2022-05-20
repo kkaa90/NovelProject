@@ -59,6 +59,7 @@ fun ShowPostList(
 ) {
     val novelInfo = remember { mutableStateListOf<NovelsInfo.NovelInfo>() }
     val episode = remember { mutableStateMapOf<Int, List<Int>>() }
+    val t = remember { mutableStateListOf<NovelsInfo.NovelInfo>() }
     val cover = remember {
         mutableStateOf(
             NovelsInfo.NovelCover(
@@ -71,7 +72,7 @@ fun ShowPostList(
         mutableStateMapOf<Int, List<NovelsInfo.NovelInfo>>()
     }
     LaunchedEffect(true) {
-        getNovelsList(num, novelInfo, episode, cover, test)
+        getNovelsList(num, novelInfo, episode, cover, test, t)
     }
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
@@ -83,6 +84,7 @@ fun ShowPostList(
     val tabs = listOf("목록", "댓글")
     val dMenu: MutableList<String> = ArrayList()
     dMenu.add("전체")
+    dMenu.add("조회순")
     for (key in episode.keys) {
         dMenu.add(key.toString())
     }
@@ -92,7 +94,7 @@ fun ShowPostList(
         mutableStateListOf<NovelsInfo.NovelInfo>()
     }
     if (epList.size == 0) {
-        epList.addAll(novelInfo)
+        epList.addAll(t)
     }
     var eIsEmpty by remember { mutableStateOf(false) }
     getToken(m)
@@ -263,7 +265,10 @@ fun ShowPostList(
                                                             epList.add(novelInfo.find { it.nvId == key }!!)
                                                         }
                                                         println(epList.size)
-                                                    } else {
+                                                    } else if(dMenuItem=="조회순"){
+                                                        sortList(novelInfo, episode, t)
+                                                    }
+                                                    else {
                                                         epList.add(novelInfo.find { it.nvId == dMenuItem.toInt() }!!)
                                                         val e = episode[dMenuItem.toInt()]
                                                         if (e!!.isNotEmpty()) {
@@ -295,6 +300,7 @@ fun ShowPostList(
                     if (eIsEmpty) {
                         item { Text(text = "글이 없습니다.") }
                     } else {
+
                         items(epList) { n ->
                             Column(
                                 modifier = Modifier.padding(
@@ -370,14 +376,15 @@ fun NovelDetailListItem1(
                             style = MaterialTheme.typography.subtitle2
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
-                            text = novelsInfo.nvWriter,
+                            text = "${novelsInfo.nvWriter}  조회 ${novelsInfo.nvHit}",
                             style = MaterialTheme.typography.body2
                         )
                     }
                 }
 
-                if (t?.size == 1) {
+                if (t?.size!!<=2) {
                     IconButton(onClick = { }) {
 
                     }
@@ -390,10 +397,10 @@ fun NovelDetailListItem1(
                     }
                 }
             }
-            if (t?.size != 1) {
+            if (t?.size!! >=3) {
                 AnimatedVisibility(visible = visibility.value) {
                     Column() {
-                        for (i in 1 until t?.size!!) {
+                        for (i in 1 until t.size) {
                             Spacer(modifier = Modifier.height(2.dp))
                             NovelDetailListItem2(
                                 novelsInfo = t[i],
@@ -456,13 +463,13 @@ fun NovelDetailListItem2(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = novelsInfo.nvWriter,
+                            text = "${novelsInfo.nvWriter}  조회 ${novelsInfo.nvHit}",
                             style = MaterialTheme.typography.body2
                         )
                     }
                 }
 
-                if (t.size == 1) {
+                if (t.size<=2) {
                     IconButton(onClick = { }) {
 
                     }
@@ -475,7 +482,7 @@ fun NovelDetailListItem2(
                     }
                 }
             }
-            if (t.size != 1) {
+            if (t.size >=3) {
                 AnimatedVisibility(visible = visibility.value) {
                     Column() {
                         for (i in 1 until t.size) {
@@ -496,14 +503,44 @@ fun NovelDetailListItem2(
         }
     }
 }
+fun sortList(
+    novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>,
+    episode: SnapshotStateMap<Int, List<Int>>,
+    t: SnapshotStateList<NovelsInfo.NovelInfo>
+){
+    t.clear()
+    val temp = mutableListOf<NovelsInfo.NovelInfo>()
+    val temp2 = mutableListOf<NovelsInfo.NovelInfo>()
+    if (novelInfo.size != 0) {
+        temp2.add(novelInfo.find { it.nvId==episode.keys.first() }!!)
+        while(true){
+            val e = episode[temp2[temp2.size-1].nvId]!!
+            if(e.isNotEmpty()){
+                temp.clear()
+                for (i in e.indices) {
+                    novelInfo.find { it.nvId == e[i] }.let {
+                        temp.add(it!!)
+                    }
+                }
+                temp2.add(temp.sortedByDescending { it.nvHit }[0])
+            }
+            else {
+                break
+            }
+        }
+        t.addAll(temp2)
+    }
 
+}
 
 fun getNovelsList(
     num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>,
     episode: SnapshotStateMap<Int, List<Int>>, cover: MutableState<NovelsInfo.NovelCover>,
-    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>
+    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>,
+    t: SnapshotStateList<NovelsInfo.NovelInfo>
 ) {
-
+    val temp = mutableListOf<NovelsInfo.NovelInfo>()
+    val temp2 = mutableListOf<NovelsInfo.NovelInfo>()
     val retrofitClass = RetrofitClass.api.getNovelList(num)
     retrofitClass.enqueue(object : retrofit2.Callback<NovelsInfo> {
         override fun onResponse(call: Call<NovelsInfo>, response: Response<NovelsInfo>) {
@@ -511,6 +548,7 @@ fun getNovelsList(
             novelInfo.addAll(r!!.novelInfo)
             episode.putAll(r.episode)
             if (novelInfo.size != 0) {
+                temp2.add(novelInfo.find { it.nvId==episode.keys.first() }!!)
                 for (key in episode.keys) {
                     println(key)
                     val epList = mutableListOf<NovelsInfo.NovelInfo>()
@@ -518,13 +556,37 @@ fun getNovelsList(
                     val e = episode[key]
                     if (e!!.isNotEmpty()) {
                         for (i in e.indices) {
-                            epList.add(novelInfo.find { it.nvId == e[i] }!!)
+                            novelInfo.find { it.nvId == e[i] }.let {
+                                epList.add(it!!)
+                            }
+//                            epList.add(novelInfo.find { it.nvId == e[i] }!!)
+//                            temp.add(novelInfo.find { it.nvId == e[i] }!!)
                         }
                     }
                     test[key] = epList
                 }
+                while(true){
+                    val e = episode[temp2[temp2.size-1].nvId]!!
+                    if(e.isNotEmpty()){
+                        temp.clear()
+                        for (i in e.indices) {
+                            novelInfo.find { it.nvId == e[i] }.let {
+                                temp.add(it!!)
+                            }
+                        }
+                        temp2.add(temp.sortedByDescending { it.nvHit }[0])
+                    }
+                    else {
+                        break
+                    }
+                }
             }
+            println("테스트중 : $temp2")
             cover.value = r.novelCover
+            t.addAll(temp2)
+            novelInfo.sortByDescending {
+                it.nvHit
+            }
         }
 
         override fun onFailure(call: Call<NovelsInfo>, t: Throwable) {

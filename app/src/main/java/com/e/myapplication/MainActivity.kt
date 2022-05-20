@@ -192,6 +192,13 @@ class RouteAction(navHostController: NavHostController){
     val goBack: () -> Unit = {
         navHostController.popBackStack()
     }
+    // 메인 화면
+    val clearBack: () -> Unit = {
+        navHostController.navigate(NAVROUTE.MAIN.routeName){
+            popUpTo(0)
+        }
+    }
+
 }
 
 @Composable
@@ -204,7 +211,6 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
     val mainViewModel : MainActivityViewModel = viewModel()
     val novelViewModel : NovelViewModel = viewModel()
     val boardViewModel : FreeBoardViewModel = viewModel()
-
     // NavHost로 내비게이션 결정
     // 내비게이션 연결 설정
     NavHost(navController, starting) {
@@ -389,7 +395,9 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope, routeAction: Ro
         }
     }
     Box(Modifier.fillMaxWidth(), contentAlignment = Center){
-        TextButton(onClick = { routeAction.navTo(NAVROUTE.MAIN) }) {
+        TextButton(onClick = {
+            routeAction.clearBack()
+        }) {
             Text(text = "Tree Novel")
         }
     }

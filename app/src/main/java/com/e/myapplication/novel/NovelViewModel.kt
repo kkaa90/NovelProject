@@ -41,7 +41,12 @@ class NovelViewModel : ViewModel(){
     //소설 커버
     private val _c = MutableStateFlow(NovelsInfo.NovelCover())
     val c = _c.asStateFlow()
-
+    //소설 트리
+    private val _tree = MutableStateFlow(emptyMap<Int, List<NovelsInfo.NovelInfo>>())
+    val tree = _tree.asStateFlow()
+    //소설 조회순
+    private val _h = MutableStateFlow(emptyList<NovelsInfo.NovelInfo>())
+    val h = _h.asStateFlow()
 
     //소설 커버 작성
     var nCTitle by mutableStateOf("")
@@ -66,11 +71,16 @@ class NovelViewModel : ViewModel(){
     var nDImageNum by mutableStateOf("1")
     var nDPoint by mutableStateOf("0")
 
-
-
+    //소설 커버 목록
+    class NCSort(val present: String, val v: String)
+    val sList = listOf(NCSort("최신 순", "nvcId"),
+        NCSort("조회수 순","nvcHit"), NCSort("구독자 순","nvcSubscribeCount")
+    )
+    var sNow by mutableStateOf(sList[0])
+    var asc by mutableStateOf("DESC")
 
     //계정 정보 읽기
-    fun read(): AccountInfo {
+    private fun read(): AccountInfo {
         val context = MyApplication.ApplicationContext()
         val repository = ProtoRepository(context)
         var accountInfo: AccountInfo
@@ -82,7 +92,7 @@ class NovelViewModel : ViewModel(){
 
     //소설 커버 목록 받아오기
     fun updateNovels(){
-        val gNovels = RetrofitClass.api.getNovels("nvcId,ASC")
+        val gNovels = RetrofitClass.api.getNovels("${sNow.v},$asc")
         gNovels.enqueue(object :retrofit2.Callback<Novels>{
             override fun onResponse(call: Call<Novels>, response: Response<Novels>) {
                 _n.value = response.body()!!.content
@@ -261,5 +271,12 @@ class NovelViewModel : ViewModel(){
 
         routeAction.goBack()
     }
+
+    fun getNovelsList(
+
+    ){
+
+    }
+
 
 }

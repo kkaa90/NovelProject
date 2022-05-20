@@ -2,6 +2,7 @@ package com.e.myapplication.notification
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
+import com.e.myapplication.NAVROUTE
 import com.e.myapplication.RouteAction
 import com.e.myapplication.notifyDB
 import com.e.myapplication.ui.theme.gray
@@ -56,7 +58,7 @@ fun NotificationsView(routeAction: RouteAction) {
         Spacer(modifier = Modifier.height(8.dp))
         LazyColumn {
             items(list) {n->
-                ShowNotification(notification = n)
+                ShowNotification(notification = n, routeAction)
             }
         }
     }
@@ -64,10 +66,10 @@ fun NotificationsView(routeAction: RouteAction) {
 }
 
 @Composable
-fun ShowNotification(notification: Notify){
+fun ShowNotification(notification: Notify, routeAction: RouteAction){
     Column(modifier = Modifier
         .border(width = 1.dp, color = Color.Blue, shape = RectangleShape)
-        .fillMaxWidth()) {
+        .fillMaxWidth().clickable { routeAction.navWithNum(NAVROUTE.NOVELDETAILSLIST.routeName + "/${notification.titleId}") }) {
         Text(text = notification.title.toString())
         Text(text = notification.body.toString())
     }

@@ -24,7 +24,9 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
         super.onMessageReceived(remoteMessage)
         if(remoteMessage.data.isNotEmpty()){
             sendNotification(remoteMessage.data["title"].toString(),remoteMessage.data["body"].toString())
-            val r = Runnable { notifyDB.dao().insert(Notify(remoteMessage.data["title"].toString(),remoteMessage.data["body"].toString())) }
+            val r = Runnable { notifyDB.dao().insert(Notify(remoteMessage.data["title"].toString(),remoteMessage.data["body"].toString(),
+                remoteMessage.data["titleId"]?.toInt()
+            )) }
             Thread(r).start()
             Log.d("remote",remoteMessage.data["title"].toString())
             println(remoteMessage.data.toString())

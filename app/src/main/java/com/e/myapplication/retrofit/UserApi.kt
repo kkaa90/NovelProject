@@ -75,6 +75,7 @@ interface UserApi {
         @Path("num") num: Int
     ): Call<Boards>
 
+    //자유 게시판 신고
     @POST("/boards/{num}/report")
     fun reportBoard(
         @Header("Authorization") authorization: String?,
@@ -82,6 +83,18 @@ interface UserApi {
         @Body body: ReportMethod
     ): Call<CallMethod>
 
+    //좋아요 싫어요
+    @POST("/boards/{num}/like")
+    fun likeBoard(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num : Int
+    ) : Call<CallMethod>
+
+    @POST("/boards/{num}/dislike")
+    fun dislikeBoard(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num : Int
+    ) : Call<CallMethod>
 
     // 자유게시판 댓글 쓰기 및 불러오기
     @Headers("Content-Type: application/json")
@@ -102,6 +115,30 @@ interface UserApi {
         @Path("num") num: Int,
         @Query("page") page: Int
     ): Call<Comments>
+
+    //자유게시판 댓글 좋아요 싫어요
+    @POST("/boards/{bNum}/cmts/{cNum}/like")
+    fun likeBoardComment(
+        @Header("Authorization") authorization: String?,
+        @Path("bNum") bNum : Int,
+        @Path("cNum") cNum : Int
+    ) : Call<CallMethod>
+
+    @POST("/boards/{bNum}/cmts/{cNum}/dislike")
+    fun dislikeBoardComment(
+        @Header("Authorization") authorization: String?,
+        @Path("bNum") bNum : Int,
+        @Path("cNum") cNum : Int
+    ) : Call<CallMethod>
+
+    //자유 게시판 댓글 신고
+    @POST("/boards/{bNum}/cmts/{cNum}/report")
+    fun reportBoardComment(
+        @Header("Authorization") authorization: String?,
+        @Path("bNum") bNum : Int,
+        @Path("cNum") cNum : Int,
+        @Body body: ReportMethod
+    ): Call<CallMethod>
 
     //이미지 업로드 및 주소받기
     @Multipart
@@ -157,6 +194,14 @@ interface UserApi {
         @Body body: PostNovelsDetail
     ) : Call<SNCR>
 
+    //소설 신고
+    @POST("/novels/{num}/report")
+    fun reportNovel(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int,
+        @Body body: ReportMethod
+    ): Call<CallMethod>
+
     //소설 댓글
     @POST("/novels/detail/{num}/cmts")
     fun sendNComment(
@@ -171,6 +216,30 @@ interface UserApi {
         @Query("nv-id") nv_id :Int,
         @Query("pagenum") pagenum : Int
     ) : Call<NvComments>
+
+    //자유게시판 댓글 좋아요 싫어요
+    @POST("/novels/{nNum}/cmts/{cNum}/like")
+    fun likeNovelComment(
+        @Header("Authorization") authorization: String?,
+        @Path("nNum") nNum : Int,
+        @Path("cNum") cNum : Int
+    ) : Call<CallMethod>
+
+    @POST("/novels/{nNum}/cmts/{cNum}/dislike")
+    fun dislikeNovelComment(
+        @Header("Authorization") authorization: String?,
+        @Path("nNum") nNum : Int,
+        @Path("cNum") cNum : Int
+    ) : Call<CallMethod>
+
+    //자유 게시판 댓글 신고
+    @POST("/novels/{nNum}/cmts/{cNum}/report")
+    fun reportNovelComment(
+        @Header("Authorization") authorization: String?,
+        @Path("nNum") nNum : Int,
+        @Path("cNum") cNum : Int,
+        @Body body: ReportMethod
+    ): Call<CallMethod>
 
     //각화 리뷰
     @Headers("Content-Type: application/json")
@@ -212,16 +281,5 @@ interface UserApi {
     ) : Call<BoardList>
 
 
-    //좋아요 싫어요
-    @POST("/boards/{num}/like")
-    fun likeBoard(
-        @Header("Authorization") authorization: String?,
-        @Path("num") num : Int
-    ) : Call<CallMethod>
 
-    @POST("/boards/{num}/dislike")
-    fun dislikeBoard(
-        @Header("Authorization") authorization: String?,
-        @Path("num") num : Int
-    ) : Call<CallMethod>
 }

@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,9 +30,11 @@ fun NovelCovers(
     viewModel.updateNovels()
     val novels = viewModel.n.collectAsState()
     val tags = viewModel.t.collectAsState()
-    val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
+    var visibility by remember {
+        mutableStateOf(false)
+    }
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
         floatingActionButton = {
@@ -65,14 +69,33 @@ fun NovelCovers(
                 ) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text("실시간 랭킹", fontSize = 32.sp, modifier = Modifier.padding(4.0.dp))
-                        Text("좋아요 순", fontSize = 18.sp, modifier = Modifier.padding(4.0.dp))
+                        Column {
+                            Text(viewModel.sNow.present, fontSize = 18.sp, modifier = Modifier
+                                .padding(4.0.dp)
+                                .clickable { visibility = !visibility })
+                            DropdownMenu(expanded = visibility, onDismissRequest = { visibility=false }) {
+                                viewModel.sList.forEach { list ->
+                                    DropdownMenuItem(onClick = {
+                                        viewModel.sNow = list
+                                        viewModel.updateNovels()
+                                        visibility=false
+                                    }) {
+                                        Text(text = list.present)
+                                    }
+                                }
+                            }
+                        }
+                        IconButton(onClick = {
+                            if(viewModel.asc=="ASC") {
+                                viewModel.asc = "DESC"
+                            }
+                            else {
+                                viewModel.asc="ASC"
+                            }
+                        }) {
+                            Icon(if(viewModel.asc=="DESC")Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,"")
+                        }
                     }
-                    Text(
-                        text = "더보기 ", fontSize = 14.sp, modifier = Modifier
-                            .clickable(onClick = {})
-                            .padding(4.0.dp)
-                    )
-
                 }
                 LazyColumn {
                     itemsIndexed(novels.value) { index, novel ->

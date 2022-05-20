@@ -54,6 +54,7 @@ class FreeBoardViewModel : ViewModel() {
     var currentCommentPosition by mutableStateOf(-1)
     var scrollState by mutableStateOf(LazyListState())
     var commentPage by mutableStateOf(1)
+    var reportComment by mutableStateOf(0)
 
     //WritingBoard
     var title by mutableStateOf("")
@@ -244,13 +245,13 @@ class FreeBoardViewModel : ViewModel() {
         })
     }
 
-    fun reportingBoard(num: Int, reportState: ReportState ,content : String){
+    fun reportingBoard(num: Int, reportState: ReportState){
         val context = MyApplication.ApplicationContext()
         val ac = read()
         val retrofitClass = RetrofitClass.api.reportBoard(
             ac.authorization,
             num,
-            ReportMethod(reportState.sendState, content)
+            ReportMethod(reportState.sendState, reportContent)
         )
         retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
             override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
@@ -261,6 +262,7 @@ class FreeBoardViewModel : ViewModel() {
                             "신고가 완료되었습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        reportContent = ""
                     }
                     "reduplication" -> {
                         Toast.makeText(
@@ -268,13 +270,14 @@ class FreeBoardViewModel : ViewModel() {
                             "이미 신고한 게시물입니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        reportContent = ""
                     }
                     else -> {
                         getAToken(context)
                         retrofitClass.cancel()
                         Handler(Looper.getMainLooper()).postDelayed(
                             {
-                                reportingBoard(num, reportState, content)
+                                reportingBoard(num, reportState)
                             }, 1000
                         )
                     }
@@ -284,7 +287,138 @@ class FreeBoardViewModel : ViewModel() {
             override fun onFailure(call: Call<CallMethod>, t: Throwable) {
                 t.printStackTrace()
             }
+        })
+    }
 
+    //좋아요 누르기
+    fun likeComment(bNum: Int,cNum: Int){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.likeBoardComment(ac.authorization, bNum, cNum)
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                when (response.body()!!.msg) {
+                    "OK" -> {
+                        Toast.makeText(
+                            context,
+                            "추천을 누르셨습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    "reduplication" -> {
+                        Toast.makeText(
+                            context,
+                            "이미 추천을 누르셨습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    else -> {
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed(
+                            {
+                                likeComment(bNum, cNum)
+                            }, 1000
+                        )
+                    }
+                }
+
+            }
+
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+
+    //싫어요 누르기
+    fun dislikeComment(bNum: Int, cNum: Int){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.dislikeBoardComment(ac.authorization, bNum,cNum)
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                when (response.body()!!.msg) {
+                    "OK" -> {
+                        Toast.makeText(
+                            context,
+                            "비추천을 누르셨습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    "reduplication" -> {
+                        Toast.makeText(
+                            context,
+                            "이미 비추천을 누르셨습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    else -> {
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed(
+                            {
+                                dislikeComment(bNum, cNum)
+                            }, 1000
+                        )
+                    }
+                }
+
+            }
+
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+
+
+    //댓글 신고
+    fun reportingComment(bNum: Int, reportState: ReportState){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.reportBoardComment(
+            ac.authorization,
+            bNum,
+            reportComment,
+            ReportMethod(reportState.sendState, reportContent)
+        )
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                when (response.body()!!.msg) {
+                    "OK" -> {
+                        Toast.makeText(
+                            context,
+                            "신고가 완료되었습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        reportContent = ""
+                    }
+                    "reduplication" -> {
+                        Toast.makeText(
+                            context,
+                            "이미 신고한 게시물입니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        reportContent = ""
+                    }
+                    else -> {
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed(
+                            {
+                                reportingComment(bNum, reportState)
+                            }, 1000
+                        )
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
         })
     }
 
