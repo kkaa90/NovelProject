@@ -20,6 +20,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,6 +60,7 @@ fun ShowBoard(
     LaunchedEffect(true) {
         viewModel.updateBoard(num)
         viewModel.updateComments(num, 1)
+        viewModel.a=viewModel.read()
         Handler(Looper.getMainLooper()).postDelayed(
             {
                 viewModel.viewModelScope.launch {
@@ -399,11 +401,23 @@ fun ShowComment(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(comment.brdCmtDislike.toString(), fontSize = 16.sp)
                     }
-                    IconButton(onClick = {
-                        viewModel.reportComment=comment.brdCmtId
-                        visibility.value=true}) {
-                        Icon(painter = painterResource(id = R.drawable.ic_baseline_report_24), contentDescription = "")
+                    println(viewModel.a.memId)
+                    println(comment.memId.toString())
+                    if(viewModel.a.memId==comment.memId.toString()){
+                        TextButton(onClick = {
+
+                        }) {
+                            Text(text="삭제")
+                        }
                     }
+                    else {
+                        TextButton(onClick = {
+                            viewModel.reportComment=comment.brdCmtId
+                            visibility.value=true}) {
+                            Text(text = "신고")
+                        }
+                    }
+                    
                 }
 
             }
@@ -526,11 +540,19 @@ fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: 
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(comment.brdCmtDislike.toString(), fontSize = 16.sp)
                         }
-                        IconButton(onClick = {
-                            viewModel.reportComment=comment.brdCmtId
-                            visibility.value=true
-                        }) {
-                            Icon(painter = painterResource(id = R.drawable.ic_baseline_report_24), contentDescription = "")
+                        if(viewModel.a.memId==comment.memId.toString()){
+                            TextButton(onClick = {
+
+                            }) {
+                                Text(text="삭제")
+                            }
+                        }
+                        else {
+                            TextButton(onClick = {
+                                viewModel.reportComment=comment.brdCmtId
+                                visibility.value=true}) {
+                                Text(text = "신고")
+                            }
                         }
                     }
                 }
@@ -590,7 +612,9 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>, viewModel: Fre
                     value = viewModel.reportContent,
                     onValueChange = { viewModel.reportContent = it },
                     label = { Text(text = "자세한 사유") },
-                    modifier = Modifier.fillMaxWidth().height(100.dp))
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp))
                 Spacer(modifier = Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     OutlinedButton(onClick = {
@@ -650,7 +674,9 @@ fun ShowCReportDialog(bNum: Int, visibility: MutableState<Boolean>, viewModel: F
                     value = viewModel.reportContent,
                     onValueChange = { viewModel.reportContent = it },
                     label = { Text(text = "자세한 사유") },
-                    modifier = Modifier.fillMaxWidth().height(100.dp))
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp))
                 Spacer(modifier = Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     OutlinedButton(onClick = {
@@ -671,3 +697,20 @@ fun ShowCReportDialog(bNum: Int, visibility: MutableState<Boolean>, viewModel: F
     }
 }
 
+@Composable
+fun deleteBoardDialog(){
+    Dialog(onDismissRequest = { /*TODO*/ }) {
+        Surface() {
+            
+        }
+    }
+}
+
+@Composable
+fun deleteCommentDialog(){
+    Dialog(onDismissRequest = { /*TODO*/ }) {
+        Surface() {
+
+        }
+    }
+}

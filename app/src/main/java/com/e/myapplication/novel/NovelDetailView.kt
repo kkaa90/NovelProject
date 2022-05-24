@@ -1,25 +1,29 @@
 package com.e.myapplication.novel
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.opengl.Visibility
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,14 +31,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.e.myapplication.AccountInfo
+import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
 import com.e.myapplication.RouteAction
+import com.e.myapplication.board.FreeBoardViewModel
 import com.e.myapplication.dataclass.*
 import com.e.myapplication.retrofit.RetrofitClass
+import com.e.myapplication.ui.theme.gray
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +57,7 @@ import retrofit2.Response
 fun NovelDetailView(
     nNum: Int,
     bNum: Int,
+    viewModel: NovelViewModel,
     routeAction: RouteAction
 ) {
     println("nNum: $nNum, bNum: $bNum")
@@ -57,160 +69,239 @@ fun NovelDetailView(
     }
     val novel =
         remember {
-            mutableStateOf(NovelsDetail(NovelsDetail.Novel(
-                listOf(), 0, 0, "",
-                "", 0, 0, 0, 0,
-                0, 0, "", "", ""),
-            NovelsDetail.User("","",""),"")
+            mutableStateOf(
+                NovelsDetail(
+                    NovelsDetail.Novel(
+                        listOf(), 0, 0, "",
+                        "", 0, 0, 0, 0,
+                        0, 0, "", "", ""
+                    ),
+                    NovelsDetail.User("", "", ""), ""
+                )
             )
         }
-    val comments = remember{ mutableStateListOf<NvComments.Comment>() }
+    val comments = remember { mutableStateListOf<NvComments.Comment>() }
     var visibility by remember { mutableStateOf(false) }
     var commentV by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
-    LaunchedEffect(true){
+    var listVisibility = remember { mutableStateOf(false) }
+    var rnVisibility = remember { mutableStateOf(false) }
+    var rcVisibility = remember { mutableStateOf(false) }
+    val backStackEntry = routeAction.getNow.backQueue
+    LaunchedEffect(true) {
+        viewModel.detailNow=bNum
         getNovelBoard(context, nNum = nNum, bNum = bNum, novel, routeAction)
         getC(nNum, bNum, comments)
+        viewModel.a = viewModel.read()
+        println(backStackEntry)
     }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        Scaffold(topBar = {
-            AnimatedVisibility(visible = visibility) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { routeAction.goBack() }) {
-                            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "")
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(text = novel.value.novel.nvTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+
+
+    Scaffold(topBar = {
+        AnimatedVisibility(visible = visibility) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {
+                        routeAction.goBack()
+                    }) {
+                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "")
                     }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = novel.value.novel.nvTitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
 
-                    Row(verticalAlignment = Alignment.CenterVertically){
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable {
+                            listVisibility.value = !listVisibility.value
+                        }) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "",
+                            modifier = Modifier.size(14.sp.value.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("목록", fontSize = 14.sp)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    if(viewModel.a.memId==novel.value.novel.memId.toString()){
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.List, contentDescription = "", modifier = Modifier.size(14.sp.value.dp))
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "",
+                                modifier = Modifier.size(14.sp.value.dp)
+                            )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("목록", fontSize = 14.sp)
+                            Text("수정", fontSize = 14.sp)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(painter = painterResource(R.drawable.ic_baseline_report_24), contentDescription = "", modifier = Modifier.size(14.sp.value.dp))
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "",
+                                modifier = Modifier.size(14.sp.value.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("삭제", fontSize = 14.sp)
+                        }
+                    }
+                    else {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
+                            rnVisibility.value=true
+                        }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_baseline_report_24),
+                                contentDescription = "",
+                                modifier = Modifier.size(14.sp.value.dp)
+                            )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("신고", fontSize = 14.sp)
                         }
                     }
-
+                    Spacer(modifier = Modifier.width(8.dp))
                 }
+
             }
+        }
 
-        },
-            bottomBar = {
-                AnimatedVisibility(visible = visibility) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Min),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
+    },
+        bottomBar = {
+            AnimatedVisibility(visible = visibility) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
 
-                        Text(text = "댓글", modifier = Modifier
-                            .clickable { commentV = !commentV }
-                            .padding(8.dp))
+                    Text(text = "댓글", modifier = Modifier
+                        .clickable { commentV = !commentV }
+                        .padding(8.dp))
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "평점")
-                            Spacer(modifier = Modifier.width(4.0.dp))
-                            Column {
-                                Row(
-                                    modifier = Modifier
-                                        .border(
-                                            1.dp,
-                                            MaterialTheme.colors.secondary,
-                                            RectangleShape
-                                        )
-                                        .clickable { rExpanded = !rExpanded }) {
-                                    Text(text = rName)
-                                    Icon(
-                                        imageVector = Icons.Filled.ArrowDropDown,
-                                        contentDescription = ""
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "평점")
+                        Spacer(modifier = Modifier.width(4.0.dp))
+                        Column {
+                            Row(
+                                modifier = Modifier
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colors.secondary,
+                                        RectangleShape
                                     )
-                                }
-                                DropdownMenu(
-                                    expanded = rExpanded,
-                                    onDismissRequest = { rExpanded = false }) {
-                                    rPoint.forEach { rItem ->
-                                        DropdownMenuItem(onClick = {
-                                            rName = rItem; rExpanded = false
-                                        }) {
-                                            Text(text = rItem)
-                                        }
+                                    .clickable { rExpanded = !rExpanded }) {
+                                Text(text = rName)
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowDropDown,
+                                    contentDescription = ""
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = rExpanded,
+                                onDismissRequest = { rExpanded = false }) {
+                                rPoint.forEach { rItem ->
+                                    DropdownMenuItem(onClick = {
+                                        rName = rItem; rExpanded = false
+                                    }) {
+                                        Text(text = rItem)
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.width(4.0.dp))
-                            TextButton(onClick = { sendR(context, bNum, nNum, rName) }) {
-                                Text(text = "리뷰 전송")
-                            }
+                        }
+                        Spacer(modifier = Modifier.width(4.0.dp))
+                        TextButton(onClick = { sendR(context, bNum, nNum, rName) }) {
+                            Text(text = "리뷰 전송")
                         }
                     }
                 }
-            }) { innerpadding ->
-            BackHandler {
-                if (commentV) commentV = false
-                else if (!commentV && visibility) visibility = false
-                else routeAction.goBack()
             }
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerpadding)
-            ) {
-                if (!commentV) {
-                    LazyColumn(
-                        Modifier
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null
-                            ) { visibility = !visibility }
-                            .fillMaxSize()) {
-                        item {
-                            ShowBoard(novel.value)
-                        }
-                    }
-                } else {
-                    var content by remember {
-                        mutableStateOf("")
-                    }
-                    Column(Modifier.fillMaxSize()) {
-                        Row {
-                            OutlinedTextField(value = content, onValueChange = { content = it })
-                            Button(onClick = {
-                                sendC(context, nNum, bNum, 0, content, comments)
-                            }) {
-                                Text(text = "댓글 작성")
-                            }
-                        }
-                        LazyColumn(Modifier.fillMaxWidth()) {
-                            itemsIndexed(comments) { index, c ->
-                                if (c.nvCmtReply == 0) {
-                                    ShowComment(comment = c, nNum, bNum, comments, index)
-                                }
-                            }
-                        }
-                    }
-
-                }
+        }) { innerpadding ->
+        BackHandler {
+            if (commentV||listVisibility.value) {
+                commentV = false
+                listVisibility.value=false
+            } else if ((!commentV&&!listVisibility.value) && visibility) {
+                visibility = false
+            } else routeAction.goBack()
+        }
+        Box(modifier = Modifier.zIndex(if (listVisibility.value) 1f else 0f)) {
+            AnimatedVisibility(visible = listVisibility.value) {
+                NovelDetailList(
+                    paddingValues = innerpadding,
+                    viewModel = viewModel,
+                    num = nNum,
+                    routeAction = routeAction,
+                    visibility = listVisibility
+                )
             }
 
         }
+        Box() {
+            AnimatedVisibility(visible = rnVisibility.value) {
+                ShowNovelReport(num = bNum, visibility = rnVisibility, viewModel = viewModel)
+            }
+
+        }
+        Box() {
+            AnimatedVisibility(visible = rcVisibility.value) {
+                ShowNovelCReport(bNum = bNum, visibility = rcVisibility, viewModel = viewModel)
+            }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerpadding)
+        ) {
+            if (!commentV) {
+                LazyColumn(
+                    Modifier
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null
+                        ) { visibility = !visibility }
+                        .fillMaxSize()) {
+                    item {
+                        ShowBoard(novel.value)
+                    }
+                }
+            } else {
+                var content by remember {
+                    mutableStateOf("")
+                }
+                Column(Modifier.fillMaxSize()) {
+                    Row {
+                        OutlinedTextField(value = content, onValueChange = { content = it })
+                        Button(onClick = {
+                            sendC(context, nNum, bNum, 0, content, comments)
+                        }) {
+                            Text(text = "댓글 작성")
+                        }
+                    }
+                    LazyColumn(Modifier.fillMaxWidth()) {
+                        itemsIndexed(comments) { index, c ->
+                            if (c.nvCmtReply == 0) {
+                                ShowComment(comment = c, nNum, bNum, comments, index, rcVisibility, viewModel)
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+
     }
+
 }
 
 @Composable
@@ -226,80 +317,303 @@ fun ShowComment(
     nNum: Int,
     bNum: Int,
     comments: SnapshotStateList<NvComments.Comment>,
-    index: Int
+    index: Int,
+    rcVisibility: MutableState<Boolean>,
+    viewModel: NovelViewModel
 ) {
     val context = LocalContext.current
     var visibility by remember { mutableStateOf(false) }
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clickable { visibility = !visibility }) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                painter = painterResource(id = R.drawable.schumi),
-                contentDescription = "",
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .border(1.dp, Color.Black, CircleShape)
-                    .size(16.dp)
-            )
-            Text(text = comment.memNickname)
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = comment.nvCmtContents)
-        AnimatedVisibility(visible = visibility) {
-            var content by remember {
-                mutableStateOf("")
-            }
-            Column(Modifier.fillMaxWidth()) {
-                Row {
-                    Spacer(modifier = Modifier.width(10.dp))
-                    OutlinedTextField(value = content, onValueChange = { content = it })
-                    Button(onClick = {
-                        sendC(context, nNum, bNum, comment.nvCmtId, content, comments)
-                    }) {
-                        Text(text = "댓글 작성")
-                    }
-
+    Card(modifier = Modifier
+        .fillMaxWidth()
+        .border(0.25.dp, Color.Gray))
+    {
+        Column(Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = comment.memNickname, modifier = Modifier.padding(horizontal = 8.dp), fontWeight = FontWeight.Bold)
+            Row() {
+                Spacer(modifier = Modifier.width(24.dp))
+                Column() {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = comment.nvCmtDatetime)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = comment.nvCmtContents)
                 }
-
-
             }
-        }
-        if (comment.nvCmtReplynum != 0) {
-            for (i: Int in index + 1 until comment.nvCmtReplynum + index + 1) {
-                Row {
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.schumi),
-                                contentDescription = "",
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .border(1.dp, Color.Black, CircleShape)
-                                    .size(16.dp)
-                            )
-                            Text(text = comments[i].memNickname)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(modifier = Modifier.clickable { visibility=!visibility }){
+                    Text(text = "댓글", fontSize = 10.sp)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Row(modifier = Modifier.clickable {  }, verticalAlignment = Alignment.CenterVertically){
+                    Icon(imageVector = Icons.Default.ThumbUp, contentDescription = "", modifier = Modifier.size(10.sp.value.dp))
+                    Text(text = " 추천 ${comment.nvCmtLike}", fontSize = 10.sp)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Row(modifier = Modifier.clickable {  }, verticalAlignment = Alignment.CenterVertically){
+                    Icon(imageVector = Icons.Default.ThumbUp, contentDescription = "", modifier = Modifier.size(10.sp.value.dp))
+                    Text(text = " 비추천 ${comment.nvCmtLike}", fontSize = 10.sp)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                if(viewModel.a.memId==comment.memId.toString()){
+                    Row(modifier = Modifier.clickable {  }){
+                        Text(text = "삭제", fontSize = 10.sp)
+                    }
+                }
+                else {
+                    Row(modifier = Modifier.clickable {
+                        viewModel.reportComment = comment.nvCmtId
+                        rcVisibility.value=!rcVisibility.value
+                    }){
+                        Text(text = "신고", fontSize = 10.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+            AnimatedVisibility(visible = visibility) {
+                var content by remember {
+                    mutableStateOf("")
+                }
+                Column(Modifier.fillMaxWidth()) {
+                    Row {
+                        Spacer(modifier = Modifier.width(10.dp))
+                        OutlinedTextField(value = content, onValueChange = { content = it })
+                        Button(onClick = {
+                            sendC(context, nNum, bNum, comment.nvCmtId, content, comments)
+                        }) {
+                            Text(text = "댓글 작성")
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = comments[i].nvCmtContents)
+
+                    }
+
+
+                }
+            }
+            if (comment.nvCmtReplynum != 0) {
+                for (i: Int in index + 1 until comment.nvCmtReplynum + index + 1) {
+                    Divider(thickness = 0.25.dp, color= Color.Gray)
+                    Row {
+                        Spacer(modifier = Modifier.width(20.dp))
+                        Column {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = comment.memNickname, modifier = Modifier.padding(horizontal = 8.dp), fontWeight = FontWeight.Bold)
+                            Row() {
+                                Spacer(modifier = Modifier.width(24.dp))
+                                Column() {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = comment.nvCmtDatetime)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(text = comment.nvCmtContents)
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                Row(modifier = Modifier.clickable {  }, verticalAlignment = Alignment.CenterVertically){
+                                    Icon(imageVector = Icons.Default.ThumbUp, contentDescription = "", modifier = Modifier.size(10.sp.value.dp))
+                                    Text(text = " 추천 ${comment.nvCmtLike}", fontSize = 10.sp)
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Row(modifier = Modifier.clickable {  },verticalAlignment = Alignment.CenterVertically){
+                                    Icon(imageVector = Icons.Default.ThumbUp, contentDescription = "", modifier = Modifier.size(10.sp.value.dp))
+                                    Text(text = " 비추천 ${comment.nvCmtLike}", fontSize = 10.sp)
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                if(viewModel.a.memId==comment.memId.toString()){
+                                    Row(modifier = Modifier.clickable {  }){
+                                        Text(text = "삭제", fontSize = 10.sp)
+                                    }
+                                }
+                                else {
+                                    Row(modifier = Modifier.clickable {
+                                        viewModel.reportComment = comment.nvCmtId
+                                        rcVisibility.value=!rcVisibility.value
+                                    }){
+                                        Text(text = "신고", fontSize = 10.sp)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                            }
+                        }
+
                     }
 
                 }
-
             }
-        }
 
+        }
     }
 
 }
+
+@SuppressLint("StateFlowValueCalledInComposition")
+@Composable
+fun NovelDetailList(
+    paddingValues: PaddingValues,
+    viewModel: NovelViewModel,
+    num: Int,
+    routeAction: RouteAction,
+    visibility: MutableState<Boolean>,
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .background(gray)
+    ) {
+        Row() {
+            IconButton(onClick = { visibility.value = false }) {
+                Icon(imageVector = Icons.Default.Close, contentDescription = "")
+            }
+        }
+        LazyColumn {
+            items(viewModel.d.value) { d ->
+                NovelDetailListItem1(
+                    novelsInfo = d,
+                    num = num,
+                    test = viewModel.tree.value,
+                    routeAction = routeAction,
+                    viewModel = viewModel
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ShowNovelReport(num: Int, visibility: MutableState<Boolean>, viewModel: NovelViewModel) {
+    var mSelected by remember {
+        mutableStateOf(reportState[0])
+    }
+    var mVisibility by remember {
+        mutableStateOf(false)
+    }
+    Dialog(onDismissRequest = {
+        viewModel.reportContent = ""
+        visibility.value = false
+    }) {
+        Surface(
+            modifier = Modifier
+                .wrapContentSize(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "신고", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Column {
+                    Row(modifier = Modifier.clickable { mVisibility = !mVisibility }) {
+                        Text(text = "  ${mSelected.presentState}")
+                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "")
+                    }
+                    DropdownMenu(
+                        expanded = mVisibility,
+                        onDismissRequest = { mVisibility = false }) {
+                        reportState.forEach {
+                            DropdownMenuItem(onClick = { mSelected = it; mVisibility = false }) {
+                                Text(text = it.presentState)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+                OutlinedTextField(
+                    value = viewModel.reportContent,
+                    onValueChange = { viewModel.reportContent = it },
+                    label = { Text(text = "자세한 사유") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    OutlinedButton(onClick = {
+                        viewModel.reportContent = ""
+                        visibility.value = false }) {
+                        Text(text = "취소")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    OutlinedButton(onClick = {
+                        viewModel.reportingNovel(num, mSelected)
+                        visibility.value = false
+                        println("게시글 신고")
+                    },enabled = visibility.value) {
+                        Text(text = "확인")
+                    }
+                }
+            }
+        }
+    }
+}
+@Composable
+fun ShowNovelCReport(bNum: Int, visibility: MutableState<Boolean>, viewModel: NovelViewModel) {
+    var mSelected by remember {
+        mutableStateOf(reportState[0])
+    }
+    var mVisibility by remember {
+        mutableStateOf(false)
+    }
+    Dialog(onDismissRequest = {
+        viewModel.reportContent = ""
+        visibility.value = false }) {
+        Surface(
+            modifier = Modifier
+                .wrapContentSize(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "댓글 신고", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Column {
+                    Row(modifier = Modifier.clickable { mVisibility = !mVisibility }) {
+                        Text(text = "  ${mSelected.presentState}")
+                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "")
+                    }
+                    DropdownMenu(
+                        expanded = mVisibility,
+                        onDismissRequest = { mVisibility = false }) {
+                        reportState.forEach {
+                            DropdownMenuItem(onClick = { mSelected = it; mVisibility = false }) {
+                                Text(text = it.presentState)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+                OutlinedTextField(
+                    value = viewModel.reportContent,
+                    onValueChange = { viewModel.reportContent = it },
+                    label = { Text(text = "자세한 사유") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    OutlinedButton(onClick = {
+                        viewModel.reportContent = ""
+                        visibility.value = false }) {
+                        Text(text = "취소")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    OutlinedButton(onClick = {
+                        viewModel.reportingNComment(bNum, mSelected)
+                        visibility.value = false
+                        println("댓글 신고")
+                    }, enabled = visibility.value) {
+                        Text(text = "확인")
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 
 fun getNovelBoard(
     context: Context,
     nNum: Int,
     bNum: Int,
-    novel : MutableState<NovelsDetail>,
+    novel: MutableState<NovelsDetail>,
     routeAction: RouteAction
 ) {
     val repository = ProtoRepository(context)
@@ -480,3 +794,4 @@ fun sendR(context: Context, bNum: Int, nNum: Int, rvPoint: String) {
         }
     })
 }
+

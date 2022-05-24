@@ -116,6 +116,13 @@ interface UserApi {
         @Query("page") page: Int
     ): Call<Comments>
 
+    @DELETE("/boards/{bNum}/cmts/{cNum}")
+    fun deleteComment(
+        @Header("Authorization") authorization: String?,
+        @Path("bNum") bNum : Int,
+        @Path("cNum") cNum : Int
+    ): Call<CallMethod>
+
     //자유게시판 댓글 좋아요 싫어요
     @POST("/boards/{bNum}/cmts/{cNum}/like")
     fun likeBoardComment(

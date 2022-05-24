@@ -66,6 +66,8 @@ class FreeBoardViewModel : ViewModel() {
     var imageNum by mutableStateOf("1")
     var backVisibility by mutableStateOf(false)
 
+    var a by mutableStateOf(read())
+
     //계정 정보 읽어오기
     fun read(): AccountInfo {
         val context = MyApplication.ApplicationContext()
@@ -155,6 +157,39 @@ class FreeBoardViewModel : ViewModel() {
             }
 
             override fun onFailure(call: Call<PostBoardResponse>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+
+    //댓글 삭제
+    fun deleteComment(bNum: Int, cNum: Int){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.deleteComment(ac.authorization,bNum, cNum)
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
+            override fun onResponse(
+                call: Call<CallMethod>,
+                response: Response<CallMethod>
+            ) {
+                val result = response.body()?.msg
+                println(result)
+                if (result == "OK") {
+                    updateComments(bNum,1)
+                } else {
+                    getAToken(context)
+                    retrofitClass.cancel()
+                    Handler(Looper.getMainLooper()).postDelayed(
+                        {
+                            deleteComment(bNum, cNum)
+                        }, 1000
+                    )
+
+                }
+            }
+
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
                 t.printStackTrace()
             }
 

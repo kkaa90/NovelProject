@@ -6,6 +6,8 @@ import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -31,16 +33,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.room.Room
@@ -175,7 +180,8 @@ enum class NAVROUTE(val routeName: String, val description: String){
     NOVELDETAIL("novelDetail","소설 보기"),
     WRITINGNOVELDETAIL("writingNovelDetail","소설 쓰기"),
     SEARCH("search","검색"),
-    NOTIFICATION("notification","알림")
+    NOTIFICATION("notification","알림"),
+    LOADING("loading","로딩")
 }
 
 // 네비게이션 라우트 액션
@@ -198,11 +204,24 @@ class RouteAction(navHostController: NavHostController){
             popUpTo(0)
         }
     }
+    val goList: (String) -> Unit = {route ->
+
+        navHostController.backQueue.removeLast()
+        navHostController.navigate(route)
+    }
+    val goDetail: (Int, Int) -> Unit = { nNum, bNum->
+        navHostController.navigate("novelDetail?nNum=${nNum}&bNum=${bNum}"){
+            popUpTo(NAVROUTE.NOVELDETAILSLIST.routeName+"/${nNum}"){
+                inclusive = false
+            }
+        }
+    }
+    val getNow = navHostController
 
 }
 
 @Composable
-fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
+fun NavigationGraph(starting: String = NAVROUTE.LOADING.routeName){
     // 내비게이션 컨트롤러
     val navController = rememberNavController()
 
@@ -214,6 +233,9 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
     // NavHost로 내비게이션 결정
     // 내비게이션 연결 설정
     NavHost(navController, starting) {
+        composable(NAVROUTE.LOADING.routeName){
+            LoadingView(routeAction = routeAction)
+        }
         composable(NAVROUTE.MAIN.routeName){
             ShowNovelList(routeAction,mainViewModel)
         }
@@ -244,7 +266,7 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
         }
         composable(NAVROUTE.NOVELDETAILSLIST.routeName+"/{num}"){ nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
-            ShowPostList(routeAction, num)
+            ShowPostList(routeAction, num, novelViewModel)
         }
         composable(NAVROUTE.NOVELDETAIL.routeName+"?nNum={nNum}&bNum={bNum}",
             arguments = listOf(
@@ -258,7 +280,7 @@ fun NavigationGraph(starting: String = NAVROUTE.MAIN.routeName){
             )){ nav ->
             val nNum = nav.arguments?.getString("nNum")!!.toInt()
             val bNum = nav.arguments?.getString("bNum")!!.toInt()
-            NovelDetailView(nNum, bNum, routeAction)
+            NovelDetailView(nNum, bNum, novelViewModel, routeAction)
         }
         composable(NAVROUTE.WRITINGNOVELDETAIL.routeName+"/{num}"){nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
@@ -453,13 +475,14 @@ fun NovelCoverListItem(novel: Novels.Content, tag: List<String>, routeAction: Ro
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun DefaultPreview3() {
-    MyApplicationTheme {
-
+fun LoadingView(routeAction: RouteAction){
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "TreeNovel", fontSize = 32.sp, fontStyle = FontStyle.Italic)
+        Handler(Looper.getMainLooper()).postDelayed({routeAction.clearBack()},1000)
     }
 }
+
 fun getToken(){
     FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task->
         if(!task.isSuccessful){

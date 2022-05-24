@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
+import androidx.navigation.NavBackStackEntry
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.MyApplication
 import com.e.myapplication.RouteAction
@@ -36,17 +37,23 @@ class NovelViewModel : ViewModel(){
     private val _t = MutableStateFlow(emptyList<List<String>>())
     val t = _t.asStateFlow()
     //소설 게시물 목록
-    private val _d = MutableStateFlow(emptyList<NovelsInfo.NovelInfo>())
+    private val _d = MutableStateFlow(mutableListOf<NovelsInfo.NovelInfo>())
     val d = _d.asStateFlow()
+    //에피소드
+    private val _e = MutableStateFlow(mutableMapOf<Int, List<Int>>())
+    val e = _e.asStateFlow()
     //소설 커버
     private val _c = MutableStateFlow(NovelsInfo.NovelCover())
     val c = _c.asStateFlow()
     //소설 트리
-    private val _tree = MutableStateFlow(emptyMap<Int, List<NovelsInfo.NovelInfo>>())
+    private val _tree = MutableStateFlow(mutableMapOf<Int, List<NovelsInfo.NovelInfo>>())
     val tree = _tree.asStateFlow()
     //소설 조회순
-    private val _h = MutableStateFlow(emptyList<NovelsInfo.NovelInfo>())
+    private val _h = MutableStateFlow(mutableListOf<NovelsInfo.NovelInfo>())
     val h = _h.asStateFlow()
+    //소설 키
+
+    var back by mutableStateOf("")
 
     //소설 커버 작성
     var nCTitle by mutableStateOf("")
@@ -71,6 +78,13 @@ class NovelViewModel : ViewModel(){
     var nDImageNum by mutableStateOf("1")
     var nDPoint by mutableStateOf("0")
 
+    //소설 게시물
+    var detailNow by mutableStateOf(-1)
+    var reportContent by mutableStateOf("")
+    var reportComment by mutableStateOf(0)
+
+    var a by mutableStateOf(read())
+
     //소설 커버 목록
     class NCSort(val present: String, val v: String)
     val sList = listOf(NCSort("최신 순", "nvcId"),
@@ -80,7 +94,7 @@ class NovelViewModel : ViewModel(){
     var asc by mutableStateOf("DESC")
 
     //계정 정보 읽기
-    private fun read(): AccountInfo {
+    fun read(): AccountInfo {
         val context = MyApplication.ApplicationContext()
         val repository = ProtoRepository(context)
         var accountInfo: AccountInfo
@@ -273,9 +287,155 @@ class NovelViewModel : ViewModel(){
     }
 
     fun getNovelsList(
-
+        num: Int
     ){
+        _d.value.clear()
+        _e.value.clear()
+        _tree.value.clear()
+        _h.value.clear()
+        val retrofitClass = RetrofitClass.api.getNovelList(num)
+        retrofitClass.enqueue(object : retrofit2.Callback<NovelsInfo>{
+            override fun onResponse(call: Call<NovelsInfo>, response: Response<NovelsInfo>) {
+                val r = response.body()
+                _d.value.addAll(r!!.novelInfo)
+                _e.value.putAll(r.episode)
+                if(_d.value.size!=0){
+                    for(key in _e.value.keys){
+                        val epList = mutableListOf<NovelsInfo.NovelInfo>()
+                        epList.add(_d.value.find { it.nvId==key }!!)
+                        val ep = _e.value[key]
+                        if(ep!!.isNotEmpty()){
+                            for(i in ep.indices){
+                                _d.value.find { it.nvId==ep[i] }.let {
+                                    epList.add(it!!)
+                                }
+                            }
+                        }
+                        _tree.value[key] = epList
+                    }
+                }
+                _c.value = r.novelCover
+                _d.value.sortBy {
+                    it.nvId
+                }
+                sortList()
+            }
 
+            override fun onFailure(call: Call<NovelsInfo>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+    fun sortList(){
+        _h.value.clear()
+        val temp = mutableListOf<NovelsInfo.NovelInfo>()
+        val temp2 = mutableListOf<NovelsInfo.NovelInfo>()
+        if(_d.value.isNotEmpty()){
+            temp2.add(_d.value.find { it.nvId== _e.value.keys.first()}!!)
+            while (true){
+                val ep = _e.value[temp2[temp2.size-1].nvId]!!
+                if (ep.isNotEmpty()){
+                    temp.clear()
+                    for (i in ep.indices){
+                        _d.value.find { it.nvId == ep[i] }.let {
+                            temp.add(it!!)
+                        }
+                    }
+                    temp2.add(temp.sortedByDescending { it.nvHit }[0])
+                }
+                else {
+                    break
+                }
+            }
+            _h.value.addAll(temp2)
+        }
+    }
+
+    fun reportingNovel(num: Int, reportState: ReportState){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.reportNovel(ac.authorization,num,
+            ReportMethod(reportState.sendState, reportContent)
+        )
+        println(retrofitClass.request().toString())
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                when (response.body()!!.msg) {
+                    "OK" -> {
+                        Toast.makeText(
+                            context,
+                            "신고가 완료되었습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        reportContent = ""
+                    }
+                    "reduplication" -> {
+                        Toast.makeText(
+                            context,
+                            "이미 신고한 게시물입니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        reportContent = ""
+                    }
+                    else -> {
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed(
+                            {
+                                reportingNovel(num, reportState)
+                            }, 1000
+                        )
+                    }
+                }
+            }
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
+        })
+    }
+
+    fun reportingNComment(num: Int, reportState: ReportState){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.reportNovelComment(ac.authorization,num,reportComment,ReportMethod(reportState.sendState,reportContent))
+        println(retrofitClass.request().toString())
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                when (response.body()!!.msg) {
+                    "OK" -> {
+                        Toast.makeText(
+                            context,
+                            "신고가 완료되었습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        reportContent = ""
+                    }
+                    "reduplication" -> {
+                        Toast.makeText(
+                            context,
+                            "이미 신고한 게시물입니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        reportContent = ""
+                    }
+                    else -> {
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed(
+                            {
+                                reportingNComment(num, reportState)
+                            }, 1000
+                        )
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
     }
 
 

@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberImagePainter
 import com.e.myapplication.*
 import com.e.myapplication.R
@@ -39,6 +40,7 @@ import com.e.myapplication.dataclass.nvcr
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.dimGray
+import com.e.myapplication.ui.theme.gray
 import com.e.myapplication.ui.theme.skyBlue
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
@@ -55,46 +57,41 @@ import retrofit2.Response
 @Composable
 fun ShowPostList(
     routeAction: RouteAction,
-    num: Int
+    num: Int,
+    viewModel: NovelViewModel
 ) {
-    val novelInfo = remember { mutableStateListOf<NovelsInfo.NovelInfo>() }
-    val episode = remember { mutableStateMapOf<Int, List<Int>>() }
-    val t = remember { mutableStateListOf<NovelsInfo.NovelInfo>() }
-    val cover = remember {
-        mutableStateOf(
-            NovelsInfo.NovelCover(
-                "1", "", 0, 0,
-                0, "", 0, 0
-            )
-        )
-    }
-    val test = remember {
-        mutableStateMapOf<Int, List<NovelsInfo.NovelInfo>>()
-    }
     LaunchedEffect(true) {
-        getNovelsList(num, novelInfo, episode, cover, test, t)
+
+        viewModel.detailNow = -1
+        viewModel.getNovelsList(num)
     }
+    val novelInfo = viewModel.d.collectAsState()
+    val episode = viewModel.e.collectAsState()
+    val t = viewModel.h.collectAsState()
+    val cover = viewModel.c.collectAsState()
+    val test = viewModel.tree.collectAsState()
+
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     val m = remember {
         mutableStateOf("")
     }
-    var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("목록", "댓글")
+//    var tabIndex by remember { mutableStateOf(0) }
+//    val tabs = listOf("목록", "댓글")
     val dMenu: MutableList<String> = ArrayList()
     dMenu.add("전체")
     dMenu.add("조회순")
-    for (key in episode.keys) {
+    for (key in episode.value.keys) {
         dMenu.add(key.toString())
     }
     var dMenuExpanded by remember { mutableStateOf(false) }
-    var dMenuName: String by remember { mutableStateOf(dMenu[0]) }
+    var dMenuName: String by remember { mutableStateOf(dMenu[1]) }
     val epList = remember {
         mutableStateListOf<NovelsInfo.NovelInfo>()
     }
     if (epList.size == 0) {
-        epList.addAll(t)
+        epList.addAll(t.value)
     }
     var eIsEmpty by remember { mutableStateOf(false) }
     getToken(m)
@@ -206,120 +203,119 @@ fun ShowPostList(
                     }
                 }
             }
-            stickyHeader{
-                TabRow(
-                    selectedTabIndex = tabIndex,
-                    modifier = Modifier.height(36.dp),
-                    contentColor = Color.Black
-
+//            stickyHeader{
+//                TabRow(
+//                    selectedTabIndex = tabIndex,
+//                    modifier = Modifier.height(36.dp),
+//                    contentColor = Color.Black
+//
+//                ) {
+//                    tabs.forEachIndexed { index, text ->
+//                        Tab(
+//                            selected = tabIndex == index,
+//                            onClick = { tabIndex = index },
+//                            text = {
+//                                Text(
+//                                    text,
+//                                    color = if (tabIndex == index) Color.White else Color.Black
+//                                )
+//                            },
+//                            modifier = Modifier.background(if (tabIndex == index) Color.Black else Color.White)
+//                        )
+//                    }
+//                }
+//            }
+//            when (tabIndex) {
+//                0 -> {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(gray),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    tabs.forEachIndexed { index, text ->
-                        Tab(
-                            selected = tabIndex == index,
-                            onClick = { tabIndex = index },
-                            text = {
-                                Text(
-                                    text,
-                                    color = if (tabIndex == index) Color.White else Color.Black
-                                )
-                            },
-                            modifier = Modifier.background(if (tabIndex == index) Color.Black else Color.White)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Spacer(modifier = Modifier.padding(8.dp))
+                        TextButton(onClick = {
+                            for (key in episode.value.keys) {
+                                println(key)
+                            }
+                        }) {
+                            Text(text = "공지 숨기기")
+                        }
+                        Spacer(modifier = Modifier.padding(30.dp))
+                        Column {
+                            Row(Modifier.clickable { dMenuExpanded = !dMenuExpanded }) {
+                                Text(dMenuName)
+                                Icon(imageVector = Icons.Filled.ArrowDropDown, "")
+                            }
+                            DropdownMenu(
+                                expanded = dMenuExpanded,
+                                onDismissRequest = { dMenuExpanded = false }) {
+                                dMenu.forEach { dMenuItem ->
+                                    DropdownMenuItem(onClick = {
+                                        dMenuExpanded = false; dMenuName = dMenuItem
+                                        epList.clear()
+                                        if (novelInfo.value.size != 0) {
+                                            eIsEmpty = false
+                                            if (dMenuItem == "전체") {
+                                                epList.addAll(novelInfo.value)
+                                                println(epList.size)
+                                            } else if (dMenuItem == "조회순") {
+                                                viewModel.sortList()
+                                            } else {
+                                                epList.add(novelInfo.value.find { it.nvId == dMenuItem.toInt() }!!)
+                                                val e = episode.value[dMenuItem.toInt()]
+                                                if (e!!.isNotEmpty()) {
+                                                    for (i in e.indices) {
+                                                        epList.add(novelInfo.value.find { it.nvId == e[i] }!!)
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            eIsEmpty = true
+                                        }
+                                        println(epList.size)
+                                    }) {
+                                        Text(dMenuItem)
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                    IconButton(onClick = { }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_baseline_sort_24),
+                            contentDescription = ""
                         )
                     }
                 }
             }
-            when (tabIndex) {
-                0 -> {
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.padding(8.dp))
-                                Button(onClick = {
-                                    for (key in episode.keys) {
-                                        println(key)
-                                    }
-                                }) {
-                                    Text(text = "공지 숨기기")
-                                }
-                                Spacer(modifier = Modifier.padding(30.dp))
-                                Column {
-                                    Row(Modifier.clickable { dMenuExpanded = !dMenuExpanded }) {
-                                        Text(dMenuName)
-                                        Icon(imageVector = Icons.Filled.ArrowDropDown, "")
-                                    }
-                                    DropdownMenu(
-                                        expanded = dMenuExpanded,
-                                        onDismissRequest = { dMenuExpanded = false }) {
-                                        dMenu.forEach { dMenuItem ->
-                                            DropdownMenuItem(onClick = {
-                                                dMenuExpanded = false; dMenuName = dMenuItem
-                                                epList.clear()
-                                                if (novelInfo.size != 0) {
-                                                    eIsEmpty = false
-                                                    if (dMenuItem == "전체") {
-                                                        for (key in episode.keys) {
-                                                            epList.add(novelInfo.find { it.nvId == key }!!)
-                                                        }
-                                                        println(epList.size)
-                                                    } else if(dMenuItem=="조회순"){
-                                                        sortList(novelInfo, episode, t)
-                                                    }
-                                                    else {
-                                                        epList.add(novelInfo.find { it.nvId == dMenuItem.toInt() }!!)
-                                                        val e = episode[dMenuItem.toInt()]
-                                                        if (e!!.isNotEmpty()) {
-                                                            for (i in e.indices) {
-                                                                epList.add(novelInfo.find { it.nvId == e[i] }!!)
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-                                                    eIsEmpty = true
-                                                }
-                                                println(epList.size)
-                                            }) {
-                                                Text(dMenuItem)
-                                            }
-                                        }
+            if (eIsEmpty) {
+                item { Text(text = "글이 없습니다.") }
+            } else {
 
-                                    }
-                                }
-                            }
-                            IconButton(onClick = { }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_baseline_sort_24),
-                                    contentDescription = ""
-                                )
-                            }
-                        }
+                items(epList) { n ->
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
+                    ) {
+                        NovelDetailListItem1(n, num, test.value, routeAction, viewModel)
                     }
-                    if (eIsEmpty) {
-                        item { Text(text = "글이 없습니다.") }
-                    } else {
 
-                        items(epList) { n ->
-                            Column(
-                                modifier = Modifier.padding(
-                                    horizontal = 8.dp,
-                                    vertical = 4.dp
-                                )
-                            ) {
-                                NovelDetailListItem1(n, num, test, routeAction)
-                            }
-
-                        }
-                    }
-                }
-                1 -> {
-                    items(items = test.keys.toList()) { i ->
-                        Text(i.toString())
-                    }
                 }
             }
+//                }
+//                1 -> {
+//                    items(items = test.keys.toList()) { i ->
+//                        Text(i.toString())
+//                    }
+//                }
+//            }
         }
     }
 }
@@ -341,8 +337,9 @@ fun NovelsIconButton(icon: Int, count: String) {
 fun NovelDetailListItem1(
     novelsInfo: NovelsInfo.NovelInfo,
     num: Int,
-    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>,
-    routeAction: RouteAction
+    test: MutableMap<Int, List<NovelsInfo.NovelInfo>>,
+    routeAction: RouteAction,
+    viewModel: NovelViewModel
 ) {
     val context = LocalContext.current
     var visibility = rememberSaveable { mutableStateOf(false) }
@@ -353,14 +350,23 @@ fun NovelDetailListItem1(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
-                routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
+                if(viewModel.detailNow==-1){
+                    routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
+                }
+                else {
+                    routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
+                }
             }),
         elevation = 4.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (visibility.value) skyBlue else Color.White)
+                .background(
+                    if (viewModel.detailNow == novelsInfo.nvId) Color.Yellow else {
+                        if (visibility.value) skyBlue else Color.White
+                    }
+                )
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -384,7 +390,7 @@ fun NovelDetailListItem1(
                     }
                 }
 
-                if (t?.size!!<=2) {
+                if (t?.size!! <= 2) {
                     IconButton(onClick = { }) {
 
                     }
@@ -397,7 +403,7 @@ fun NovelDetailListItem1(
                     }
                 }
             }
-            if (t?.size!! >=3) {
+            if (t?.size!! >= 3) {
                 AnimatedVisibility(visible = visibility.value) {
                     Column() {
                         for (i in 1 until t.size) {
@@ -407,7 +413,8 @@ fun NovelDetailListItem1(
                                 num = num,
                                 test = test,
                                 visibility,
-                                routeAction
+                                routeAction,
+                                viewModel
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                         }
@@ -423,9 +430,10 @@ fun NovelDetailListItem1(
 fun NovelDetailListItem2(
     novelsInfo: NovelsInfo.NovelInfo,
     num: Int,
-    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>,
+    test: MutableMap<Int, List<NovelsInfo.NovelInfo>>,
     vis: MutableState<Boolean>,
-    routeAction: RouteAction
+    routeAction: RouteAction,
+    viewModel: NovelViewModel
 ) {
     val context = LocalContext.current
     var visibility = rememberSaveable { mutableStateOf(false) }
@@ -439,14 +447,23 @@ fun NovelDetailListItem2(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
-                routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
+                if(viewModel.detailNow==-1){
+                    routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
+                }
+                else {
+                    routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
+                }
             }),
         elevation = 4.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (visibility.value) skyBlue else Color.White)
+                .background(
+                    if (viewModel.detailNow == novelsInfo.nvId) Color.Yellow else {
+                        if (visibility.value) skyBlue else Color.White
+                    }
+                )
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -469,7 +486,7 @@ fun NovelDetailListItem2(
                     }
                 }
 
-                if (t.size<=2) {
+                if (t.size <= 2) {
                     IconButton(onClick = { }) {
 
                     }
@@ -482,7 +499,7 @@ fun NovelDetailListItem2(
                     }
                 }
             }
-            if (t.size >=3) {
+            if (t.size >= 3) {
                 AnimatedVisibility(visible = visibility.value) {
                     Column() {
                         for (i in 1 until t.size) {
@@ -492,7 +509,8 @@ fun NovelDetailListItem2(
                                 num = num,
                                 test = test,
                                 visibility,
-                                routeAction
+                                routeAction,
+                                viewModel
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                         }
@@ -502,98 +520,6 @@ fun NovelDetailListItem2(
             }
         }
     }
-}
-fun sortList(
-    novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>,
-    episode: SnapshotStateMap<Int, List<Int>>,
-    t: SnapshotStateList<NovelsInfo.NovelInfo>
-){
-    t.clear()
-    val temp = mutableListOf<NovelsInfo.NovelInfo>()
-    val temp2 = mutableListOf<NovelsInfo.NovelInfo>()
-    if (novelInfo.size != 0) {
-        temp2.add(novelInfo.find { it.nvId==episode.keys.first() }!!)
-        while(true){
-            val e = episode[temp2[temp2.size-1].nvId]!!
-            if(e.isNotEmpty()){
-                temp.clear()
-                for (i in e.indices) {
-                    novelInfo.find { it.nvId == e[i] }.let {
-                        temp.add(it!!)
-                    }
-                }
-                temp2.add(temp.sortedByDescending { it.nvHit }[0])
-            }
-            else {
-                break
-            }
-        }
-        t.addAll(temp2)
-    }
-
-}
-
-fun getNovelsList(
-    num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>,
-    episode: SnapshotStateMap<Int, List<Int>>, cover: MutableState<NovelsInfo.NovelCover>,
-    test: SnapshotStateMap<Int, List<NovelsInfo.NovelInfo>>,
-    t: SnapshotStateList<NovelsInfo.NovelInfo>
-) {
-    val temp = mutableListOf<NovelsInfo.NovelInfo>()
-    val temp2 = mutableListOf<NovelsInfo.NovelInfo>()
-    val retrofitClass = RetrofitClass.api.getNovelList(num)
-    retrofitClass.enqueue(object : retrofit2.Callback<NovelsInfo> {
-        override fun onResponse(call: Call<NovelsInfo>, response: Response<NovelsInfo>) {
-            val r = response.body()
-            novelInfo.addAll(r!!.novelInfo)
-            episode.putAll(r.episode)
-            if (novelInfo.size != 0) {
-                temp2.add(novelInfo.find { it.nvId==episode.keys.first() }!!)
-                for (key in episode.keys) {
-                    println(key)
-                    val epList = mutableListOf<NovelsInfo.NovelInfo>()
-                    epList.add(novelInfo.find { it.nvId == key }!!)
-                    val e = episode[key]
-                    if (e!!.isNotEmpty()) {
-                        for (i in e.indices) {
-                            novelInfo.find { it.nvId == e[i] }.let {
-                                epList.add(it!!)
-                            }
-//                            epList.add(novelInfo.find { it.nvId == e[i] }!!)
-//                            temp.add(novelInfo.find { it.nvId == e[i] }!!)
-                        }
-                    }
-                    test[key] = epList
-                }
-                while(true){
-                    val e = episode[temp2[temp2.size-1].nvId]!!
-                    if(e.isNotEmpty()){
-                        temp.clear()
-                        for (i in e.indices) {
-                            novelInfo.find { it.nvId == e[i] }.let {
-                                temp.add(it!!)
-                            }
-                        }
-                        temp2.add(temp.sortedByDescending { it.nvHit }[0])
-                    }
-                    else {
-                        break
-                    }
-                }
-            }
-            println("테스트중 : $temp2")
-            cover.value = r.novelCover
-            t.addAll(temp2)
-            novelInfo.sortByDescending {
-                it.nvHit
-            }
-        }
-
-        override fun onFailure(call: Call<NovelsInfo>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
 }
 
 fun addSubscribe(context: Context, nvc: Nvc) {
