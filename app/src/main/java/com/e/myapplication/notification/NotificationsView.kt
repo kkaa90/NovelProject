@@ -1,11 +1,14 @@
 package com.e.myapplication.notification
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
@@ -28,8 +31,8 @@ import com.e.myapplication.ui.theme.gray
 
 @Composable
 fun NotificationsView(routeAction: RouteAction) {
-    val list = remember { mutableStateListOf<Notify>()}
-    LaunchedEffect(true){
+    val list = remember { mutableStateListOf<Notify>() }
+    LaunchedEffect(true) {
         val r = Runnable {
             val db = notifyDB.dao().getAll()
             list.addAll(db)
@@ -37,16 +40,17 @@ fun NotificationsView(routeAction: RouteAction) {
         Thread(r).start()
     }
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
-            .fillMaxWidth()
-            .background(gray)
-        , verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
+                .fillMaxWidth()
+                .background(gray), verticalAlignment = Alignment.CenterVertically
+        ) {
             IconButton(onClick = { routeAction.goBack() }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
             Text(text = "알림 리스트")
             IconButton(onClick = {
-                val r = Runnable { 
+                val r = Runnable {
                     notifyDB.dao().deleteAll()
                     list.removeAll(list)
                 }
@@ -57,20 +61,26 @@ fun NotificationsView(routeAction: RouteAction) {
         }
         Spacer(modifier = Modifier.height(8.dp))
         LazyColumn {
-            items(list) {n->
+            items(list) { n ->
                 ShowNotification(notification = n, routeAction)
             }
         }
     }
-    
+
 }
 
 @Composable
-fun ShowNotification(notification: Notify, routeAction: RouteAction){
-    Column(modifier = Modifier
-        .border(width = 1.dp, color = Color.Blue, shape = RectangleShape)
-        .fillMaxWidth().clickable { routeAction.navWithNum(NAVROUTE.NOVELDETAILSLIST.routeName + "/${notification.titleId}") }) {
-        Text(text = notification.title.toString())
-        Text(text = notification.body.toString())
+fun ShowNotification(notification: Notify, routeAction: RouteAction) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { routeAction.navWithNum(NAVROUTE.NOVELDETAILSLIST.routeName + "/${notification.titleId}") },
+        shape = RoundedCornerShape(6.dp), border = BorderStroke(0.25.dp, gray)
+    ) {
+        Column() {
+            Text(text = notification.title.toString())
+            Text(text = notification.body.toString())
+        }
     }
+
 }

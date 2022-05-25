@@ -56,6 +56,7 @@ import com.e.myapplication.board.ShowFreeBoardList
 import com.e.myapplication.board.WritingBoard
 import com.e.myapplication.dataclass.Novels
 import com.e.myapplication.menu.Drawer
+import com.e.myapplication.notification.MIGRATION_1_2
 import com.e.myapplication.notification.NotificationsView
 import com.e.myapplication.notification.NotifyDB
 import com.e.myapplication.novel.*
@@ -152,7 +153,8 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         checkPermissions()
-        notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java,"notifyDB").build()
+        notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java,"notifyDB").addMigrations(
+            MIGRATION_1_2).build()
 
         setContent {
             MyApplicationTheme {
