@@ -40,14 +40,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
+import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import androidx.room.Room
 import coil.compose.rememberImagePainter
 import com.e.myapplication.board.FreeBoardViewModel
@@ -266,7 +263,8 @@ fun NavigationGraph(starting: String = NAVROUTE.LOADING.routeName){
         composable(NAVROUTE.NOVELCOVERLIST.routeName){
             NovelCovers(routeAction, novelViewModel)
         }
-        composable(NAVROUTE.NOVELDETAILSLIST.routeName+"/{num}"){ nav ->
+        composable(route = NAVROUTE.NOVELDETAILSLIST.routeName+"/{num}",
+            deepLinks = listOf(navDeepLink { uriPattern = "novel://novel/{num}" })){ nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
             ShowPostList(routeAction, num, novelViewModel)
         }

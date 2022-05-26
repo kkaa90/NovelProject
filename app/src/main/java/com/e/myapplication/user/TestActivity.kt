@@ -36,7 +36,7 @@ var temp2 = mutableStateOf(false)
 class TestActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val l2 = "https://treenovel.tk:8080/oauth2/authorization/google"
+        val l2 = "https://treenovel.tk/oauth2/authorization/google"
         setContent {
             MyApplicationTheme {
                 // A surface container using the 'background' color from the theme
