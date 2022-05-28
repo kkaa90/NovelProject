@@ -68,6 +68,9 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
     val focusManager = LocalFocusManager.current
     val v = viewModel
     var requestBody: RequestBody
+    if(!v.woe){
+        v.imageNum="1"
+    }
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
             if (uri != null) {
@@ -108,17 +111,27 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
             IconButton(onClick = { routeAction.goBack() }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
-            TextButton(onClick = {
-                if (v.body.size != 0) {
-                    println("파일 있음")
-                    v.writeBoard("1", routeAction)
-                } else {
-                    println("파일 없음")
-                    v.writeBoard("0", routeAction)
+            if(v.woe){
+                TextButton(onClick = {
+                    v.editBoard("1",routeAction)
+                }) {
+                    Text(text = "수정")
                 }
-            }) {
-                Text(text = "글쓰기")
             }
+            else {
+                TextButton(onClick = {
+                    if (v.body.size != 0) {
+                        println("파일 있음")
+                        v.writeBoard("1", routeAction)
+                    } else {
+                        println("파일 없음")
+                        v.writeBoard("0", routeAction)
+                    }
+                }) {
+                    Text(text = "글쓰기")
+                }
+            }
+
         }
 
     }) { p ->

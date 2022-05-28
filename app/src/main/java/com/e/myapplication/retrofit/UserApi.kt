@@ -75,6 +75,18 @@ interface UserApi {
         @Path("num") num: Int
     ): Call<Boards>
 
+    @PUT("/boards/{num}")
+    fun editBoard(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int,
+        @Body body: PostBoard
+    ): Call<CallMethod>
+
+    @DELETE("/boards/{num}")
+    fun deleteBoard(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int
+    ): Call<CallMethod>
     //자유 게시판 신고
     @POST("/boards/{num}/report")
     fun reportBoard(
@@ -224,7 +236,14 @@ interface UserApi {
         @Query("pagenum") pagenum : Int
     ) : Call<NvComments>
 
-    //자유게시판 댓글 좋아요 싫어요
+    @DELETE("/novels/detail/{nNum}/cmts")
+    fun deleteNComment(
+        @Header("Authorization") authorization: String?,
+        @Path("nNum") nNum: Int,
+        @Query("nv-cmt-id") nv_cmt_id : Int
+    ): Call<CallMethod>
+
+    //소설 댓글 좋아요 싫어요
     @POST("/novels/{nNum}/cmts/{cNum}/like")
     fun likeNovelComment(
         @Header("Authorization") authorization: String?,
@@ -239,7 +258,7 @@ interface UserApi {
         @Path("cNum") cNum : Int
     ) : Call<CallMethod>
 
-    //자유 게시판 댓글 신고
+    //소설 댓글 신고
     @POST("/novels/{nNum}/cmts/{cNum}/report")
     fun reportNovelComment(
         @Header("Authorization") authorization: String?,

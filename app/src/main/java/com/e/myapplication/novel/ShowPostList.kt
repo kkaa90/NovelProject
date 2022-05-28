@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberImagePainter
 import com.e.myapplication.*
@@ -60,16 +61,36 @@ fun ShowPostList(
     num: Int,
     viewModel: NovelViewModel
 ) {
-    LaunchedEffect(true) {
-
-        viewModel.detailNow = -1
-        viewModel.getNovelsList(num)
+    var c by remember {
+        mutableStateOf(true)
     }
+    var temp by remember {
+        mutableStateOf("")
+    }
+    val epList = remember {
+        mutableStateListOf<NovelsInfo.NovelInfo>()
+    }
+    val dMenu: MutableList<String> = ArrayList()
+    dMenu.add("전체")
+    dMenu.add("조회순")
     val novelInfo = viewModel.d.collectAsState()
     val episode = viewModel.e.collectAsState()
     val t = viewModel.h.collectAsState()
     val cover = viewModel.c.collectAsState()
     val test = viewModel.tree.collectAsState()
+    LaunchedEffect(true) {
+        viewModel.detailNow = -1
+        viewModel.getNovelsList(num)
+        c = true
+        Handler(Looper.getMainLooper()).postDelayed({
+            c = false;
+            temp = "1234"
+            if (epList.size == 0) {
+                epList.addAll(t.value)
+            }
+        }, 1000)
+    }
+
 
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
@@ -79,20 +100,14 @@ fun ShowPostList(
     }
 //    var tabIndex by remember { mutableStateOf(0) }
 //    val tabs = listOf("목록", "댓글")
-    val dMenu: MutableList<String> = ArrayList()
-    dMenu.add("전체")
-    dMenu.add("조회순")
+
     for (key in episode.value.keys) {
         dMenu.add(key.toString())
     }
     var dMenuExpanded by remember { mutableStateOf(false) }
     var dMenuName: String by remember { mutableStateOf(dMenu[1]) }
-    val epList = remember {
-        mutableStateListOf<NovelsInfo.NovelInfo>()
-    }
-    if (epList.size == 0) {
-        epList.addAll(t.value)
-    }
+
+
     var eIsEmpty by remember { mutableStateOf(false) }
     getToken(m)
     Scaffold(
@@ -109,7 +124,7 @@ fun ShowPostList(
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState
-    ) {
+    ) { p ->
         BackHandler {
             if (scaffoldState.drawerState.isClosed) routeAction.goBack()
             else {
@@ -117,6 +132,24 @@ fun ShowPostList(
                     scaffoldState.drawerState.apply {
                         close()
                     }
+                }
+            }
+        }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .zIndex(if (c) 1f else 0f)
+        ) {
+            AnimatedVisibility(visible = c) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                        .padding(p),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
                 }
             }
         }
@@ -193,7 +226,7 @@ fun ShowPostList(
                             Text(cover.value.nvcContents, fontSize = 21.sp)
                             Spacer(modifier = Modifier.padding(4.dp))
                             Text(
-                                "장르 : " + cover.value.nvcReviewcount,
+                                "장르 : $temp",
                                 color = dimGray,
                                 fontSize = 14.sp
                             )
@@ -238,9 +271,10 @@ fun ShowPostList(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Spacer(modifier = Modifier.padding(8.dp))
                         TextButton(onClick = {
-                            for (key in episode.value.keys) {
-                                println(key)
-                            }
+//                            for (key in episode.value.keys) {
+//                                println(key)
+//                            }
+                            dMenu.remove(dMenu.find { it=="444444" })
                         }) {
                             Text(text = "공지 숨기기")
                         }
@@ -350,10 +384,9 @@ fun NovelDetailListItem1(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
-                if(viewModel.detailNow==-1){
+                if (viewModel.detailNow == -1) {
                     routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
-                }
-                else {
+                } else {
                     routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
                 }
             }),
@@ -447,10 +480,9 @@ fun NovelDetailListItem2(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
-                if(viewModel.detailNow==-1){
+                if (viewModel.detailNow == -1) {
                     routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
-                }
-                else {
+                } else {
                     routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
                 }
             }),

@@ -264,7 +264,7 @@ fun NavigationGraph(starting: String = NAVROUTE.LOADING.routeName){
             NovelCovers(routeAction, novelViewModel)
         }
         composable(route = NAVROUTE.NOVELDETAILSLIST.routeName+"/{num}",
-            deepLinks = listOf(navDeepLink { uriPattern = "novel://novel/{num}" })){ nav ->
+            deepLinks = listOf(navDeepLink { uriPattern = "novel://novellist/num={num}" })){ nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
             ShowPostList(routeAction, num, novelViewModel)
         }
@@ -287,7 +287,7 @@ fun NavigationGraph(starting: String = NAVROUTE.LOADING.routeName){
             WritingNovelDetail(num = num, routeAction = routeAction, novelViewModel)
         }
         composable(NAVROUTE.SEARCH.routeName){
-            SearchView(routeAction)
+            SearchView(routeAction,boardViewModel)
         }
         composable(NAVROUTE.NOTIFICATION.routeName){
             NotificationsView(routeAction)
@@ -338,11 +338,12 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
                         .fillMaxWidth()
                         .height(180.dp)
                         .clickable(onClick = {
-                            val ac = read()
-                            println("토큰 : ${ac.authorization}")
-                            println("리프레시 : ${ac.refreshToken}")
-                            println("아이콘 : ${ac.memIcon}")
-                            getToken()
+//                            val ac = read()
+//                            println("토큰 : ${ac.authorization}")
+//                            println("리프레시 : ${ac.refreshToken}")
+//                            println("아이콘 : ${ac.memIcon}")
+//                            getToken()
+                            MyFirebaseMessagingService().sendNotification("test","test",75)
                         })
                 )
                 Spacer(modifier = Modifier.height(8.0.dp))

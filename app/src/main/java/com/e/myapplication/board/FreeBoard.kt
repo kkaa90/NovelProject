@@ -58,7 +58,7 @@ fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteActi
             //Divider(color = Color(0xFFCFCECE))
             LazyColumn() {
                 items(boards) { board ->
-                    FreeBoardListItem(board, routeAction)
+                    FreeBoardListItem(board,boardViewModel, routeAction)
                     //Divider(color = Color(0xFFCFCECE))
                 }
             }
@@ -67,11 +67,13 @@ fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteActi
     }
 }
 @Composable
-fun FreeBoardListItem(board: BoardList.BoardListItem, routeAction: RouteAction) {
+fun FreeBoardListItem(board: BoardList.BoardListItem,viewModel: FreeBoardViewModel, routeAction: RouteAction) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
+                viewModel.imageNum=board.imgUrl
+                viewModel.boardNum=board.brdId
                 routeAction.navWithNum("boardDetail/${board.brdId}")
             })
     ) {
@@ -108,29 +110,6 @@ fun FreeBoardListItem(board: BoardList.BoardListItem, routeAction: RouteAction) 
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
-        }
-    }
-}
-
-@Composable
-@Preview
-fun Test(){
-    val context = LocalContext.current
-    MyApplicationTheme() {
-        Surface(color = MaterialTheme.colors.background){
-            Column(Modifier.fillMaxSize()) {
-                FreeBoardListItem(board = BoardList.BoardListItem(1, "테스트", "2222-22-22", 3, 0,
-                    10,0,1,10,0,0,"제목입니다1234","2222-22-22",
-                    "",1,"닉네임_123"),
-                    routeAction = RouteAction(NavHostController(context)))
-
-                FreeBoardListItem(board = BoardList.BoardListItem(0, "테스트", "2222-22-22", 3, 0,
-                    10,0,0,10,0,0,"제목입니다1234","2222-22-22",
-                    "",1,"닉네임_123"),
-                    routeAction = RouteAction(NavHostController(context)))
-            }
-            
-            
         }
     }
 }

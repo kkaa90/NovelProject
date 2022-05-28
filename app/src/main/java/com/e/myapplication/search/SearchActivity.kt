@@ -30,6 +30,7 @@ import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
 import com.e.myapplication.RouteAction
 import com.e.myapplication.board.FreeBoardListItem
+import com.e.myapplication.board.FreeBoardViewModel
 import com.e.myapplication.dataclass.BoardList
 import com.e.myapplication.dataclass.Boards
 import com.e.myapplication.dataclass.Novels
@@ -40,7 +41,7 @@ import retrofit2.Response
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SearchView(routeAction: RouteAction) {
+fun SearchView(routeAction: RouteAction, viewModel: FreeBoardViewModel) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val sMenu: List<String> = listOf("제목", "글쓴이", "전체")
@@ -139,7 +140,7 @@ fun SearchView(routeAction: RouteAction) {
                 if (bResult.size != 0) {
                     LazyColumn {
                         items(bResult) { board ->
-                            FreeBoardListItem(board = board, routeAction)
+                            FreeBoardListItem(board = board, viewModel ,routeAction)
                         }
                     }
                 } else {

@@ -55,8 +55,9 @@ class FreeBoardViewModel : ViewModel() {
     var scrollState by mutableStateOf(LazyListState())
     var commentPage by mutableStateOf(1)
     var reportComment by mutableStateOf(0)
+    var boardNum by mutableStateOf(0)
 
-    //WritingBoard
+    //WritingBoard and editBoard
     var title by mutableStateOf("")
     var content by mutableStateOf("")
     var imageUri = mutableStateListOf<Uri?>()
@@ -65,6 +66,7 @@ class FreeBoardViewModel : ViewModel() {
     var body = mutableStateListOf<MultipartBody.Part?>()
     var imageNum by mutableStateOf("1")
     var backVisibility by mutableStateOf(false)
+    var woe by mutableStateOf(false)
 
     var a by mutableStateOf(read())
 
@@ -108,7 +110,7 @@ class FreeBoardViewModel : ViewModel() {
     //댓글 받아오기
     fun updateComments(num : Int, page : Int){
         if(_comments.value.isNotEmpty()&&page==1){
-            _comments.value.removeAll(_comments.value)
+            _comments.value.clear()
         }
         val retrofitClass = RetrofitClass.api.getComments(num,page)
         retrofitClass.enqueue(object : retrofit2.Callback<Comments>{
@@ -164,10 +166,10 @@ class FreeBoardViewModel : ViewModel() {
     }
 
     //댓글 삭제
-    fun deleteComment(bNum: Int, cNum: Int){
+    fun deleteComment(){
         val context = MyApplication.ApplicationContext()
         val ac = read()
-        val retrofitClass = RetrofitClass.api.deleteComment(ac.authorization,bNum, cNum)
+        val retrofitClass = RetrofitClass.api.deleteComment(ac.authorization,boardNum, reportComment)
         retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
             override fun onResponse(
                 call: Call<CallMethod>,
@@ -176,13 +178,13 @@ class FreeBoardViewModel : ViewModel() {
                 val result = response.body()?.msg
                 println(result)
                 if (result == "OK") {
-                    updateComments(bNum,1)
+                    //updateComments(boardNum,1)
                 } else {
                     getAToken(context)
                     retrofitClass.cancel()
                     Handler(Looper.getMainLooper()).postDelayed(
                         {
-                            deleteComment(bNum, cNum)
+                            deleteComment()
                         }, 1000
                     )
 
@@ -496,9 +498,7 @@ class FreeBoardViewModel : ViewModel() {
     fun writeBoard(i : String,routeAction: RouteAction){
         val context = MyApplication.ApplicationContext()
         val ac = read()
-        val writeBoard = RetrofitClass
-        val service = writeBoard.api
-        val wb = service.writeBoard(
+        val wb = RetrofitClass.api.writeBoard(
             ac.authorization.toString(),
             PostBoard(content.replace("\n","<br>"),"",i,title,ac.memNick,imageNum,"0")
         )
@@ -535,12 +535,105 @@ class FreeBoardViewModel : ViewModel() {
         })
     }
 
+    fun editing(num: Int){
+        woe=true
+        boardNum=num
+        content = Html.fromHtml(board.value.board.brdContents).toString()
+            .replace("<br>", "\n")
+        title = board.value.board.brdTitle
+    }
+
+    fun editBoard(i: String,routeAction: RouteAction){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val eb = RetrofitClass.api.editBoard(
+            ac.authorization.toString(),
+            boardNum,
+            PostBoard(content.replace("\n","<br>"),"",if(imageNum=="1") "0" else "1",title,ac.memNick,imageNum,"0")
+        )
+        eb.enqueue(object : retrofit2.Callback<CallMethod>{
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                val r = response.body()?.msg
+                println(response.body().toString())
+                println(r)
+                when (r) {
+                    "JWT expiration" -> {
+                        println("토큰 만료")
+                        getAToken(context)
+                        eb.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed({ editBoard(i, routeAction) }, 1000)
+                    }
+                    "OK" -> {
+                        println("글쓰기 성공")
+                        backPressed2(routeAction)
+                    }
+                    else -> {
+                        println("글쓰기 오류")
+                    }
+                }
+                eb.cancel()
+            }
+
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+    fun deleteBoard(routeAction: RouteAction){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.deleteBoard(ac.authorization,boardNum)
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                val r = response.body()?.msg
+                println(response.body().toString())
+                println(r)
+                when (r) {
+                    "JWT expiration" -> {
+                        println("토큰 만료")
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed({ deleteBoard(routeAction) }, 1000)
+                    }
+                    "OK" -> {
+                        println("글쓰기 성공")
+                        backPressed(routeAction)
+                    }
+                    else -> {
+                        println("글쓰기 오류")
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+
     //뒤로가기
     fun backPressed(routeAction: RouteAction){
         backVisibility=false
         content=""
         title=""
         imageNum="1"
+        woe=false
+        boardNum=0
+        imageUri.clear()
+        bitmap.clear()
+        files.clear()
+        body.clear()
+        routeAction.goBack()
+    }
+    //뒤로가기
+    fun backPressed2(routeAction: RouteAction){
+        backVisibility=false
+        content=""
+        title=""
+        woe=false
+        boardNum=0
         imageUri.clear()
         bitmap.clear()
         files.clear()

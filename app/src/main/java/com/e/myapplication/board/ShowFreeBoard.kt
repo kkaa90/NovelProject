@@ -1,6 +1,7 @@
 package com.e.myapplication.board
 
 import android.content.Context
+import android.opengl.Visibility
 import android.os.Handler
 import android.os.Looper
 import android.text.Html
@@ -65,6 +66,7 @@ fun ShowBoard(
             {
                 viewModel.viewModelScope.launch {
                     viewModel.comments.collect {
+                        comment.clear()
                         comment.addAll(it)
                     }
                 }
@@ -76,6 +78,12 @@ fun ShowBoard(
         mutableStateOf(false)
     }
     val rcVisibility = remember {
+        mutableStateOf(false)
+    }
+    val deleteVisibility = remember {
+        mutableStateOf(false)
+    }
+    val deleleCVisibility = remember {
         mutableStateOf(false)
     }
     Scaffold(topBar = {
@@ -93,8 +101,24 @@ fun ShowBoard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            TextButton(onClick = { rdVisibility.value = true }) {
-                Text(text = "신고")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if(viewModel.a.memId==board.board.memId.toString()){
+                    TextButton(onClick = {
+                        viewModel.editing(num)
+                        routeAction.navTo(NAVROUTE.WRITINGBOARD)
+                    }) {
+                        Text(text = "수정")
+                    }
+                    TextButton(onClick = { deleteVisibility.value=true }) {
+                        Text(text = "삭제")
+                    }
+                }
+                else{
+                    TextButton(onClick = { rdVisibility.value = true }) {
+                        Text(text = "신고")
+                    }
+                }
+
             }
         }
     }) { p ->
@@ -105,7 +129,12 @@ fun ShowBoard(
             AnimatedVisibility(visible = rcVisibility.value) {
                 ShowCReportDialog(bNum = num, visibility = rcVisibility, viewModel = viewModel)
             }
-
+            AnimatedVisibility(visible = deleteVisibility.value) {
+                DeleteBoardDialog(visibility = deleteVisibility, viewModel = viewModel, routeAction = routeAction)
+            }
+            AnimatedVisibility(visible = deleleCVisibility.value) {
+                DeleteCommentDialog(visibility = deleleCVisibility, viewModel = viewModel, routeAction = routeAction)
+            }
         }
         BackHandler {
             if (viewModel.currentCommentPosition != -1) {
@@ -286,7 +315,8 @@ fun ShowBoard(
                             index,
                             viewModel,
                             routeAction,
-                            rcVisibility
+                            rcVisibility,
+                            deleleCVisibility
                         )
                     }
                 }
@@ -353,7 +383,8 @@ fun ShowComment(
     index: Int,
     viewModel: FreeBoardViewModel,
     routeAction: RouteAction,
-    visibility: MutableState<Boolean>
+    visibility: MutableState<Boolean>,
+    dVisibility: MutableState<Boolean>
 ) {
     println("index : $index")
     Card(modifier = Modifier
@@ -405,7 +436,8 @@ fun ShowComment(
                     println(comment.memId.toString())
                     if(viewModel.a.memId==comment.memId.toString()){
                         TextButton(onClick = {
-
+                            viewModel.reportComment=comment.brdCmtId
+                            dVisibility.value=true
                         }) {
                             Text(text="삭제")
                         }
@@ -489,7 +521,7 @@ fun ShowComment(
             if (comment.brdCmtReplynum != 0) {
                 for (i: Int in index - comment.brdCmtReplynum until index) {
                     println(i)
-                    ShowComment2(comment = comments.reversed()[i], visibility, viewModel)
+                    ShowComment2(comment = comments.reversed()[i], visibility, viewModel, dVisibility)
                 }
             }
         }
@@ -497,7 +529,7 @@ fun ShowComment(
 }
 
 @Composable
-fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel) {
+fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel, dVisibility: MutableState<Boolean>) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -542,7 +574,8 @@ fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: 
                         }
                         if(viewModel.a.memId==comment.memId.toString()){
                             TextButton(onClick = {
-
+                                viewModel.reportComment=comment.brdCmtId
+                                dVisibility.value=true
                             }) {
                                 Text(text="삭제")
                             }
@@ -698,19 +731,43 @@ fun ShowCReportDialog(bNum: Int, visibility: MutableState<Boolean>, viewModel: F
 }
 
 @Composable
-fun deleteBoardDialog(){
-    Dialog(onDismissRequest = { /*TODO*/ }) {
-        Surface() {
-            
+fun DeleteBoardDialog(visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel, routeAction: RouteAction){
+    AlertDialog(onDismissRequest = { visibility.value=false },
+    title = { Text(text = "게시글 삭제")},
+    text = { Text(text = "게시글을 삭제하시겠습니까?")},
+    confirmButton = {
+        TextButton(onClick = {
+            viewModel.deleteBoard(routeAction)
+            routeAction.goBack()}) {
+            Text(text = "확인")
         }
-    }
+
+    },
+    dismissButton = {
+        TextButton(onClick = { visibility.value=false }) {
+            Text(text = "취소")
+        }
+    })
 }
 
 @Composable
-fun deleteCommentDialog(){
-    Dialog(onDismissRequest = { /*TODO*/ }) {
-        Surface() {
+fun DeleteCommentDialog(visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel, routeAction: RouteAction){
+    AlertDialog(onDismissRequest = { visibility.value=false },
+        title = { Text(text = "댓글 삭제")},
+        text = { Text(text = "댓글을 삭제하시겠습니까?")},
+        confirmButton = {
+            TextButton(onClick = {
+                viewModel.deleteComment()
+                routeAction.goBack()
+                routeAction.navWithNum(NAVROUTE.BOARDDETAIL.routeName+"/${viewModel.boardNum}")
+            }) {
+                Text(text = "확인")
+            }
 
-        }
-    }
+        },
+        dismissButton = {
+            TextButton(onClick = { visibility.value=false }) {
+                Text(text = "취소")
+            }
+        })
 }

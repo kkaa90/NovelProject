@@ -1,5 +1,6 @@
 package com.e.myapplication
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -51,11 +52,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
 
     // 알림 생성 (아이콘, 알림 소리 등)
-    private fun sendNotification(title: String?, body: String, num: Int) {
+
+    fun sendNotification(title: String?, body: String, num: Int) {
         val intent = Intent(this, MainActivity::class.java)
         val test = Intent(
             Intent.ACTION_VIEW,
-            ("novel://novellist/${num}").toUri(),
+            ("novel://novellist/num=${num}").toUri(),
             this,
             MainActivity::class.java
         )
