@@ -46,6 +46,9 @@ class FreeBoardViewModel : ViewModel() {
     //댓글
     private val _comments = MutableStateFlow(mutableListOf<Comment>())
     val comments = _comments.asStateFlow()
+    //대댓글
+    private val _replys = MutableStateFlow(mutableMapOf<Int, MutableList<Comment>>())
+    val replys = _replys.asStateFlow()
 
     //ShowFreeBoard
     var comment by mutableStateOf("")
@@ -117,10 +120,21 @@ class FreeBoardViewModel : ViewModel() {
             override fun onResponse(call: Call<Comments>, response: Response<Comments>) {
                 val r = response.body()
                 if (r?.pagenum != 0) {
-                    for (i: Int in 0 until response.body()?.comments?.size!!) {
-                        let { _comments.value.addAll(response.body()?.comments!![i]) }
+
+                    for (i: Int in 0 until r?.comments?.size!!) {
+                        if(r.comments[i].size==1){
+                            _comments.value.add(r.comments[i][0])
+                        }
+                        else {
+                            _comments.value.add(r.comments[i][0])
+                            val temp = mutableListOf<Comment>()
+                            for(j : Int in 1 until r.comments[i].size){
+                                temp.add(r.comments[i][j])
+                            }
+                            _replys.value[r.comments[i][0].brdCmtId] = temp
+                        }
                     }
-                    if(r?.pagenum!! >page){
+                    if(r.pagenum >page){
                         updateComments(num,page+1)
                     }
                 }

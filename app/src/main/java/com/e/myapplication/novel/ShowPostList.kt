@@ -42,6 +42,7 @@ import com.e.myapplication.menu.Drawer
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.dimGray
 import com.e.myapplication.ui.theme.gray
+import com.e.myapplication.ui.theme.primaryBlue
 import com.e.myapplication.ui.theme.skyBlue
 import com.e.myapplication.user.ProtoRepository
 import com.e.myapplication.user.getAToken
@@ -158,7 +159,7 @@ fun ShowPostList(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(skyBlue)
+                        .background(primaryBlue)
 
                 ) {
                     Row {
@@ -274,9 +275,14 @@ fun ShowPostList(
 //                            for (key in episode.value.keys) {
 //                                println(key)
 //                            }
-                            dMenu.remove(dMenu.find { it=="444444" })
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                dMenuName=dMenu[1]
+                                epList.clear()
+                                epList.addAll(t.value)
+
+                            }, 1000)
                         }) {
-                            Text(text = "공지 숨기기")
+                            Text(text = "새로 고침")
                         }
                         Spacer(modifier = Modifier.padding(30.dp))
                         Column {

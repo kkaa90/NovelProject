@@ -45,6 +45,7 @@ import com.e.myapplication.dataclass.Comment
 import com.e.myapplication.dataclass.reportState
 import com.e.myapplication.lCheck
 import com.e.myapplication.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 
@@ -58,6 +59,9 @@ fun ShowBoard(
     val comment = remember {
         mutableStateListOf<Comment>()
     }
+    val reply = remember {
+        mutableStateMapOf<Int, MutableList<Comment>>()
+    }
     LaunchedEffect(true) {
         viewModel.updateBoard(num)
         viewModel.updateComments(num, 1)
@@ -68,6 +72,13 @@ fun ShowBoard(
                     viewModel.comments.collect {
                         comment.clear()
                         comment.addAll(it)
+                    }
+
+                }
+                viewModel.viewModelScope.launch {
+                    viewModel.replys.collect{
+                        reply.clear()
+                        reply.putAll(it)
                     }
                 }
             }, 1000
@@ -310,6 +321,7 @@ fun ShowBoard(
                         ShowComment(
                             comment = c,
                             comment,
+                            reply,
                             num,
                             context,
                             index,
@@ -378,6 +390,7 @@ fun FreeBoardIconButton(
 fun ShowComment(
     comment: Comment,
     comments: MutableList<Comment>,
+    replys : MutableMap<Int, MutableList<Comment>>,
     num: Int,
     context: Context,
     index: Int,
@@ -517,11 +530,9 @@ fun ShowComment(
                     }
                 }
             }
-
-            if (comment.brdCmtReplynum != 0) {
-                for (i: Int in index - comment.brdCmtReplynum until index) {
-                    println(i)
-                    ShowComment2(comment = comments.reversed()[i], visibility, viewModel, dVisibility)
+            if (!replys[comment.brdCmtId].isNullOrEmpty()) {
+                for (i in replys[comment.brdCmtId]!!.size-1 downTo 0){
+                    ShowComment2(comment = replys[comment.brdCmtId]!![i], visibility = visibility, viewModel = viewModel, dVisibility = dVisibility)
                 }
             }
         }

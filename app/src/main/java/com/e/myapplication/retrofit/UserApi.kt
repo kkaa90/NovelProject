@@ -213,6 +213,14 @@ interface UserApi {
         @Body body: PostNovelsDetail
     ) : Call<SNCR>
 
+
+    @DELETE("/novels/detail/{nNum}")
+    fun deleteNovel(
+        @Header("Authorization") authorization: String?,
+        @Path("nNum") nNum: Int,
+        @Query("nv-id") nv_id: Int
+    ): Call<CallMethod>
+
     //소설 신고
     @POST("/novels/{num}/report")
     fun reportNovel(
