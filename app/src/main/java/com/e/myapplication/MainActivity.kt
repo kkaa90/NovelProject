@@ -30,11 +30,17 @@ import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -170,11 +176,11 @@ enum class NAVROUTE(val routeName: String, val description: String){
     LOGIN("login","로그인"),
     REGISTER("register","회원가입"),
     PROFILE("profile","회원정보"),
-    BOARD("board","자유게시판 목록"),
-    BOARDDETAIL("boardDetail","자유게시판"),
+    BOARD("board","자유게시판"),
+    BOARDDETAIL("boardDetail","자유게시판 상세"),
     WRITINGBOARD("writingBoard","자유게시판 글쓰기"),
     WRITINGNOVELCOVER("writingNovelCover","소설 커버 작성"),
-    NOVELCOVERLIST("novelCoverList","소설 커버 목록"),
+    NOVELCOVERLIST("novelCoverList","소설 커버"),
     NOVELDETAILSLIST("novelDetailsList","소설 세부 목록"),
     NOVELDETAIL("novelDetail","소설 보기"),
     WRITINGNOVELDETAIL("writingNovelDetail","소설 쓰기"),

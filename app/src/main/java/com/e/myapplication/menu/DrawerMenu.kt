@@ -76,16 +76,15 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
         read()
     }
 
-    Column {
+    Column(modifier = Modifier.fillMaxWidth()) {
         if (lCheck) {
             if (memIcon == "1") {
-                Image(
-                    painter = painterResource(id = R.drawable.schumi), contentDescription = "",
+                Column(
                     modifier = Modifier
                         .height(100.dp)
                         .fillMaxWidth()
                         .padding(10.dp)
-                )
+                ){}
             } else {
                 Image(
                     painter = rememberImagePainter(memIcon), contentDescription = "",
@@ -114,7 +113,7 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
                 horizontalAlignment = Alignment.CenterHorizontally
 
             ) {
-                Text("로그인이 필요합니다.", fontSize = 30.sp)
+                Text("로그인", fontSize = 30.sp)
             }
         }
 
@@ -124,10 +123,10 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
                 .fillMaxWidth()
                 .height(5.dp)
         )
-        Text(text = if (lCheck) userId else "")
-        Text(text = if (lCheck) userNick else "")
-        Text(text = if (lCheck) p.toString() else "")
-        Row() {
+        Text(text = if (lCheck) "아이디 : $userId" else "")
+        Text(text = if (lCheck) "닉네임 : $userNick" else "")
+        Text(text = if (lCheck) "포인트 : $p" else "")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             if (lCheck) {
                 OutlinedButton(onClick = {
                     routeAction.navTo(NAVROUTE.PROFILE)
@@ -152,17 +151,16 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
             }
 
         }
-        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.MAIN) }) {
-            Text(text = NAVROUTE.MAIN.description)
-            Spacer(modifier = Modifier.height(20.dp))
+        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.MAIN) }.fillMaxWidth()) {
+            Text(text = NAVROUTE.MAIN.description, modifier = Modifier.padding(8.dp))
+
         }
-        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.BOARD) }) {
-            Text(text = NAVROUTE.BOARD.description)
-            Spacer(modifier = Modifier.height(20.dp))
+        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.BOARD) }.fillMaxWidth()) {
+            Text(text = NAVROUTE.BOARD.description, modifier = Modifier.padding(8.dp))
+
         }
-        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.NOVELCOVERLIST) }) {
-            Text(text = NAVROUTE.NOVELCOVERLIST.description)
-            Spacer(modifier = Modifier.height(20.dp))
+        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.NOVELCOVERLIST) }.fillMaxWidth()) {
+            Text(text = NAVROUTE.NOVELCOVERLIST.description, modifier = Modifier.padding(8.dp))
         }
     }
 }
