@@ -27,7 +27,9 @@ data class NovelsInfo(
         @SerializedName("nvcId")
         val nvcId: Int = 0,
         @SerializedName("nvId")
-        val nvId: Int = 0
+        val nvId: Int = 0,
+        @SerializedName("nvcSubscribeCount")
+        val nvcSubscribeCount : Int =0
     )
     data class NovelInfo(
         @SerializedName("imgUrl")

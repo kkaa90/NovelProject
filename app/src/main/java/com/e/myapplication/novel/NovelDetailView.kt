@@ -577,18 +577,20 @@ fun NovelDetailList(
             .padding(paddingValues)
             .background(gray)
     ) {
+        val epList = viewModel.h.collectAsState().value
         Row() {
             IconButton(onClick = { visibility.value = false }) {
                 Icon(imageVector = Icons.Default.Close, contentDescription = "")
             }
         }
         LazyColumn {
-            items(viewModel.d.value) { d ->
+            itemsIndexed(epList) { index,  d ->
                 NovelDetailListItem1(
                     novelsInfo = d,
                     num = num,
                     test = viewModel.tree.value,
                     routeAction = routeAction,
+                    index = index,
                     viewModel = viewModel
                 )
             }
@@ -836,9 +838,17 @@ fun getNovelBoard(
                     ).show()
                     routeAction.goBack()
                 }
+                "ERROR" -> {
+                    routeAction.goBack()
+                    Toast.makeText(
+                        context,
+                        "로그인이 필요합니다.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    routeAction.navTo(NAVROUTE.LOGIN)
+                }
                 "null" -> {
                     novel.value = r!!
-
                 }
             }
         }
@@ -869,7 +879,7 @@ fun sendC(
 
     val ac = read()
     val retrofitClass = RetrofitClass.api.sendNComment(
-        ac.authorization, nNum, PostNvComments(ac.memNick, cmt, nCR, 0, bNum)
+        ac.authorization, nNum, PostNvComments(ac.memNick, cmt, nCR, 0)
     )
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {

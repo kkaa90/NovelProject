@@ -12,6 +12,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -192,11 +193,6 @@ fun ShowPostList(
                                         count = cover.value.nvcHit.toString()
                                     )
                                     Spacer(modifier = Modifier.padding(4.0.dp))
-                                    NovelsIconButton(
-                                        icon = R.drawable.ic_baseline_thumb_up_24,
-                                        count = if (cover.value.nvcReviewcount != 0) (cover.value.nvcReviewpoint / cover.value.nvcReviewcount).toString() else "0"
-                                    )
-                                    Spacer(modifier = Modifier.padding(4.0.dp))
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         IconButton(onClick = {
                                             println(m)
@@ -211,7 +207,7 @@ fun ShowPostList(
                                                 contentDescription = null
                                             )
                                         }
-                                        Text("1000", fontSize = 12.sp)
+                                        Text(cover.value.nvcSubscribeCount.toString(), fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -226,12 +222,12 @@ fun ShowPostList(
                         Column {
                             Text(cover.value.nvcContents, fontSize = 21.sp)
                             Spacer(modifier = Modifier.padding(4.dp))
-                            Text(
-                                "장르 : $temp",
-                                color = dimGray,
-                                fontSize = 14.sp
-                            )
-                            Text("태그 : #아무거나", color = dimGray, fontSize = 14.sp)
+//                            Text(
+//                                "장르 : $temp",
+//                                color = dimGray,
+//                                fontSize = 14.sp
+//                            )
+//                            Text("태그 : #아무거나", color = dimGray, fontSize = 14.sp)
                             Spacer(modifier = Modifier.padding(4.dp))
                         }
                     }
@@ -337,14 +333,14 @@ fun ShowPostList(
                 item { Text(text = "글이 없습니다.") }
             } else {
 
-                items(epList) { n ->
+                itemsIndexed(epList) { index, n ->
                     Column(
                         modifier = Modifier.padding(
                             horizontal = 8.dp,
                             vertical = 4.dp
                         )
                     ) {
-                        NovelDetailListItem1(n, num, test.value, routeAction, viewModel)
+                        NovelDetailListItem1(n, num, test.value, routeAction, index , viewModel)
                     }
 
                 }
@@ -379,6 +375,7 @@ fun NovelDetailListItem1(
     num: Int,
     test: MutableMap<Int, List<NovelsInfo.NovelInfo>>,
     routeAction: RouteAction,
+    index : Int,
     viewModel: NovelViewModel
 ) {
     val context = LocalContext.current
@@ -416,7 +413,7 @@ fun NovelDetailListItem1(
                     Spacer(modifier = Modifier.padding(10.0.dp))
                     Column {
                         Text(
-                            text = novelsInfo.nvId.toString() + "화 " + novelsInfo.nvTitle,
+                            text = index.plus(1).toString() + "화 " + novelsInfo.nvTitle,
                             color = MaterialTheme.colors.secondaryVariant,
                             style = MaterialTheme.typography.subtitle2
                         )
@@ -453,6 +450,8 @@ fun NovelDetailListItem1(
                                 test = test,
                                 visibility,
                                 routeAction,
+                                index.plus(2).toString(),
+                                i,
                                 viewModel
                             )
                             Spacer(modifier = Modifier.height(2.dp))
@@ -472,6 +471,8 @@ fun NovelDetailListItem2(
     test: MutableMap<Int, List<NovelsInfo.NovelInfo>>,
     vis: MutableState<Boolean>,
     routeAction: RouteAction,
+    indexed : String,
+    index : Int,
     viewModel: NovelViewModel
 ) {
     val context = LocalContext.current
@@ -512,7 +513,7 @@ fun NovelDetailListItem2(
                     Spacer(modifier = Modifier.padding(10.0.dp))
                     Column {
                         Text(
-                            text = novelsInfo.nvId.toString() + "화 " + novelsInfo.nvTitle,
+                            text =  "${indexed}-${index}화 " + novelsInfo.nvTitle,
                             color = MaterialTheme.colors.secondaryVariant,
                             style = MaterialTheme.typography.subtitle2
                         )
@@ -548,6 +549,8 @@ fun NovelDetailListItem2(
                                 test = test,
                                 visibility,
                                 routeAction,
+                                "${indexed}-${index}",
+                                i,
                                 viewModel
                             )
                             Spacer(modifier = Modifier.height(2.dp))

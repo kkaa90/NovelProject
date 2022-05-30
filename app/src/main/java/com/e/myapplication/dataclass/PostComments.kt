@@ -22,7 +22,5 @@ data class PostNvComments(
     @SerializedName("nvCmtReply")
     val nvCmtReply: Int,
     @SerializedName("nvCmtState")
-    val nvCmtState: Int,
-    @SerializedName("nvId")
-    val nvId: Int
+    val nvCmtState: Int
 )
