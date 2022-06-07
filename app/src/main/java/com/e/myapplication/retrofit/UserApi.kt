@@ -314,6 +314,30 @@ interface UserApi {
         @Query("keyword") keyword: String
     ) : Call<BoardList>
 
+    //쪽지
+    @GET("/messages/receive")
+    fun getReceiveMessages(
+        @Header("Authorization") authorization: String?,
+    ) : Call<Message>
 
+    @GET("/messages/send")
+    fun getSendMessages(
+        @Header("Authorization") authorization: String?,
+    ) : Call<Message>
 
+    @GET("/messages/{num}")
+    fun getMessage(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int
+    ) : Call<SingleMessage>
+    @POST("/messages")
+    fun sendMessage(
+        @Header("Authorization") authorization: String?,
+        @Body body : MessagePost
+    ) : Call<CallMethod>
+    @DELETE("messages/{num}")
+    fun deleteMessage(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int
+    ) : Call<CallMethod>
 }

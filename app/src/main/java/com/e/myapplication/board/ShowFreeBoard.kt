@@ -1,7 +1,6 @@
 package com.e.myapplication.board
 
 import android.content.Context
-import android.opengl.Visibility
 import android.os.Handler
 import android.os.Looper
 import android.text.Html
@@ -21,7 +20,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,13 +28,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
@@ -44,8 +41,6 @@ import com.e.myapplication.RouteAction
 import com.e.myapplication.dataclass.Comment
 import com.e.myapplication.dataclass.reportState
 import com.e.myapplication.lCheck
-import com.e.myapplication.ui.theme.MyApplicationTheme
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 
@@ -94,7 +89,7 @@ fun ShowBoard(
     val deleteVisibility = remember {
         mutableStateOf(false)
     }
-    val deleleCVisibility = remember {
+    val deleteCVisibility = remember {
         mutableStateOf(false)
     }
     Scaffold(topBar = {
@@ -143,8 +138,8 @@ fun ShowBoard(
             AnimatedVisibility(visible = deleteVisibility.value) {
                 DeleteBoardDialog(visibility = deleteVisibility, viewModel = viewModel, routeAction = routeAction)
             }
-            AnimatedVisibility(visible = deleleCVisibility.value) {
-                DeleteCommentDialog(visibility = deleleCVisibility, viewModel = viewModel, routeAction = routeAction)
+            AnimatedVisibility(visible = deleteCVisibility.value) {
+                DeleteCommentDialog(visibility = deleteCVisibility, viewModel = viewModel, routeAction = routeAction)
             }
         }
         BackHandler {
@@ -179,7 +174,9 @@ fun ShowBoard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Column(verticalArrangement = Arrangement.Center) {
-                            Text(text = board.user.memNick, fontSize = 14.sp)
+                            Text(text = board.user.memNick, fontSize = 14.sp, modifier = Modifier.clickable {
+                                routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${board.board.memId}&nick=${board.board.memNickname}")
+                            })
                             Text(
                                 text = board.board.brdDatetime.split(".")[0] + " 조회 ${board.board.brdHit}",
                                 fontSize = 14.sp
@@ -328,7 +325,7 @@ fun ShowBoard(
                             viewModel,
                             routeAction,
                             rcVisibility,
-                            deleleCVisibility
+                            deleteCVisibility
                         )
                     }
                 }
@@ -419,7 +416,9 @@ fun ShowComment(
             ) {
                 Row {
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = comment.memNickname, fontSize = 16.sp)
+                    Text(text = comment.memNickname, fontSize = 16.sp, modifier = Modifier.clickable {
+                        routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
+                    })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Row(
@@ -503,7 +502,8 @@ fun ShowComment(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(8.dp)
+                                .padding(8.dp),
+                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start)
                         )
                         OutlinedButton(onClick = {
                             viewModel.sendComment(
@@ -532,7 +532,7 @@ fun ShowComment(
             }
             if (!replys[comment.brdCmtId].isNullOrEmpty()) {
                 for (i in replys[comment.brdCmtId]!!.size-1 downTo 0){
-                    ShowComment2(comment = replys[comment.brdCmtId]!![i], visibility = visibility, viewModel = viewModel, dVisibility = dVisibility)
+                    ShowComment2(comment = replys[comment.brdCmtId]!![i], visibility = visibility, viewModel = viewModel, dVisibility = dVisibility, routeAction = routeAction)
                 }
             }
         }
@@ -540,7 +540,7 @@ fun ShowComment(
 }
 
 @Composable
-fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel, dVisibility: MutableState<Boolean>) {
+fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel, dVisibility: MutableState<Boolean>, routeAction: RouteAction) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -556,7 +556,9 @@ fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: 
                 ) {
                     Row {
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = comment.memNickname, fontSize = 16.sp)
+                        Text(text = comment.memNickname, fontSize = 16.sp, modifier = Modifier.clickable {
+                            routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
+                        })
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {

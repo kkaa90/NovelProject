@@ -16,4 +16,5 @@
     <string name="title_activity_change_profile">ChangeProfileActivity</string>
     <string name="title_activity_search">SearchActivity</string>
     <string name="title_activity_test2">TestActivity2</string>
+    <string name="title_activity_message">Message</string>
 </resources>

@@ -74,8 +74,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-lateinit var notifyDB : NotifyDB
+lateinit var notifyDB: NotifyDB
 var lCheck = false
+
 class MainActivity : ComponentActivity() {
     private val multiplePermissionsCode = 100
     private val requiredPermissions =
@@ -130,6 +131,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val repository = ProtoRepository(this)
         val repository2 = LoginRepository(this)
@@ -141,8 +143,9 @@ class MainActivity : ComponentActivity() {
             }
             return accountInfo
         }
-        fun readLoginInfo() : LoginInfo{
-            var loginInfo : LoginInfo
+
+        fun readLoginInfo(): LoginInfo {
+            var loginInfo: LoginInfo
             runBlocking(Dispatchers.IO) {
                 loginInfo = repository2.readLoginInfo()
             }
@@ -150,14 +153,16 @@ class MainActivity : ComponentActivity() {
         }
 
         val l = readLoginInfo()
-        if(l.chkAccSave){
+        if (l.chkAccSave) {
             getAToken(this)
         }
 
         super.onCreate(savedInstanceState)
         checkPermissions()
-        notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java,"notifyDB").addMigrations(
-            MIGRATION_1_2).build()
+        notifyDB = Room.databaseBuilder(applicationContext, NotifyDB::class.java, "notifyDB")
+            .addMigrations(
+                MIGRATION_1_2
+            ).build()
 
         setContent {
             MyApplicationTheme {
@@ -171,52 +176,58 @@ class MainActivity : ComponentActivity() {
 
 }
 
-enum class NAVROUTE(val routeName: String, val description: String){
-    MAIN("main","메인"),
-    LOGIN("login","로그인"),
-    REGISTER("register","회원가입"),
-    PROFILE("profile","회원정보"),
-    BOARD("board","자유게시판"),
-    BOARDDETAIL("boardDetail","자유게시판 상세"),
-    WRITINGBOARD("writingBoard","자유게시판 글쓰기"),
-    WRITINGNOVELCOVER("writingNovelCover","소설 커버 작성"),
-    NOVELCOVERLIST("novelCoverList","소설 커버"),
-    NOVELDETAILSLIST("novelDetailsList","소설 세부 목록"),
-    NOVELDETAIL("novelDetail","소설 보기"),
-    WRITINGNOVELDETAIL("writingNovelDetail","소설 쓰기"),
-    SEARCH("search","검색"),
-    NOTIFICATION("notification","알림"),
-    LOADING("loading","로딩")
+enum class NAVROUTE(val routeName: String, val description: String) {
+    MAIN("main", "메인"),
+    LOGIN("login", "로그인"),
+    REGISTER("register", "회원가입"),
+    PROFILE("profile", "회원정보"),
+    BOARD("board", "자유게시판"),
+    BOARDDETAIL("boardDetail", "자유게시판 상세"),
+    WRITINGBOARD("writingBoard", "자유게시판 글쓰기"),
+    WRITINGNOVELCOVER("writingNovelCover", "소설 커버 작성"),
+    NOVELCOVERLIST("novelCoverList", "소설 커버"),
+    NOVELDETAILSLIST("novelDetailsList", "소설 세부 목록"),
+    NOVELDETAIL("novelDetail", "소설 보기"),
+    WRITINGNOVELDETAIL("writingNovelDetail", "소설 쓰기"),
+    SEARCH("search", "검색"),
+    NOTIFICATION("notification", "알림"),
+    LOADING("loading", "로딩"),
+    MESSAGE("message", "쪽지"),
+    MESSAGEDETAIL("messageDetail", "쪽지보기"),
+    WRITEMESSAGE("writeMessage", "쪽지 보내기")
 }
 
 // 네비게이션 라우트 액션
-class RouteAction(navHostController: NavHostController){
+class RouteAction(navHostController: NavHostController) {
     // 특정 화면으로 이동
-    val navTo: (NAVROUTE) -> Unit = {route ->
+    val navTo: (NAVROUTE) -> Unit = { route ->
         navHostController.navigate(route.routeName)
     }
+
     // 특정 화수, 소설로 이동
-    val navWithNum: (String) -> Unit = {route ->
+    val navWithNum: (String) -> Unit = { route ->
         navHostController.navigate(route)
     }
+
     // 뒤로 가기
     val goBack: () -> Unit = {
         navHostController.popBackStack()
     }
+
     // 메인 화면
     val clearBack: () -> Unit = {
-        navHostController.navigate(NAVROUTE.MAIN.routeName){
+        navHostController.navigate(NAVROUTE.MAIN.routeName) {
             popUpTo(0)
         }
     }
-    val goList: (String) -> Unit = {route ->
+    val goList: (String) -> Unit = { route ->
 
         navHostController.backQueue.removeLast()
         navHostController.navigate(route)
     }
-    val goDetail: (Int, Int) -> Unit = { nNum, bNum->
-        navHostController.navigate("novelDetail?nNum=${nNum}&bNum=${bNum}"){
-            popUpTo(NAVROUTE.NOVELDETAILSLIST.routeName+"/${nNum}"){
+    val goDetail: (Int, Int) -> Unit = { nNum, bNum ->
+        navHostController.navigate("novelDetail?nNum=${nNum}&bNum=${bNum}") {
+            popUpTo(NAVROUTE.NOVELDETAILSLIST.routeName + "/${nNum}") {
                 inclusive = false
             }
         }
@@ -226,83 +237,105 @@ class RouteAction(navHostController: NavHostController){
 }
 
 @Composable
-fun NavigationGraph(starting: String = NAVROUTE.LOADING.routeName){
+fun NavigationGraph(starting: String = NAVROUTE.LOADING.routeName) {
     // 내비게이션 컨트롤러
     val navController = rememberNavController()
 
     // 내비게이션 라우트 액션
     val routeAction = remember(navController) { RouteAction(navController) }
-    val mainViewModel : MainActivityViewModel = viewModel()
-    val novelViewModel : NovelViewModel = viewModel()
-    val boardViewModel : FreeBoardViewModel = viewModel()
+    val mainViewModel: MainActivityViewModel = viewModel()
+    val novelViewModel: NovelViewModel = viewModel()
+    val boardViewModel: FreeBoardViewModel = viewModel()
     // NavHost로 내비게이션 결정
     // 내비게이션 연결 설정
     NavHost(navController, starting) {
-        composable(NAVROUTE.LOADING.routeName){
+        composable(NAVROUTE.LOADING.routeName) {
             LoadingView(routeAction = routeAction)
         }
-        composable(NAVROUTE.MAIN.routeName){
-            ShowNovelList(routeAction,mainViewModel)
+        composable(NAVROUTE.MAIN.routeName) {
+            ShowNovelList(routeAction, mainViewModel)
         }
-        composable(NAVROUTE.LOGIN.routeName){
+        composable(NAVROUTE.LOGIN.routeName) {
             Login(routeAction)
         }
-        composable(NAVROUTE.REGISTER.routeName){
+        composable(NAVROUTE.REGISTER.routeName) {
             Register(routeAction)
         }
-        composable(NAVROUTE.PROFILE.routeName){
+        composable(NAVROUTE.PROFILE.routeName) {
             ProfileView(routeAction)
         }
-        composable(NAVROUTE.BOARD.routeName){
+        composable(NAVROUTE.BOARD.routeName) {
             ShowFreeBoardList(boardViewModel, routeAction)
         }
-        composable(NAVROUTE.BOARDDETAIL.routeName+"/{num}"){ nav ->
+        composable(NAVROUTE.BOARDDETAIL.routeName + "/{num}") { nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
             ShowBoard(boardViewModel, routeAction, num)
         }
-        composable(NAVROUTE.WRITINGBOARD.routeName){
+        composable(NAVROUTE.WRITINGBOARD.routeName) {
             WritingBoard(boardViewModel, routeAction)
         }
-        composable(NAVROUTE.WRITINGNOVELCOVER.routeName){
+        composable(NAVROUTE.WRITINGNOVELCOVER.routeName) {
             WritingNCover(novelViewModel, routeAction)
         }
-        composable(NAVROUTE.NOVELCOVERLIST.routeName){
+        composable(NAVROUTE.NOVELCOVERLIST.routeName) {
             NovelCovers(routeAction, novelViewModel)
         }
-        composable(route = NAVROUTE.NOVELDETAILSLIST.routeName+"/{num}",
-            deepLinks = listOf(navDeepLink { uriPattern = "novel://novellist/num={num}" })){ nav ->
+        composable(route = NAVROUTE.NOVELDETAILSLIST.routeName + "/{num}",
+            deepLinks = listOf(navDeepLink { uriPattern = "novel://novellist/num={num}" })
+        ) { nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
             ShowPostList(routeAction, num, novelViewModel)
         }
-        composable(NAVROUTE.NOVELDETAIL.routeName+"?nNum={nNum}&bNum={bNum}",
+        composable(NAVROUTE.NOVELDETAIL.routeName + "?nNum={nNum}&bNum={bNum}",
             arguments = listOf(
-                navArgument("nNum"){
+                navArgument("nNum") {
                     defaultValue = "0"
                     type = NavType.StringType
-                }, navArgument("bNum"){
+                }, navArgument("bNum") {
                     defaultValue = "0"
                     type = NavType.StringType
                 }
-            )){ nav ->
+            )) { nav ->
             val nNum = nav.arguments?.getString("nNum")!!.toInt()
             val bNum = nav.arguments?.getString("bNum")!!.toInt()
             NovelDetailView(nNum, bNum, novelViewModel, routeAction)
         }
-        composable(NAVROUTE.WRITINGNOVELDETAIL.routeName+"/{num}"){nav ->
+        composable(NAVROUTE.WRITINGNOVELDETAIL.routeName + "/{num}") { nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
             WritingNovelDetail(num = num, routeAction = routeAction, novelViewModel)
         }
-        composable(NAVROUTE.SEARCH.routeName){
-            SearchView(routeAction,boardViewModel)
+        composable(NAVROUTE.SEARCH.routeName) {
+            SearchView(routeAction, boardViewModel)
         }
-        composable(NAVROUTE.NOTIFICATION.routeName){
+        composable(NAVROUTE.NOTIFICATION.routeName) {
             NotificationsView(routeAction)
+        }
+        composable(NAVROUTE.MESSAGE.routeName) {
+            MessageListView(routeAction)
+        }
+        composable(NAVROUTE.MESSAGEDETAIL.routeName + "/{num}") { nav ->
+            val num = nav.arguments?.getString("num")!!.toInt()
+            MessageView(num = num, routeAction = routeAction)
+        }
+        composable(NAVROUTE.WRITEMESSAGE.routeName + "?num={num}&nick={nick}",
+            arguments = listOf(
+                navArgument("num") {
+                    defaultValue = "0"
+                    type = NavType.StringType
+                }, navArgument("nick") {
+                    defaultValue = ""
+                    type = NavType.StringType
+                }
+            )) { nav ->
+            val num = nav.arguments?.getString("num")!!.toInt()
+            val nick = nav.arguments?.getString("nick")!!
+            SendMessageView(memId = num, memNick = nick, routeAction = routeAction)
         }
     }
 }
 
 @Composable
-fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
+fun ShowNovelList(routeAction: RouteAction, viewModel: MainActivityViewModel) {
     println("ShowNovelList")
     val context = LocalContext.current
     val repository = ProtoRepository(context = context)
@@ -314,7 +347,7 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
         }
         return accountInfo
     }
-    LaunchedEffect(true){
+    LaunchedEffect(true) {
         viewModel.updateNovels()
     }
     val novels = viewModel.n.collectAsState()
@@ -324,7 +357,7 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
         scaffoldState = scaffoldState,
-        drawerContent = { Drawer(routeAction,scaffoldState) },
+        drawerContent = { Drawer(routeAction, scaffoldState) },
         drawerGesturesEnabled = true
     ) {
         BackHandler {
@@ -344,12 +377,12 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
                         .fillMaxWidth()
                         .height(180.dp)
                         .clickable(onClick = {
-//                            val ac = read()
-//                            println("토큰 : ${ac.authorization}")
-//                            println("리프레시 : ${ac.refreshToken}")
-//                            println("아이콘 : ${ac.memIcon}")
-//                            getToken()
-                            MyFirebaseMessagingService().sendNotification("test","test",75)
+                            val ac = read()
+                            println("토큰 : ${ac.authorization}")
+                            println("리프레시 : ${ac.refreshToken}")
+                            println("아이콘 : ${ac.memIcon}")
+                            getToken()
+//                            MyFirebaseMessagingService().sendNotification("test","test",75)
                         })
                 )
                 Spacer(modifier = Modifier.height(8.0.dp))
@@ -374,7 +407,7 @@ fun ShowNovelList(routeAction: RouteAction,viewModel: MainActivityViewModel) {
                 LazyColumn {
                     itemsIndexed(novels.value) { index, novel ->
                         Spacer(modifier = Modifier.padding(8.dp))
-                        NovelCoverListItem(novel, tags.value[index],routeAction)
+                        NovelCoverListItem(novel, tags.value[index], routeAction)
                     }
 
                 }
@@ -423,7 +456,7 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope, routeAction: Ro
             }
         }
     }
-    Box(Modifier.fillMaxWidth(), contentAlignment = Center){
+    Box(Modifier.fillMaxWidth(), contentAlignment = Center) {
         TextButton(onClick = {
             routeAction.clearBack()
         }) {
@@ -435,11 +468,11 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope, routeAction: Ro
 @Composable
 fun NovelCoverListItem(novel: Novels.Content, tag: List<String>, routeAction: RouteAction) {
     var t = ""
-    if(tag.isNotEmpty()){
-        t+=tag[0]
-        for(i in 1 until tag.size){
-            t+=", "
-            t+=tag[i]
+    if (tag.isNotEmpty()) {
+        t += tag[0]
+        for (i in 1 until tag.size) {
+            t += ", "
+            t += tag[i]
         }
     }
 
@@ -452,7 +485,7 @@ fun NovelCoverListItem(novel: Novels.Content, tag: List<String>, routeAction: Ro
             })
     ) {
         Text("-", modifier = Modifier.padding(16.dp), fontSize = 24.sp)
-        if(novel.imgUrl=="1"||novel.imgUrl=="23"){
+        if (novel.imgUrl == "1" || novel.imgUrl == "23") {
             Image(
                 painter = painterResource(R.drawable.schumi), contentDescription = "schumi",
                 modifier = Modifier
@@ -461,8 +494,7 @@ fun NovelCoverListItem(novel: Novels.Content, tag: List<String>, routeAction: Ro
                     .border(1.5.dp, MaterialTheme.colors.secondary, RectangleShape),
 
                 )
-        }
-        else {
+        } else {
             Image(
                 painter = rememberImagePainter(novel.imgUrl), contentDescription = "schumi",
                 modifier = Modifier
@@ -483,16 +515,20 @@ fun NovelCoverListItem(novel: Novels.Content, tag: List<String>, routeAction: Ro
 }
 
 @Composable
-fun LoadingView(routeAction: RouteAction){
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+fun LoadingView(routeAction: RouteAction) {
+    Column(
+        Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(text = "TreeNovel", fontSize = 32.sp, fontStyle = FontStyle.Italic)
-        Handler(Looper.getMainLooper()).postDelayed({routeAction.clearBack()},1000)
+        Handler(Looper.getMainLooper()).postDelayed({ routeAction.clearBack() }, 1000)
     }
 }
 
-fun getToken(){
-    FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task->
-        if(!task.isSuccessful){
+fun getToken() {
+    FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+        if (!task.isSuccessful) {
             Log.w(TAG, "Fetching FCM registration token failed", task.exception)
             return@OnCompleteListener
         }

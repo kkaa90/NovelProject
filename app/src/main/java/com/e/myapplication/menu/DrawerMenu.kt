@@ -151,16 +151,31 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
             }
 
         }
-        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.MAIN) }.fillMaxWidth()) {
+        Column(
+            Modifier
+                .clickable { routeAction.navTo(NAVROUTE.MAIN) }
+                .fillMaxWidth()) {
             Text(text = NAVROUTE.MAIN.description, modifier = Modifier.padding(8.dp))
 
         }
-        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.BOARD) }.fillMaxWidth()) {
+        Column(
+            Modifier
+                .clickable { routeAction.navTo(NAVROUTE.BOARD) }
+                .fillMaxWidth()) {
             Text(text = NAVROUTE.BOARD.description, modifier = Modifier.padding(8.dp))
 
         }
-        Column(Modifier.clickable { routeAction.navTo(NAVROUTE.NOVELCOVERLIST) }.fillMaxWidth()) {
+        Column(
+            Modifier
+                .clickable { routeAction.navTo(NAVROUTE.NOVELCOVERLIST) }
+                .fillMaxWidth()) {
             Text(text = NAVROUTE.NOVELCOVERLIST.description, modifier = Modifier.padding(8.dp))
+        }
+        Column(Modifier
+            .clickable { routeAction.navTo(NAVROUTE.MESSAGE) }
+            .fillMaxWidth()) {
+            Text(text = NAVROUTE.MESSAGE.description, modifier = Modifier.padding(8.dp))
+
         }
     }
 }
