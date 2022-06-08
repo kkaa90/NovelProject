@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewModelScope
 import coil.compose.rememberImagePainter
 import com.e.myapplication.NAVROUTE
@@ -57,10 +59,14 @@ fun ShowBoard(
     val reply = remember {
         mutableStateMapOf<Int, MutableList<Comment>>()
     }
+    var progress by remember {
+        mutableStateOf(false)
+    }
     LaunchedEffect(true) {
+        progress = true
         viewModel.updateBoard(num)
         viewModel.updateComments(num, 1)
-        viewModel.a=viewModel.read()
+        viewModel.a = viewModel.read()
         Handler(Looper.getMainLooper()).postDelayed(
             {
                 viewModel.viewModelScope.launch {
@@ -71,11 +77,12 @@ fun ShowBoard(
 
                 }
                 viewModel.viewModelScope.launch {
-                    viewModel.replys.collect{
+                    viewModel.replys.collect {
                         reply.clear()
                         reply.putAll(it)
                     }
                 }
+                progress=false
             }, 1000
         )
     }
@@ -94,7 +101,11 @@ fun ShowBoard(
     }
     Scaffold(topBar = {
 
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { routeAction.goBack() }) {
                     Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
@@ -108,18 +119,17 @@ fun ShowBoard(
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if(viewModel.a.memId==board.board.memId.toString()){
+                if (viewModel.a.memId == board.board.memId.toString()) {
                     TextButton(onClick = {
                         viewModel.editing(num)
                         routeAction.navTo(NAVROUTE.WRITINGBOARD)
                     }) {
                         Text(text = "수정")
                     }
-                    TextButton(onClick = { deleteVisibility.value=true }) {
+                    TextButton(onClick = { deleteVisibility.value = true }) {
                         Text(text = "삭제")
                     }
-                }
-                else{
+                } else {
                     TextButton(onClick = { rdVisibility.value = true }) {
                         Text(text = "신고")
                     }
@@ -136,10 +146,33 @@ fun ShowBoard(
                 ShowCReportDialog(bNum = num, visibility = rcVisibility, viewModel = viewModel)
             }
             AnimatedVisibility(visible = deleteVisibility.value) {
-                DeleteBoardDialog(visibility = deleteVisibility, viewModel = viewModel, routeAction = routeAction)
+                DeleteBoardDialog(
+                    visibility = deleteVisibility,
+                    viewModel = viewModel,
+                    routeAction = routeAction
+                )
             }
             AnimatedVisibility(visible = deleteCVisibility.value) {
-                DeleteCommentDialog(visibility = deleteCVisibility, viewModel = viewModel, routeAction = routeAction)
+                DeleteCommentDialog(
+                    visibility = deleteCVisibility,
+                    viewModel = viewModel,
+                    routeAction = routeAction
+                )
+            }
+        }
+        if (progress) {
+            Dialog(
+                onDismissRequest = { progress = false },
+                DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+                ) {
+                    CircularProgressIndicator()
+                }
             }
         }
         BackHandler {
@@ -174,9 +207,12 @@ fun ShowBoard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Column(verticalArrangement = Arrangement.Center) {
-                            Text(text = board.user.memNick, fontSize = 14.sp, modifier = Modifier.clickable {
-                                routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${board.board.memId}&nick=${board.board.memNickname}")
-                            })
+                            Text(
+                                text = board.user.memNick,
+                                fontSize = 14.sp,
+                                modifier = Modifier.clickable {
+                                    routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${board.board.memId}&nick=${board.board.memNickname}")
+                                })
                             Text(
                                 text = board.board.brdDatetime.split(".")[0] + " 조회 ${board.board.brdHit}",
                                 fontSize = 14.sp
@@ -297,6 +333,7 @@ fun ShowBoard(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "",
                                 Modifier.clickable {
+                                    progress = true
                                     Handler(Looper.getMainLooper()).postDelayed(
                                         {
                                             comment.clear()
@@ -305,6 +342,7 @@ fun ShowBoard(
                                                     comment.addAll(it)
                                                 }
                                             }
+                                            progress = false
                                         }, 1000
                                     )
                                 })
@@ -387,7 +425,7 @@ fun FreeBoardIconButton(
 fun ShowComment(
     comment: Comment,
     comments: MutableList<Comment>,
-    replys : MutableMap<Int, MutableList<Comment>>,
+    replys: MutableMap<Int, MutableList<Comment>>,
     num: Int,
     context: Context,
     index: Int,
@@ -416,14 +454,22 @@ fun ShowComment(
             ) {
                 Row {
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = comment.memNickname, fontSize = 16.sp, modifier = Modifier.clickable {
-                        routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
-                    })
+                    Text(
+                        text = comment.memNickname,
+                        fontSize = 16.sp,
+                        modifier = Modifier.clickable {
+                            routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
+                        })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { viewModel.likeComment(comment.brdId,comment.brdCmtId) }) {
+                        modifier = Modifier.clickable {
+                            viewModel.likeComment(
+                                comment.brdId,
+                                comment.brdCmtId
+                            )
+                        }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
                             contentDescription = "",
@@ -435,7 +481,12 @@ fun ShowComment(
                     Spacer(modifier = Modifier.width(16.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { viewModel.dislikeComment(comment.brdId,comment.brdCmtId) }) {
+                        modifier = Modifier.clickable {
+                            viewModel.dislikeComment(
+                                comment.brdId,
+                                comment.brdCmtId
+                            )
+                        }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
                             contentDescription = "",
@@ -446,22 +497,22 @@ fun ShowComment(
                     }
                     println(viewModel.a.memId)
                     println(comment.memId.toString())
-                    if(viewModel.a.memId==comment.memId.toString()){
+                    if (viewModel.a.memId == comment.memId.toString()) {
                         TextButton(onClick = {
-                            viewModel.reportComment=comment.brdCmtId
-                            dVisibility.value=true
+                            viewModel.reportComment = comment.brdCmtId
+                            dVisibility.value = true
                         }) {
-                            Text(text="삭제")
+                            Text(text = "삭제")
                         }
-                    }
-                    else {
+                    } else {
                         TextButton(onClick = {
-                            viewModel.reportComment=comment.brdCmtId
-                            visibility.value=true}) {
+                            viewModel.reportComment = comment.brdCmtId
+                            visibility.value = true
+                        }) {
                             Text(text = "신고")
                         }
                     }
-                    
+
                 }
 
             }
@@ -531,8 +582,14 @@ fun ShowComment(
                 }
             }
             if (!replys[comment.brdCmtId].isNullOrEmpty()) {
-                for (i in replys[comment.brdCmtId]!!.size-1 downTo 0){
-                    ShowComment2(comment = replys[comment.brdCmtId]!![i], visibility = visibility, viewModel = viewModel, dVisibility = dVisibility, routeAction = routeAction)
+                for (i in replys[comment.brdCmtId]!!.size - 1 downTo 0) {
+                    ShowComment2(
+                        comment = replys[comment.brdCmtId]!![i],
+                        visibility = visibility,
+                        viewModel = viewModel,
+                        dVisibility = dVisibility,
+                        routeAction = routeAction
+                    )
                 }
             }
         }
@@ -540,7 +597,13 @@ fun ShowComment(
 }
 
 @Composable
-fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel, dVisibility: MutableState<Boolean>, routeAction: RouteAction) {
+fun ShowComment2(
+    comment: Comment,
+    visibility: MutableState<Boolean>,
+    viewModel: FreeBoardViewModel,
+    dVisibility: MutableState<Boolean>,
+    routeAction: RouteAction
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -556,15 +619,23 @@ fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: 
                 ) {
                     Row {
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = comment.memNickname, fontSize = 16.sp, modifier = Modifier.clickable {
-                            routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
-                        })
+                        Text(
+                            text = comment.memNickname,
+                            fontSize = 16.sp,
+                            modifier = Modifier.clickable {
+                                routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
+                            })
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { viewModel.likeComment(comment.brdId,comment.brdCmtId) }) {
+                            modifier = Modifier.clickable {
+                                viewModel.likeComment(
+                                    comment.brdId,
+                                    comment.brdCmtId
+                                )
+                            }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
                                 contentDescription = "",
@@ -576,7 +647,12 @@ fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: 
                         Spacer(modifier = Modifier.width(16.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { viewModel.dislikeComment(comment.brdId,comment.brdCmtId) }) {
+                            modifier = Modifier.clickable {
+                                viewModel.dislikeComment(
+                                    comment.brdId,
+                                    comment.brdCmtId
+                                )
+                            }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
                                 contentDescription = "",
@@ -585,18 +661,18 @@ fun ShowComment2(comment: Comment,visibility: MutableState<Boolean>, viewModel: 
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(comment.brdCmtDislike.toString(), fontSize = 16.sp)
                         }
-                        if(viewModel.a.memId==comment.memId.toString()){
+                        if (viewModel.a.memId == comment.memId.toString()) {
                             TextButton(onClick = {
-                                viewModel.reportComment=comment.brdCmtId
-                                dVisibility.value=true
+                                viewModel.reportComment = comment.brdCmtId
+                                dVisibility.value = true
                             }) {
-                                Text(text="삭제")
+                                Text(text = "삭제")
                             }
-                        }
-                        else {
+                        } else {
                             TextButton(onClick = {
-                                viewModel.reportComment=comment.brdCmtId
-                                visibility.value=true}) {
+                                viewModel.reportComment = comment.brdCmtId
+                                visibility.value = true
+                            }) {
                                 Text(text = "신고")
                             }
                         }
@@ -660,12 +736,14 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>, viewModel: Fre
                     label = { Text(text = "자세한 사유") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp))
+                        .height(100.dp)
+                )
                 Spacer(modifier = Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     OutlinedButton(onClick = {
                         viewModel.reportContent = ""
-                        visibility.value = false }) {
+                        visibility.value = false
+                    }) {
                         Text(text = "취소")
                     }
                     Spacer(modifier = Modifier.width(10.dp))
@@ -680,6 +758,7 @@ fun ShowReportDialog(num: Int, visibility: MutableState<Boolean>, viewModel: Fre
         }
     }
 }
+
 @Composable
 fun ShowCReportDialog(bNum: Int, visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel) {
     var mSelected by remember {
@@ -690,7 +769,8 @@ fun ShowCReportDialog(bNum: Int, visibility: MutableState<Boolean>, viewModel: F
     }
     Dialog(onDismissRequest = {
         viewModel.reportContent = ""
-        visibility.value = false }) {
+        visibility.value = false
+    }) {
         Surface(
             modifier = Modifier
                 .wrapContentSize(),
@@ -722,12 +802,14 @@ fun ShowCReportDialog(bNum: Int, visibility: MutableState<Boolean>, viewModel: F
                     label = { Text(text = "자세한 사유") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp))
+                        .height(100.dp)
+                )
                 Spacer(modifier = Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     OutlinedButton(onClick = {
                         viewModel.reportContent = ""
-                        visibility.value = false }) {
+                        visibility.value = false
+                    }) {
                         Text(text = "취소")
                     }
                     Spacer(modifier = Modifier.width(10.dp))
@@ -744,42 +826,51 @@ fun ShowCReportDialog(bNum: Int, visibility: MutableState<Boolean>, viewModel: F
 }
 
 @Composable
-fun DeleteBoardDialog(visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel, routeAction: RouteAction){
-    AlertDialog(onDismissRequest = { visibility.value=false },
-    title = { Text(text = "게시글 삭제")},
-    text = { Text(text = "게시글을 삭제하시겠습니까?")},
-    confirmButton = {
-        TextButton(onClick = {
-            viewModel.deleteBoard(routeAction)
-            routeAction.goBack()}) {
-            Text(text = "확인")
-        }
-
-    },
-    dismissButton = {
-        TextButton(onClick = { visibility.value=false }) {
-            Text(text = "취소")
-        }
-    })
-}
-
-@Composable
-fun DeleteCommentDialog(visibility: MutableState<Boolean>, viewModel: FreeBoardViewModel, routeAction: RouteAction){
-    AlertDialog(onDismissRequest = { visibility.value=false },
-        title = { Text(text = "댓글 삭제")},
-        text = { Text(text = "댓글을 삭제하시겠습니까?")},
+fun DeleteBoardDialog(
+    visibility: MutableState<Boolean>,
+    viewModel: FreeBoardViewModel,
+    routeAction: RouteAction
+) {
+    AlertDialog(onDismissRequest = { visibility.value = false },
+        title = { Text(text = "게시글 삭제") },
+        text = { Text(text = "게시글을 삭제하시겠습니까?") },
         confirmButton = {
             TextButton(onClick = {
-                viewModel.deleteComment()
+                viewModel.deleteBoard(routeAction)
                 routeAction.goBack()
-                routeAction.navWithNum(NAVROUTE.BOARDDETAIL.routeName+"/${viewModel.boardNum}")
             }) {
                 Text(text = "확인")
             }
 
         },
         dismissButton = {
-            TextButton(onClick = { visibility.value=false }) {
+            TextButton(onClick = { visibility.value = false }) {
+                Text(text = "취소")
+            }
+        })
+}
+
+@Composable
+fun DeleteCommentDialog(
+    visibility: MutableState<Boolean>,
+    viewModel: FreeBoardViewModel,
+    routeAction: RouteAction
+) {
+    AlertDialog(onDismissRequest = { visibility.value = false },
+        title = { Text(text = "댓글 삭제") },
+        text = { Text(text = "댓글을 삭제하시겠습니까?") },
+        confirmButton = {
+            TextButton(onClick = {
+                viewModel.deleteComment()
+                routeAction.goBack()
+                routeAction.navWithNum(NAVROUTE.BOARDDETAIL.routeName + "/${viewModel.boardNum}")
+            }) {
+                Text(text = "확인")
+            }
+
+        },
+        dismissButton = {
+            TextButton(onClick = { visibility.value = false }) {
                 Text(text = "취소")
             }
         })

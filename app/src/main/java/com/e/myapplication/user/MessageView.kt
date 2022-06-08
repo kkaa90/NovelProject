@@ -75,16 +75,7 @@ fun MessageListView(routeAction: RouteAction) {
         }
         Row() {
             TextButton(onClick = {
-                deleteMessage(context, isChecked)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    if (tabIndex == 0) {
-                        rMessages.clear()
-                        getRMessages(context, rMessages)
-                    } else {
-                        sMessages.clear()
-                        getSMessages(context, sMessages)
-                    }
-                }, 1000)
+                deleteMessage(context, isChecked, rMessages, sMessages)
             }) {
                 Text(text = "삭제")
             }
@@ -94,14 +85,14 @@ fun MessageListView(routeAction: RouteAction) {
                         isChecked.add(it.msgId)
 
                     }
-                    deleteMessage(context, isChecked)
+                    deleteMessage(context, isChecked, rMessages, sMessages)
                     rMessages.clear()
                 } else {
                     sMessages.forEach {
                         isChecked.add(it.msgId)
 
                     }
-                    deleteMessage(context, isChecked)
+                    deleteMessage(context, isChecked, rMessages, sMessages)
                     sMessages.clear()
                 }
 
@@ -457,7 +448,12 @@ fun sendMessage(
     })
 }
 
-fun deleteMessage(context: Context, isChecked: MutableList<Int>) {
+fun deleteMessage(
+    context: Context,
+    isChecked: MutableList<Int>,
+    rMessage: SnapshotStateList<Message.Msg.Content>,
+    sMessage: SnapshotStateList<Message.Msg.Content>
+) {
     val repository = ProtoRepository(context)
     fun read(): AccountInfo {
         var accountInfo: AccountInfo
@@ -478,12 +474,18 @@ fun deleteMessage(context: Context, isChecked: MutableList<Int>) {
                     retrofitClass.cancel()
                     Handler(Looper.getMainLooper()).postDelayed(
                         {
-                            deleteMessage(context, isChecked)
+                            deleteMessage(context, isChecked, rMessage, sMessage)
                         }, 1000
                     )
                 } else {
-                    isChecked.removeFirst()
-                    deleteMessage(context, isChecked)
+                    if (isChecked.isEmpty()) {
+                        getSMessages(context, sMessage)
+                        getRMessages(context, rMessage)
+                    } else {
+                        isChecked.removeFirst()
+                        deleteMessage(context, isChecked, rMessage, sMessage)
+                    }
+
                 }
             }
 
