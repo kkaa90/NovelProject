@@ -59,11 +59,9 @@ fun ShowBoard(
     val reply = remember {
         mutableStateMapOf<Int, MutableList<Comment>>()
     }
-    var progress by remember {
-        mutableStateOf(false)
-    }
+
     LaunchedEffect(true) {
-        progress = true
+        viewModel.progress = true
         viewModel.updateBoard(num)
         viewModel.updateComments(num, 1)
         viewModel.a = viewModel.read()
@@ -82,7 +80,7 @@ fun ShowBoard(
                         reply.putAll(it)
                     }
                 }
-                progress=false
+                viewModel.progress=false
             }, 1000
         )
     }
@@ -160,9 +158,9 @@ fun ShowBoard(
                 )
             }
         }
-        if (progress) {
+        if (viewModel.progress) {
             Dialog(
-                onDismissRequest = { progress = false },
+                onDismissRequest = { viewModel.progress = false },
                 DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
             ) {
                 Box(
@@ -307,15 +305,24 @@ fun ShowBoard(
 //                                comment,
 //                                0
 //                            )
+                                viewModel.progress = true
                                 viewModel.comment = ""
                                 Handler(Looper.getMainLooper()).postDelayed(
                                     {
-                                        comment.clear()
                                         viewModel.viewModelScope.launch {
                                             viewModel.comments.collect {
+                                                comment.clear()
                                                 comment.addAll(it)
                                             }
+
                                         }
+                                        viewModel.viewModelScope.launch {
+                                            viewModel.replys.collect {
+                                                reply.clear()
+                                                reply.putAll(it)
+                                            }
+                                        }
+                                        viewModel.progress=false
                                     }, 1000
                                 )
 
@@ -333,7 +340,7 @@ fun ShowBoard(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "",
                                 Modifier.clickable {
-                                    progress = true
+                                    viewModel.progress = true
                                     Handler(Looper.getMainLooper()).postDelayed(
                                         {
                                             comment.clear()
@@ -342,7 +349,13 @@ fun ShowBoard(
                                                     comment.addAll(it)
                                                 }
                                             }
-                                            progress = false
+                                            viewModel.viewModelScope.launch {
+                                                viewModel.replys.collect {
+                                                    reply.clear()
+                                                    reply.putAll(it)
+                                                }
+                                            }
+                                            viewModel.progress = false
                                         }, 1000
                                     )
                                 })
@@ -563,15 +576,22 @@ fun ShowComment(
                                 num
                             )
                             viewModel.comment2 = ""
+                            viewModel.progress = true
                             Handler(Looper.getMainLooper()).postDelayed(
                                 {
-                                    viewModel.currentCommentPosition = -1
                                     comments.clear()
                                     viewModel.viewModelScope.launch {
                                         viewModel.comments.collect {
                                             comments.addAll(it)
                                         }
                                     }
+                                    viewModel.viewModelScope.launch {
+                                        viewModel.replys.collect {
+                                            replys.clear()
+                                            replys.putAll(it)
+                                        }
+                                    }
+                                    viewModel.progress = false
                                 }, 1000
                             )
                         }, enabled = (viewModel.comment2 != "")) {

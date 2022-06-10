@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
@@ -73,6 +74,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.random.Random.Default.nextInt
 
 lateinit var notifyDB: NotifyDB
 var lCheck = false
@@ -460,7 +462,7 @@ fun TopMenu(scaffoldState: ScaffoldState, scope: CoroutineScope, routeAction: Ro
         TextButton(onClick = {
             routeAction.clearBack()
         }) {
-            Text(text = "Tree Novel")
+            Text(text = "Tree Novel", fontStyle = FontStyle.Italic)
         }
     }
 }

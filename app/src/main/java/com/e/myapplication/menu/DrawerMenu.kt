@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.Text
@@ -12,6 +13,7 @@ import androidx.compose.material.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -77,23 +79,27 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
+
         if (lCheck) {
-            if (memIcon == "1") {
-                Column(
-                    modifier = Modifier
-                        .height(100.dp)
-                        .fillMaxWidth()
-                        .padding(10.dp)
-                ){}
-            } else {
-                Image(
-                    painter = rememberImagePainter(memIcon), contentDescription = "",
-                    modifier = Modifier
-                        .height(100.dp)
-                        .fillMaxWidth()
-                        .padding(10.dp)
-                )
+            Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically){
+                if (memIcon == "1") {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_baseline_person_24), contentDescription = "",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Image(
+                        painter = rememberImagePainter(memIcon), contentDescription = "",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                }
+                Text(text = " $userNick")
             }
+
 
         } else {
             Column(
@@ -116,16 +122,7 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
                 Text("로그인", fontSize = 30.sp)
             }
         }
-
-
-        Spacer(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(5.dp)
-        )
-        Text(text = if (lCheck) "아이디 : $userId" else "")
-        Text(text = if (lCheck) "닉네임 : $userNick" else "")
-        Text(text = if (lCheck) "포인트 : $p" else "")
+        Text(text = if (lCheck) "포인트 : $p" else "", modifier = Modifier.padding(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             if (lCheck) {
                 OutlinedButton(onClick = {
@@ -133,7 +130,7 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
                 }) {
                     Text(text = "회원정보")
                 }
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(16.dp))
                 OutlinedButton(onClick = {
                     lCheck = false
                     accountSave(User("", "", "", "", "", "", "", "", ""))

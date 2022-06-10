@@ -68,8 +68,8 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
     val focusManager = LocalFocusManager.current
     val v = viewModel
     var requestBody: RequestBody
-    if(!v.woe){
-        v.imageNum="1"
+    if (!v.woe) {
+        v.imageNum = "1"
     }
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -111,14 +111,13 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
             IconButton(onClick = { routeAction.goBack() }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
-            if(v.woe){
+            if (v.woe) {
                 TextButton(onClick = {
-                    v.editBoard("1",routeAction)
+                    v.editBoard("1", routeAction)
                 }) {
                     Text(text = "수정")
                 }
-            }
-            else {
+            } else {
                 TextButton(onClick = {
                     if (v.body.size != 0) {
                         println("파일 있음")
@@ -167,7 +166,9 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
                 value = v.content,
                 onValueChange = { v.content = it },
                 label = { Text("내용") },
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.Done
                 ),
@@ -195,7 +196,7 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
                     )
                 }
             }
-            Row(){
+            Row() {
                 TextButton(onClick = {
                     if (v.bitmap.size > 3) {
                         Toast.makeText(
@@ -245,22 +246,22 @@ fun BackAskingDialog(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(text = "게시글 작성을 취소하시겠습니까?\n입력한 내용은 삭제됩니다.")
                 Spacer(modifier = Modifier.height(20.dp))
-                Column(
-                    Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Row {
-                        OutlinedButton(onClick = { viewModel.backVisibility = false }) {
-                            Text(text = "취소")
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        OutlinedButton(onClick = {
-                            viewModel.backPressed(routeAction)
-                        }) {
-                            Text(text = "확인")
-                        }
+                    OutlinedButton(onClick = { viewModel.backVisibility = false }) {
+                        Text(text = "취소")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    OutlinedButton(onClick = {
+                        viewModel.backPressed(routeAction)
+                    }) {
+                        Text(text = "확인")
                     }
                 }
+
 
             }
         }

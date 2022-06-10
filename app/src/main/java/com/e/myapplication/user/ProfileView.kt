@@ -16,6 +16,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -28,11 +30,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.rememberImagePainter
 import com.e.myapplication.*
@@ -42,6 +46,7 @@ import com.e.myapplication.dataclass.*
 import com.e.myapplication.menu.point
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
+import com.e.myapplication.ui.theme.gray
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType
@@ -130,10 +135,11 @@ fun ProfileView(routeAction: RouteAction) {
             )
         }
     }
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier
+        .fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().background(gray),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -159,15 +165,14 @@ fun ProfileView(routeAction: RouteAction) {
             }
 
         }
-        Spacer(modifier = Modifier.height(20.dp))
         Row(modifier = Modifier
             .clickable { launcher.launch("image/*") }
-            .height(60.dp)
+            .height(60.dp).border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp)
             .fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "아이콘 변경")
+            Text(text = "이미지", fontSize = 20.sp)
             if (ac.memIcon == "1") {
                 Image(
-                    painter = painterResource(id = R.drawable.schumi),
+                    painter = painterResource(id = R.drawable.ic_baseline_person_24),
                     contentDescription = "",
                     modifier = Modifier
                         .size(40.dp)
@@ -199,51 +204,47 @@ fun ProfileView(routeAction: RouteAction) {
                 }
             }
         }
-        Spacer(modifier = Modifier.height(10.dp))
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth().border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp)
         ) {
-            Text(text = "아이디")
+            Text(text = "아이디", fontSize = 20.sp)
             Text(text = ac.memUserid)
         }
-        Spacer(modifier = Modifier.height(10.dp))
         Column(modifier = Modifier
             .clickable { nickDialog.value = true }
-            .fillMaxWidth()) {
-            Text(text = "닉네임")
+            .fillMaxWidth().border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp)) {
+            Text(text = "닉네임", fontSize = 20.sp)
             Text(text = ac.memNick)
             if (nickContent.value != "") {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(text = "[${nickContent.value}]으로 변경됩니다.")
             }
         }
-        Spacer(modifier = Modifier.height(20.dp))
         Column(modifier = Modifier
             .clickable {
-                if(ac.memUserid.contains("Google")){
-                    Toast.makeText(
-                        context,
-                        "구글 계정은 변경할 수 없습니다.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                else {
+                if (ac.memUserid.contains("Google")) {
+                    Toast
+                        .makeText(
+                            context,
+                            "구글 계정은 변경할 수 없습니다.",
+                            Toast.LENGTH_LONG
+                        )
+                        .show()
+                } else {
                     emailDialog.value = true
                 }
 
             }
-            .fillMaxWidth()) {
-            Text(text = "이메일")
+            .fillMaxWidth().border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp)) {
+            Text(text = "이메일", fontSize = 20.sp)
             Text(text = ac.email)
             if (emailContent.value != "") {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(text = "[${emailContent.value}]으로 변경됩니다.")
             }
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-        Text("비밀번호 변경", Modifier.clickable {
+        Column(modifier = Modifier.fillMaxWidth().border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp).clickable {
             if(ac.memUserid.contains("Google")){
                 Toast.makeText(
                     context,
@@ -254,7 +255,10 @@ fun ProfileView(routeAction: RouteAction) {
             else {
                 pwdDialog.value = true
             }
-        })
+        }) {
+            Text("비밀번호 변경", fontSize = 20.sp)
+        }
+
     }
 }
 
@@ -268,20 +272,21 @@ fun ChangeProfileDialog(
     val context = LocalContext.current
     Dialog(onDismissRequest = { visibility.value = false }) {
         Surface(
-            modifier = Modifier
-                .width(240.dp)
-                .height(400.dp),
+            modifier = Modifier.wrapContentSize(),
             shape = RoundedCornerShape(12.dp),
             color = Color.White
         ) {
-            Column {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(text = "$present 변경")
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(text = "현재 $present : $now")
                 Spacer(modifier = Modifier.height(20.dp))
                 OutlinedTextField(value = change.value, onValueChange = { change.value = it })
                 Spacer(modifier = Modifier.height(20.dp))
-                Row {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     OutlinedButton(onClick = {
                         change.value = ""
                         visibility.value = false
@@ -429,8 +434,10 @@ fun changeProfile(
         ac.authorization,
         ChangeProfile(email, nick, icon)
     )
+    println(retrofitClass.request().toString())
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+            println(response.body().toString())
             if (response.body()!!.msg == "OK") {
                 val user = User(
                     ac.memUserid, ac.authorization, icon, ac.memId, nick,

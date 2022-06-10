@@ -59,6 +59,7 @@ class FreeBoardViewModel : ViewModel() {
     var commentPage by mutableStateOf(1)
     var reportComment by mutableStateOf(0)
     var boardNum by mutableStateOf(0)
+    var progress by mutableStateOf(false)
 
     //WritingBoard and editBoard
     var title by mutableStateOf("")

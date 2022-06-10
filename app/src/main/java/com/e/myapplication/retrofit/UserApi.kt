@@ -185,6 +185,12 @@ interface UserApi {
         @Query("sort") sort : String
     ): Call<Novels>
 
+    @GET("/novels")
+    fun getNovelsWithToken(
+        @Header("Authorization") authorization: String?,
+        @Query("sort") sort : String
+    ): Call<NovelsWithToken>
+
     @Headers("Content-Type: application/json")
     @POST("/novels")
     fun writeNCover(
@@ -340,4 +346,15 @@ interface UserApi {
         @Header("Authorization") authorization: String?,
         @Path("num") num: Int
     ) : Call<CallMethod>
+
+    //열람 목록
+    @GET("/users/purchase/")
+    fun getPurchaseCover(
+        @Header("Authorization") authorization: String?
+    ) : Call<PurchaseCover>
+    @GET("/users/purchase/{num}")
+    fun getPurchase(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int
+    ) : Call<PurchaseNovel>
 }

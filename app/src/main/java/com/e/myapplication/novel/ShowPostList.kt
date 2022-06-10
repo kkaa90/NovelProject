@@ -31,6 +31,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberImagePainter
@@ -137,19 +139,16 @@ fun ShowPostList(
                 }
             }
         }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .zIndex(if (c) 1f else 0f)
-        ) {
-            AnimatedVisibility(visible = c) {
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .background(Color.White)
-                        .padding(p),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+        if(c){
+            Dialog(
+                onDismissRequest = { c = false },
+                DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
                 ) {
                     CircularProgressIndicator()
                 }
@@ -271,11 +270,12 @@ fun ShowPostList(
 //                            for (key in episode.value.keys) {
 //                                println(key)
 //                            }
+                            c= true
                             Handler(Looper.getMainLooper()).postDelayed({
                                 dMenuName=dMenu[1]
                                 epList.clear()
                                 epList.addAll(t.value)
-
+                                c= false
                             }, 1000)
                         }) {
                             Text(text = "새로 고침")
