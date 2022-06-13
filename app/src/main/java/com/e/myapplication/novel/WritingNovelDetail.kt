@@ -59,17 +59,16 @@ import java.io.File
 fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewModel) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
-    val novelInfo = remember { mutableStateListOf<NovelsInfo.NovelInfo>() }
-    LaunchedEffect(true) {
-        getNovelEpisode(num, novelInfo)
-    }
+    val novelInfo = viewModel.d.collectAsState().value
     val dMenu: MutableList<String> = ArrayList()
     dMenu.add("첫화")
-    if (novelInfo.size != 0) {
-        for (i in novelInfo.indices) {
-            dMenu.add(novelInfo[i].nvId.toString() + "화 : " + novelInfo[i].nvTitle)
+    if (novelInfo.isNotEmpty()) {
+        if (viewModel.parent != 0) {
+            for (i in novelInfo.indices) {
+                dMenu.add(novelInfo[i].nvId.toString() + "화 : " + novelInfo[i].nvTitle)
+            }
+            dMenu.removeAt(0)
         }
-        dMenu.removeAt(0)
     }
     var dMenuExpanded by remember { mutableStateOf(false) }
     var dMenuName: String by remember { mutableStateOf("선택") }
@@ -116,28 +115,33 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
             TextButton(onClick = {
-                val parent: String = when (dMenuName) {
-                    "첫화" -> {
-                        "0"
-                    }
-                    "선택" -> {
-                        "-"
-                    }
-                    else -> {
-                        novelInfo[dMenuIndex].nvId.toString()
-                    }
-                }
-                if (parent == "-") {
-                    Toast.makeText(
-                        context,
-                        "부모 화를 선택해야 합니다.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                if (viewModel.woe) {
+                    viewModel.editNovelDetail(routeAction)
                 } else {
-                    viewModel.writeNovelDetail(routeAction, num, parent)
+                    val parent: String = when (dMenuName) {
+                        "첫화" -> {
+                            "0"
+                        }
+                        "선택" -> {
+                            "-"
+                        }
+                        else -> {
+                            novelInfo[dMenuIndex].nvId.toString()
+                        }
+                    }
+                    if (parent == "-") {
+                        Toast.makeText(
+                            context,
+                            "부모 화를 선택해야 합니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        viewModel.writeNovelDetail(routeAction, num, parent)
+                    }
                 }
+
             }) {
-                Text(text = "글쓰기")
+                Text(text = if (viewModel.woe) "수정" else "글쓰기")
             }
         }
     }) { p ->
@@ -175,89 +179,91 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                 })
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "포인트 : ")
-                OutlinedTextField(
-                    value = viewModel.nDPoint,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    onValueChange = {
-                        val d = it.toIntOrNull()
-                        if (d == null) {
-                            viewModel.nDPoint = "0"
-                        } else {
-                            if (d > 50) {
+            if (!viewModel.woe) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "포인트 : ")
+                    OutlinedTextField(
+                        value = if (viewModel.nDPoint == "0") "" else viewModel.nDPoint,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        onValueChange = {
+                            val d = it.toIntOrNull()
+                            if (d == null) {
                                 viewModel.nDPoint = "0"
-                                Toast.makeText(
-                                    context,
-                                    "포인트는 0부터 50까지 설정 가능합니다.",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                                viewModel.nDPoint = "0"
-
                             } else {
-                                viewModel.nDPoint = it
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                )
+                                if (d > 50) {
+                                    viewModel.nDPoint = "0"
+                                    Toast.makeText(
+                                        context,
+                                        "포인트는 0부터 50까지 설정 가능합니다.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                    viewModel.nDPoint = "0"
 
-            }
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .border(0.5.dp, Color.Gray)
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "부모 화 선택 [")
-                Column {
-                    Row(Modifier.clickable { dMenuExpanded = !dMenuExpanded }) {
-                        Text(dMenuName)
-                        Icon(imageVector = Icons.Filled.ArrowDropDown, "")
-                    }
-                    DropdownMenu(
-                        expanded = dMenuExpanded,
-                        onDismissRequest = { dMenuExpanded = false }) {
-                        dMenu.forEachIndexed { index, dMenuItem ->
-                            DropdownMenuItem(onClick = {
-                                dMenuExpanded = false; dMenuName = dMenuItem
-                                dMenuIndex = index
-                            }) {
-                                Text(dMenuItem)
+                                } else {
+                                    viewModel.nDPoint = it
+                                }
                             }
-                        }
-
-                    }
-                }
-                Text(text = "]")
-            }
-            Row {
-                for (i: Int in 0 until viewModel.nDBitmap.size) {
-                    Image(
-                        bitmap = viewModel.nDBitmap[i]!!.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(100.dp)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onLongPress = {
-                                        viewModel.nDImageUri.remove(viewModel.nDImageUri[i])
-                                        viewModel.nDBitmap.remove(viewModel.nDBitmap[i])
-                                        viewModel.nDFiles.remove(viewModel.nDFiles[i])
-                                        viewModel.nDBody.remove(viewModel.nDBody[i])
-                                    }
-                                )
-                            }
+                        },
+                        modifier = Modifier.weight(1f),
                     )
+
                 }
-            }
-            Row {
-                TextButton(onClick = { launcher.launch("image/*") }) {
-                    Text(text = "이미지 선택")
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .border(0.5.dp, Color.Gray)
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "부모 화 선택 [")
+                    Column {
+                        Row(Modifier.clickable { dMenuExpanded = !dMenuExpanded }) {
+                            Text(dMenuName)
+                            Icon(imageVector = Icons.Filled.ArrowDropDown, "")
+                        }
+                        DropdownMenu(
+                            expanded = dMenuExpanded,
+                            onDismissRequest = { dMenuExpanded = false }) {
+                            dMenu.forEachIndexed { index, dMenuItem ->
+                                DropdownMenuItem(onClick = {
+                                    dMenuExpanded = false; dMenuName = dMenuItem
+                                    dMenuIndex = index
+                                }) {
+                                    Text(dMenuItem)
+                                }
+                            }
+
+                        }
+                    }
+                    Text(text = "]")
                 }
-                TextButton(onClick = { viewModel.uploadNDImages() }) {
-                    Text(text = "이미지 업로드")
+                Row {
+                    for (i: Int in 0 until viewModel.nDBitmap.size) {
+                        Image(
+                            bitmap = viewModel.nDBitmap[i]!!.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            viewModel.nDImageUri.remove(viewModel.nDImageUri[i])
+                                            viewModel.nDBitmap.remove(viewModel.nDBitmap[i])
+                                            viewModel.nDFiles.remove(viewModel.nDFiles[i])
+                                            viewModel.nDBody.remove(viewModel.nDBody[i])
+                                        }
+                                    )
+                                }
+                        )
+                    }
+                }
+                Row {
+                    TextButton(onClick = { launcher.launch("image/*") }) {
+                        Text(text = "이미지 선택")
+                    }
+                    TextButton(onClick = { viewModel.uploadNDImages() }) {
+                        Text(text = "이미지 업로드")
+                    }
                 }
             }
         }

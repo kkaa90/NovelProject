@@ -68,9 +68,6 @@ fun ShowPostList(
     var c by remember {
         mutableStateOf(true)
     }
-    var temp by remember {
-        mutableStateOf("")
-    }
     val epList = remember {
         mutableStateListOf<NovelsInfo.NovelInfo>()
     }
@@ -88,7 +85,6 @@ fun ShowPostList(
         c = true
         Handler(Looper.getMainLooper()).postDelayed({
             c = false;
-            temp = "1234"
             if (epList.size == 0) {
                 epList.addAll(t.value)
             }
@@ -104,14 +100,11 @@ fun ShowPostList(
     }
 //    var tabIndex by remember { mutableStateOf(0) }
 //    val tabs = listOf("목록", "댓글")
-
     for (key in episode.value.keys) {
         dMenu.add(key.toString())
     }
     var dMenuExpanded by remember { mutableStateOf(false) }
     var dMenuName: String by remember { mutableStateOf(dMenu[1]) }
-
-
     var eIsEmpty by remember { mutableStateOf(false) }
     getToken(m)
     Scaffold(
@@ -387,6 +380,8 @@ fun NovelDetailListItem1(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
+                viewModel.getParent(novelsInfo.nvId)
+                viewModel.nDImageNum = novelsInfo.imgUrl
                 if (viewModel.detailNow == -1) {
                     routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
                 } else {
@@ -487,6 +482,8 @@ fun NovelDetailListItem2(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
+                viewModel.getParent(novelsInfo.nvId)
+                viewModel.nDImageNum = novelsInfo.imgUrl
                 if (viewModel.detailNow == -1) {
                     routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
                 } else {

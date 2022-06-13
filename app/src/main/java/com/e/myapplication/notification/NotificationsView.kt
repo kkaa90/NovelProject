@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -60,9 +57,10 @@ fun NotificationsView(routeAction: RouteAction) {
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        LazyColumn {
-            items(list) { n ->
+        LazyColumn(contentPadding = PaddingValues(vertical = 1.dp)) {
+            items(items = list) { n ->
                 ShowNotification(notification = n, routeAction)
+
             }
         }
     }
@@ -75,9 +73,9 @@ fun ShowNotification(notification: Notify, routeAction: RouteAction) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { routeAction.navWithNum(NAVROUTE.NOVELDETAILSLIST.routeName + "/${notification.titleId}") },
-        shape = RoundedCornerShape(6.dp), border = BorderStroke(0.25.dp, gray)
+        shape = RoundedCornerShape(6.dp), border = BorderStroke(1.dp, Color.Black)
     ) {
-        Column() {
+        Column(modifier = Modifier.padding(8.dp)) {
             Text(text = notification.title.toString())
             Text(text = notification.body.toString())
         }

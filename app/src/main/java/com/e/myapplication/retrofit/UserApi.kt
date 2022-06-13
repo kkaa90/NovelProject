@@ -219,6 +219,14 @@ interface UserApi {
         @Body body: PostNovelsDetail
     ) : Call<SNCR>
 
+    @PUT("/novels/detail/{nNum}")
+    fun editNovel(
+        @Header("Authorization") authorization: String?,
+        @Path("nNum") num: Int,
+        @Query("nv-id") nv_id: Int,
+        @Body body : EditingNovelDetail
+    ) : Call<CallMethod>
+
 
     @DELETE("/novels/detail/{nNum}")
     fun deleteNovel(

@@ -24,3 +24,15 @@ data class PostNovelsDetail(
         val nvPoint: String
     )
 }
+data class EditingNovelDetail(
+    @SerializedName("imgUrl")
+    val imgUrl: String,
+    @SerializedName("nvContents")
+    val nvContents: String,
+    @SerializedName("nvState")
+    val nvState: String,
+    @SerializedName("nvTitle")
+    val nvTitle: String,
+    @SerializedName("nvWriter")
+    val nvWriter: String
+)

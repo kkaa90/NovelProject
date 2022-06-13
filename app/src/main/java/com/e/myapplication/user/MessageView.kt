@@ -176,8 +176,13 @@ fun MessageItem(
                         color = Color(0xFF949494)
                     )
                 }
-
-                Text(text = message.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row {
+                    Text(text = message.title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    if(message.isRead==1){
+                        Text(text = "읽음 ")
+                    }
+                }
+                
             }
         }
     }

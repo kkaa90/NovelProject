@@ -61,6 +61,7 @@ fun NovelDetailView(
     routeAction: RouteAction
 ) {
     println("nNum: $nNum, bNum: $bNum")
+    println("parent : ${viewModel.parent}")
     val context = LocalContext.current
     val rPoint = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
     var rName: String by remember { mutableStateOf(rPoint[9]) }
@@ -107,6 +108,7 @@ fun NovelDetailView(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = {
+                        viewModel.parent = -1
                         routeAction.goBack()
                     }) {
                         Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "")
@@ -136,7 +138,11 @@ fun NovelDetailView(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     if (viewModel.a.memId == novel.value.novel.memId.toString()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable {
+                                viewModel.editing(novel.value.novel)
+                                routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName+"/${nNum}")
+                            }) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "",
@@ -237,7 +243,10 @@ fun NovelDetailView(
                 listVisibility.value = false
             } else if ((!commentV && !listVisibility.value) && visibility) {
                 visibility = false
-            } else routeAction.goBack()
+            } else {
+                viewModel.parent=-1
+                routeAction.goBack()
+            }
         }
         Box(modifier = Modifier.zIndex(if (listVisibility.value) 1f else 0f)) {
             AnimatedVisibility(visible = listVisibility.value) {

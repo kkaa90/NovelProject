@@ -68,7 +68,7 @@ class NovelViewModel : ViewModel(){
     var nCBackVisibility by mutableStateOf(false)
 
 
-    //소설 게시물 작성
+    //소설 게시물 작성 및 수정
     var nDTitle by mutableStateOf("")
     var nDContent by mutableStateOf("")
     var nDImageUri = mutableStateListOf<Uri?>()
@@ -77,6 +77,9 @@ class NovelViewModel : ViewModel(){
     var nDBody = mutableStateListOf<MultipartBody.Part?>()
     var nDImageNum by mutableStateOf("1")
     var nDPoint by mutableStateOf("0")
+    var parent by mutableStateOf(-1)
+    var woe by mutableStateOf(false)
+    var novelNum by mutableStateOf(0)
 
     //소설 게시물
     var detailNow by mutableStateOf(-1)
@@ -282,7 +285,20 @@ class NovelViewModel : ViewModel(){
         nDBody.clear()
         nDPoint="0"
         nDImageNum = "1"
+        parent = -1
+        woe = false
+        routeAction.goBack()
+    }
 
+    fun nDBackPressed2(routeAction: RouteAction){
+        nDTitle=""
+        nDContent=""
+        nDImageUri.clear()
+        nDBitmap.clear()
+        nDFiles.clear()
+        nDBody.clear()
+        nDPoint="0"
+        woe = false
         routeAction.goBack()
     }
 
@@ -414,7 +430,7 @@ class NovelViewModel : ViewModel(){
                     "reduplication" -> {
                         Toast.makeText(
                             context,
-                            "이미 신고한 게시물입니다.",
+                            "이미 신고한 댓글입니다.",
                             Toast.LENGTH_LONG
                         ).show()
                         reportContent = ""
@@ -437,6 +453,50 @@ class NovelViewModel : ViewModel(){
 
         })
     }
+    fun getParent(num: Int){
+        parent = if(num==c.value.nvId){
+            0
+        } else {
+            e.value.entries.find { it.value.contains(num) }?.key!!
+        }
+    }
 
+    fun editing(novel : NovelsDetail.Novel){
+        woe = true
+        nDTitle = novel.nvTitle
+        nDContent = novel.nvContents
+        nDPoint = novel.nvPoint.toString()
+        novelNum = novel.nvId
+    }
+    fun editNovelDetail(routeAction: RouteAction){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.editNovel(ac.authorization, c.value.nvcId , novelNum, EditingNovelDetail(nDImageNum,nDContent,"0",nDTitle,ac.memNick))
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod>{
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                val r =response.body()!!.msg
+                when (r) {
+                    "JWT expiration" -> {
+                        println("토큰 만료")
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed({ editNovelDetail(routeAction) }, 1000)
+                    }
+                    "OK" -> {
+                        println("글쓰기 성공")
+                        nDBackPressed2(routeAction)
+                    }
+                    else -> {
+                        println("글쓰기 오류")
+                    }
+                }
+                retrofitClass.cancel()
+            }
 
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
 }

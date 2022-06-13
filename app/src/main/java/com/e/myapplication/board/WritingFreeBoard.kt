@@ -196,34 +196,36 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
                     )
                 }
             }
-            Row() {
-                TextButton(onClick = {
-                    if (v.bitmap.size > 3) {
-                        Toast.makeText(
-                            context,
-                            "이미지는 최대 3개까지 가능합니다.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } else {
-                        launcher.launch("image/*")
-                    }
+            if (!v.woe) {
+                Row() {
+                    TextButton(onClick = {
+                        if (v.bitmap.size > 3) {
+                            Toast.makeText(
+                                context,
+                                "이미지는 최대 3개까지 가능합니다.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            launcher.launch("image/*")
+                        }
 
-                }) {
-                    Text(text = "이미지 선택")
-                }
-                TextButton(onClick = {
-                    if (v.bitmap.size == 0) {
-                        Toast.makeText(
-                            context,
-                            "이미지가 없습니다.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } else {
-                        v.uploadImage()
+                    }) {
+                        Text(text = "이미지 선택")
                     }
+                    TextButton(onClick = {
+                        if (v.bitmap.size == 0) {
+                            Toast.makeText(
+                                context,
+                                "이미지가 없습니다.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            v.uploadImage()
+                        }
 
-                }) {
-                    Text("이미지 등록")
+                    }) {
+                        Text("이미지 등록")
+                    }
                 }
             }
 
