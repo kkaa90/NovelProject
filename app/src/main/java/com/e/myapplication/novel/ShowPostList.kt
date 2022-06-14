@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -132,7 +133,7 @@ fun ShowPostList(
                 }
             }
         }
-        if(c){
+        if (c) {
             Dialog(
                 onDismissRequest = { c = false },
                 DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
@@ -199,7 +200,10 @@ fun ShowPostList(
                                                 contentDescription = null
                                             )
                                         }
-                                        Text(cover.value.nvcSubscribeCount.toString(), fontSize = 12.sp)
+                                        Text(
+                                            cover.value.nvcSubscribeCount.toString(),
+                                            fontSize = 12.sp
+                                        )
                                     }
                                 }
                             }
@@ -263,12 +267,12 @@ fun ShowPostList(
 //                            for (key in episode.value.keys) {
 //                                println(key)
 //                            }
-                            c= true
+                            c = true
                             Handler(Looper.getMainLooper()).postDelayed({
-                                dMenuName=dMenu[1]
+                                dMenuName = dMenu[1]
                                 epList.clear()
                                 epList.addAll(t.value)
-                                c= false
+                                c = false
                             }, 1000)
                         }) {
                             Text(text = "새로 고침")
@@ -333,7 +337,7 @@ fun ShowPostList(
                             vertical = 4.dp
                         )
                     ) {
-                        NovelDetailListItem1(n, num, test.value, routeAction, index , viewModel)
+                        NovelDetailListItem1(n, num, test.value, routeAction, index, viewModel)
                     }
 
                 }
@@ -368,7 +372,7 @@ fun NovelDetailListItem1(
     num: Int,
     test: MutableMap<Int, List<NovelsInfo.NovelInfo>>,
     routeAction: RouteAction,
-    index : Int,
+    index: Int,
     viewModel: NovelViewModel
 ) {
     val context = LocalContext.current
@@ -380,7 +384,7 @@ fun NovelDetailListItem1(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
-                if(lCheck) {
+                if (lCheck) {
                     viewModel.getParent(novelsInfo.nvId)
                     viewModel.nDImageNum = novelsInfo.imgUrl
                     if (viewModel.detailNow == -1) {
@@ -388,8 +392,7 @@ fun NovelDetailListItem1(
                     } else {
                         routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}&state=${novelsInfo.nvState}")
                     }
-                }
-                else {
+                } else {
                     routeAction.navTo(NAVROUTE.LOGIN)
                 }
             }),
@@ -409,7 +412,7 @@ fun NovelDetailListItem1(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row() {
+                Row(modifier = Modifier.weight(1f)) {
                     Spacer(modifier = Modifier.padding(10.0.dp))
                     Column {
                         Text(
@@ -418,11 +421,29 @@ fun NovelDetailListItem1(
                             style = MaterialTheme.typography.subtitle2
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (novelsInfo.nvWriter.length > 15) novelsInfo.nvWriter.substring(
+                                        0,
+                                        15
+                                    ) else novelsInfo.nvWriter,
+                                    style = MaterialTheme.typography.body2,
+                                )
+                                Text(
+                                    text = "  조회 ${novelsInfo.nvHit}",
+                                    style = MaterialTheme.typography.body2,
+                                )
+                            }
+                            Text(
+                                text = "포인트 : ${novelsInfo.nvPoint}",
+                                style = MaterialTheme.typography.body2
+                            )
+                        }
 
-                        Text(
-                            text = "${novelsInfo.nvWriter}  조회 ${novelsInfo.nvHit}",
-                            style = MaterialTheme.typography.body2
-                        )
                     }
                 }
 
@@ -471,8 +492,8 @@ fun NovelDetailListItem2(
     test: MutableMap<Int, List<NovelsInfo.NovelInfo>>,
     vis: MutableState<Boolean>,
     routeAction: RouteAction,
-    indexed : String,
-    index : Int,
+    indexed: String,
+    index: Int,
     viewModel: NovelViewModel
 ) {
     val context = LocalContext.current
@@ -487,7 +508,7 @@ fun NovelDetailListItem2(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
-                if(lCheck) {
+                if (lCheck) {
                     viewModel.getParent(novelsInfo.nvId)
                     viewModel.nDImageNum = novelsInfo.imgUrl
                     if (viewModel.detailNow == -1) {
@@ -495,8 +516,7 @@ fun NovelDetailListItem2(
                     } else {
                         routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}&state=${novelsInfo.nvState}")
                     }
-                }
-                else {
+                } else {
                     routeAction.navTo(NAVROUTE.LOGIN)
                 }
             }),
@@ -516,19 +536,39 @@ fun NovelDetailListItem2(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row() {
+                Row(modifier = Modifier.weight(1f)) {
                     Spacer(modifier = Modifier.padding(10.0.dp))
                     Column {
                         Text(
-                            text =  "${indexed}-${index}화 " + novelsInfo.nvTitle,
+                            text = "${indexed}-${index}화 " + novelsInfo.nvTitle,
                             color = MaterialTheme.colors.secondaryVariant,
                             style = MaterialTheme.typography.subtitle2
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "${novelsInfo.nvWriter}  조회 ${novelsInfo.nvHit}",
-                            style = MaterialTheme.typography.body2
-                        )
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (novelsInfo.nvWriter.length > 15) novelsInfo.nvWriter.substring(
+                                        0,
+                                        15
+                                    ) else novelsInfo.nvWriter,
+                                    style = MaterialTheme.typography.body2,
+                                )
+                                Text(
+                                    text = "  조회 ${novelsInfo.nvHit}",
+                                    style = MaterialTheme.typography.body2,
+                                )
+                            }
+
+                            Text(
+                                text = "포인트 : ${novelsInfo.nvPoint}",
+                                style = MaterialTheme.typography.body2
+                            )
+                        }
+
                     }
                 }
 
@@ -563,7 +603,6 @@ fun NovelDetailListItem2(
                             Spacer(modifier = Modifier.height(2.dp))
                         }
                     }
-
                 }
             }
         }
