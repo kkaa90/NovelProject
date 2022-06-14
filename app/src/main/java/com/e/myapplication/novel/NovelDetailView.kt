@@ -8,6 +8,7 @@ import android.os.Looper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.navigation.compose.currentBackStackEntryAsState
+import coil.compose.rememberImagePainter
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
@@ -57,6 +59,7 @@ import retrofit2.Response
 fun NovelDetailView(
     nNum: Int,
     bNum: Int,
+    state : Int,
     viewModel: NovelViewModel,
     routeAction: RouteAction
 ) {
@@ -94,10 +97,15 @@ fun NovelDetailView(
     val backStackEntry = routeAction.getNow.backQueue
     LaunchedEffect(true) {
         viewModel.detailNow = bNum
-        getNovelBoard(context, nNum = nNum, bNum = bNum, novel, routeAction)
-        getC(nNum, bNum, comments, replys)
-        viewModel.a = viewModel.read()
-        println(backStackEntry)
+        if(state==1){
+            setNovel(novel, bNum)
+        }
+        else {
+            getNovelBoard(context, nNum = nNum, bNum = bNum, novel, routeAction)
+            getC(nNum, bNum, comments, replys)
+            viewModel.a = viewModel.read()
+            println(backStackEntry)
+        }
     }
     Scaffold(topBar = {
         AnimatedVisibility(visible = visibility) {
@@ -106,7 +114,7 @@ fun NovelDetailView(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                     IconButton(onClick = {
                         viewModel.parent = -1
                         routeAction.goBack()
@@ -137,11 +145,11 @@ fun NovelDetailView(
                         Text("목록", fontSize = 14.sp)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    if (viewModel.a.memId == novel.value.novel.memId.toString()) {
+                    if(novel.value.novel.nvState==1){
                         Row(verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable {
                                 viewModel.editing(novel.value.novel)
-                                routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName+"/${nNum}")
+                                routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName+"?num${nNum}&state=1")
                             }) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -151,31 +159,48 @@ fun NovelDetailView(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("수정", fontSize = 14.sp)
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { dnVisibility.value = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "",
-                                modifier = Modifier.size(14.sp.value.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("삭제", fontSize = 14.sp)
-                        }
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable {
-                                rnVisibility.value = true
-                            }) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_baseline_report_24),
-                                contentDescription = "",
-                                modifier = Modifier.size(14.sp.value.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("신고", fontSize = 14.sp)
+                    }
+                    else {
+                        if (viewModel.a.memId == novel.value.novel.memId.toString()) {
+                            Row(verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable {
+                                    viewModel.editing(novel.value.novel)
+                                    routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName+"?num=${nNum}&state=0")
+                                }) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "",
+                                    modifier = Modifier.size(14.sp.value.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("수정", fontSize = 14.sp)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable { dnVisibility.value = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "",
+                                    modifier = Modifier.size(14.sp.value.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("삭제", fontSize = 14.sp)
+                            }
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable {
+                                    rnVisibility.value = true
+                                }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_baseline_report_24),
+                                    contentDescription = "",
+                                    modifier = Modifier.size(14.sp.value.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("신고", fontSize = 14.sp)
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -359,7 +384,19 @@ fun NovelDetailView(
 @Composable
 fun ShowBoard(board: NovelsDetail) {
     Column {
-        Text(text = board.novel.nvContents)
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            for (i in board.novel.imgUrls.indices) {
+                Image(
+                    painter = rememberImagePainter(board.novel.imgUrls[i]),
+                    contentDescription = "",
+                    modifier = Modifier.size(300.dp), alignment = Alignment.Center
+                )
+            }
+        }
+        Text(text = board.novel.nvContents, modifier = Modifier.padding(8.dp))
     }
 }
 
@@ -797,6 +834,17 @@ fun DeleteNovelCDialog(
     )
 }
 
+fun setNovel(novel : MutableState<NovelsDetail>, bNum: Int){
+    val n = NovelsDetail(
+        NovelsDetail.Novel(
+            listOf(), 0, 0, "삭제된 에피소드 입니다.\n누구나 해당 에피소드를 수정할 수 있습니다.",
+            "", 0, bNum, 0, 0,
+            0, 1, "삭제된 에피소드 입니다.", "", ""
+        ),
+        NovelsDetail.User("", "", ""), ""
+    )
+    novel.value = n
+}
 
 fun getNovelBoard(
     context: Context,

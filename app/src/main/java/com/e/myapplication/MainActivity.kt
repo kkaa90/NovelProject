@@ -288,7 +288,7 @@ fun NavigationGraph(starting: String = NAVROUTE.LOADING.routeName) {
             val num = nav.arguments?.getString("num")!!.toInt()
             ShowPostList(routeAction, num, novelViewModel)
         }
-        composable(NAVROUTE.NOVELDETAIL.routeName + "?nNum={nNum}&bNum={bNum}",
+        composable(NAVROUTE.NOVELDETAIL.routeName + "?nNum={nNum}&bNum={bNum}&state={state}",
             arguments = listOf(
                 navArgument("nNum") {
                     defaultValue = "0"
@@ -296,15 +296,31 @@ fun NavigationGraph(starting: String = NAVROUTE.LOADING.routeName) {
                 }, navArgument("bNum") {
                     defaultValue = "0"
                     type = NavType.StringType
+                },
+                navArgument("state"){
+                    defaultValue = "0"
+                    type = NavType.StringType
                 }
             )) { nav ->
             val nNum = nav.arguments?.getString("nNum")!!.toInt()
             val bNum = nav.arguments?.getString("bNum")!!.toInt()
-            NovelDetailView(nNum, bNum, novelViewModel, routeAction)
+            val state = nav.arguments?.getString("state")!!.toInt()
+            NovelDetailView(nNum, bNum, state , novelViewModel, routeAction)
         }
-        composable(NAVROUTE.WRITINGNOVELDETAIL.routeName + "/{num}") { nav ->
+        composable(NAVROUTE.WRITINGNOVELDETAIL.routeName + "?num={num}&state={state}",
+        arguments = listOf(
+            navArgument("num"){
+                defaultValue = "0"
+                type = NavType.StringType
+            },
+            navArgument("state"){
+                defaultValue = "0"
+                type = NavType.StringType
+            }
+        )) { nav ->
             val num = nav.arguments?.getString("num")!!.toInt()
-            WritingNovelDetail(num = num, routeAction = routeAction, novelViewModel)
+            val state = nav.arguments?.getString("state")!!.toInt()
+            WritingNovelDetail(num = num,state = state ,routeAction = routeAction, novelViewModel)
         }
         composable(NAVROUTE.SEARCH.routeName) {
             SearchView(routeAction, boardViewModel)

@@ -111,7 +111,7 @@ fun ShowPostList(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName + "/${num}")
+                routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName + "?num=${num}&state=0")
             }) {
                 Icon(Icons.Filled.Add, contentDescription = "")
             }
@@ -380,12 +380,17 @@ fun NovelDetailListItem1(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
-                viewModel.getParent(novelsInfo.nvId)
-                viewModel.nDImageNum = novelsInfo.imgUrl
-                if (viewModel.detailNow == -1) {
-                    routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
-                } else {
-                    routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
+                if(lCheck) {
+                    viewModel.getParent(novelsInfo.nvId)
+                    viewModel.nDImageNum = novelsInfo.imgUrl
+                    if (viewModel.detailNow == -1) {
+                        routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}&state=${novelsInfo.nvState}")
+                    } else {
+                        routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}&state=${novelsInfo.nvState}")
+                    }
+                }
+                else {
+                    routeAction.navTo(NAVROUTE.LOGIN)
                 }
             }),
         elevation = 4.dp
@@ -482,12 +487,17 @@ fun NovelDetailListItem2(
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
             .clickable(onClick = {
-                viewModel.getParent(novelsInfo.nvId)
-                viewModel.nDImageNum = novelsInfo.imgUrl
-                if (viewModel.detailNow == -1) {
-                    routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
-                } else {
-                    routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}")
+                if(lCheck) {
+                    viewModel.getParent(novelsInfo.nvId)
+                    viewModel.nDImageNum = novelsInfo.imgUrl
+                    if (viewModel.detailNow == -1) {
+                        routeAction.navWithNum("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}&state=${novelsInfo.nvState}")
+                    } else {
+                        routeAction.goList("novelDetail?nNum=${num}&bNum=${novelsInfo.nvId}&state=${novelsInfo.nvState}")
+                    }
+                }
+                else {
+                    routeAction.navTo(NAVROUTE.LOGIN)
                 }
             }),
         elevation = 4.dp

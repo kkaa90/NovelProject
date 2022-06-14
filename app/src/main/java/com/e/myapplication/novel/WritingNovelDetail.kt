@@ -56,7 +56,7 @@ import retrofit2.Response
 import java.io.File
 
 @Composable
-fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewModel) {
+fun WritingNovelDetail(num: Int, state : Int, routeAction: RouteAction, viewModel: NovelViewModel) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val novelInfo = viewModel.d.collectAsState().value
@@ -237,6 +237,36 @@ fun WritingNovelDetail(num: Int, routeAction: RouteAction, viewModel: NovelViewM
                     }
                     Text(text = "]")
                 }
+                Row {
+                    for (i: Int in 0 until viewModel.nDBitmap.size) {
+                        Image(
+                            bitmap = viewModel.nDBitmap[i]!!.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            viewModel.nDImageUri.remove(viewModel.nDImageUri[i])
+                                            viewModel.nDBitmap.remove(viewModel.nDBitmap[i])
+                                            viewModel.nDFiles.remove(viewModel.nDFiles[i])
+                                            viewModel.nDBody.remove(viewModel.nDBody[i])
+                                        }
+                                    )
+                                }
+                        )
+                    }
+                }
+                Row {
+                    TextButton(onClick = { launcher.launch("image/*") }) {
+                        Text(text = "이미지 선택")
+                    }
+                    TextButton(onClick = { viewModel.uploadNDImages() }) {
+                        Text(text = "이미지 업로드")
+                    }
+                }
+            }
+            if (state==1){
                 Row {
                     for (i: Int in 0 until viewModel.nDBitmap.size) {
                         Image(
