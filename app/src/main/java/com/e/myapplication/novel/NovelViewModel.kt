@@ -80,6 +80,7 @@ class NovelViewModel : ViewModel(){
     var parent by mutableStateOf(-1)
     var woe by mutableStateOf(false)
     var novelNum by mutableStateOf(0)
+    var nDBackVisibility by mutableStateOf(false)
 
     //소설 게시물
     var detailNow by mutableStateOf(-1)

@@ -108,7 +108,7 @@ fun WritingBoard(viewModel: FreeBoardViewModel, routeAction: RouteAction) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { routeAction.goBack() }) {
+            IconButton(onClick = { v.backVisibility = true }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
             if (v.woe) {

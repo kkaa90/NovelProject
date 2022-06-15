@@ -73,7 +73,7 @@ fun WritingNCover(viewModel: NovelViewModel, routeAction: RouteAction) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { routeAction.goBack() }) {
+            IconButton(onClick = { viewModel.nCBackVisibility = true }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
             }
             TextButton(onClick = {

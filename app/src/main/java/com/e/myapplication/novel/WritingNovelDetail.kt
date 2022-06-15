@@ -11,11 +11,13 @@ import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -36,6 +38,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.RouteAction
 import com.e.myapplication.dataclass.ImageUploadSingle
@@ -145,6 +149,11 @@ fun WritingNovelDetail(num: Int, state : Int, routeAction: RouteAction, viewMode
             }
         }
     }) { p ->
+        Box() {
+            AnimatedVisibility(visible = viewModel.nDBackVisibility) {
+                NDBackAskingDialog(viewModel = viewModel, routeAction = routeAction, state = state)
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -300,19 +309,49 @@ fun WritingNovelDetail(num: Int, state : Int, routeAction: RouteAction, viewMode
     }
 }
 
-fun getNovelEpisode(
-    num: Int, novelInfo: SnapshotStateList<NovelsInfo.NovelInfo>
-) {
-    val retrofitClass = RetrofitClass.api.getNovelList(num)
-    retrofitClass.enqueue(object : retrofit2.Callback<NovelsInfo> {
-        override fun onResponse(call: Call<NovelsInfo>, response: Response<NovelsInfo>) {
-            val r = response.body()
-            novelInfo.addAll(r!!.novelInfo)
+@Composable
+fun NDBackAskingDialog(viewModel: NovelViewModel, routeAction: RouteAction, state: Int) {
+    Dialog(onDismissRequest = { viewModel.nDBackVisibility = false }) {
+        Surface(
+            modifier = Modifier
+                .wrapContentSize(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "소설 작성 취소", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(text = "소설 작성을 취소하시겠습니까?\n입력한 내용은 삭제됩니다.")
+                Spacer(modifier = Modifier.height(20.dp))
+                Column(
+                    Modifier
+                        .fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row {
+                        OutlinedButton(onClick = { viewModel.nDBackVisibility = false }) {
+                            Text(text = "취소")
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        OutlinedButton(onClick = {
+                            if(viewModel.woe){
+                                if(state==1){
+                                    viewModel.nDBackPressed(routeAction)
+                                }
+                                else {
+                                    viewModel.nDBackPressed2(routeAction)
+                                }
+                            }
+                            else {
+                                viewModel.nDBackPressed(routeAction)
+                            }
+                        }) {
+                            Text(text = "확인")
+                        }
+                    }
+                }
+
+            }
         }
 
-        override fun onFailure(call: Call<NovelsInfo>, t: Throwable) {
-            t.printStackTrace()
-        }
-
-    })
+    }
 }
