@@ -74,6 +74,15 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
         p = point
     }
 
+    fun readLoginInfo() : LoginInfo{
+        var loginInfo : LoginInfo
+        runBlocking(Dispatchers.IO) {
+            loginInfo = repository2.readLoginInfo()
+        }
+        return loginInfo
+    }
+
+
     LaunchedEffect(scaffoldState.drawerState.isOpen) {
         read()
     }
@@ -133,8 +142,9 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
                 Spacer(Modifier.width(16.dp))
                 OutlinedButton(onClick = {
                     lCheck = false
+                    val l =readLoginInfo()
                     accountSave(User("", "", "", "", "", "", "", "", ""))
-                    loginSave(ChkLogin(chkIdSave = false, chkAutoLogin = false, id = "", pwd = ""))
+                    loginSave(ChkLogin(chkIdSave = l.chkIdSave, chkAutoLogin = false, id = l.id, pwd = ""))
                     point = 0
                     read()
                 }) {

@@ -3,6 +3,7 @@ package com.e.myapplication.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key.Companion.Tab
 
 private val DarkColorPalette = darkColors(
@@ -12,9 +13,9 @@ private val DarkColorPalette = darkColors(
 )
 
 private val LightColorPalette = lightColors(
-    primary = Purple500,
-    primaryVariant = Purple700,
-    secondary = Teal200
+    primary = Color(0xFF00BB90),
+    primaryVariant = Color(0xFF00A495),
+    secondary = Color(0xFF2F4858)
 
     /* Other default colors to override
     background = Color.White,
@@ -33,7 +34,8 @@ fun MyApplicationTheme(
     content: @Composable() () -> Unit
 ) {
     val colors = if (darkTheme) {
-        DarkColorPalette
+        //DarkColorPalette
+        LightColorPalette
     } else {
         LightColorPalette
     }

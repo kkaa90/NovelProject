@@ -96,7 +96,7 @@ fun Login(routeAction: RouteAction) {
             }
         }
     }*/
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
         Spacer(modifier = Modifier.height(20.dp))
         OutlinedTextField(
             value = id,
@@ -196,11 +196,7 @@ fun Login(routeAction: RouteAction) {
                 contentColor = Color.White
             )
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_baseline_login_24),
-                contentDescription = ""
-            )
-            Text(text = "Sign in with Google", modifier = Modifier.padding(6.dp))
+            Text(text = "구글 로그인", modifier = Modifier.padding(6.dp))
         }
     }
 
