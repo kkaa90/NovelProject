@@ -36,7 +36,8 @@ import java.io.File
 
 class FreeBoardViewModel : ViewModel() {
     //게시글 목록
-    private val _boards = MutableStateFlow(emptyList<BoardList.BoardListItem>())
+
+    private val _boards = MutableStateFlow(mutableListOf<BoardList.BoardListItem>())
     val boards = _boards.asStateFlow()
 
     //게시글
@@ -50,6 +51,8 @@ class FreeBoardViewModel : ViewModel() {
     private val _replys = MutableStateFlow(mutableMapOf<Int, MutableList<Comment>>())
     val replys = _replys.asStateFlow()
 
+    var p by mutableStateOf(1)
+    var pageNum by mutableStateOf(1)
     //ShowFreeBoard
     var comment by mutableStateOf("")
     var comment2 by mutableStateOf("")
@@ -87,10 +90,15 @@ class FreeBoardViewModel : ViewModel() {
 
     //게시글 목록 받아오기
     fun updateBoardList(){
-        val retrofitClass = RetrofitClass.api.getBoards(1)
+        if(p==1){
+            _boards.value.clear()
+        }
+        val retrofitClass = RetrofitClass.api.getBoards(p)
         retrofitClass.enqueue(object : retrofit2.Callback<BoardList>{
             override fun onResponse(call: Call<BoardList>, response: Response<BoardList>) {
-                _boards.value = response.body()!!.boards
+                _boards.value.addAll(response.body()!!.boards)
+                pageNum=response.body()!!.pagenum
+                progress = false
             }
             override fun onFailure(call: Call<BoardList>, t: Throwable) {
                 t.printStackTrace()

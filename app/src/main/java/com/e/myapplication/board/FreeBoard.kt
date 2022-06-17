@@ -1,22 +1,34 @@
 package com.e.myapplication.board
 
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
@@ -26,19 +38,39 @@ import com.e.myapplication.dataclass.BoardList
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Response
+import kotlin.concurrent.timer
 
 
 @Composable
 fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteAction) {
+    fun LazyListState.isScrolledToTheEnd() =
+        layoutInfo.visibleItemsInfo.lastOrNull()?.index == layoutInfo.totalItemsCount - 1
 
-    LaunchedEffect(true){
-        boardViewModel.updateBoardList()
+    val boards = remember {
+        mutableStateListOf<BoardList.BoardListItem>()
     }
-    val boards = boardViewModel.boards.collectAsState().value
+    LaunchedEffect(true) {
+        boardViewModel.progress = true
+        boardViewModel.p = 1
+        boardViewModel.updateBoardList()
+        timer(period = 100){
+            if(!boardViewModel.progress){
+                boardViewModel.viewModelScope.launch{
+                    boardViewModel.boards.collect{
+                        boards.clear()
+                        boards.addAll(it)
+                    }
+                }
+                cancel()
+            }
+        }
+    }
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
         floatingActionButton = {
@@ -49,67 +81,127 @@ fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteActi
             }
         },
         drawerContent = {
-            Drawer(routeAction,scaffoldState)
+            Drawer(routeAction, scaffoldState)
         },
         drawerGesturesEnabled = true,
         scaffoldState = scaffoldState
     ) {
+        if (boardViewModel.progress) {
+            Dialog(
+                onDismissRequest = { boardViewModel.progress = false },
+                DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
         Column(modifier = Modifier.fillMaxSize()) {
             //Divider(color = Color(0xFFCFCECE))
-            LazyColumn() {
+            LazyColumn(state = listState) {
                 items(boards) { board ->
-                    FreeBoardListItem(board,boardViewModel, routeAction)
+                    FreeBoardListItem(board, boardViewModel, routeAction)
                     //Divider(color = Color(0xFFCFCECE))
+                    if (listState.isScrolledToTheEnd() && boardViewModel.pageNum > boardViewModel.p) {
+                        boardViewModel.progress = true
+                        boardViewModel.p++
+                        boardViewModel.updateBoardList()
+                        timer(period = 100){
+                            if(!boardViewModel.progress){
+                                boardViewModel.viewModelScope.launch{
+                                    boardViewModel.boards.collect{
+                                        boards.clear()
+                                        boards.addAll(it)
+                                    }
+                                }
+                                cancel()
+                            }
+                        }
+                    }
                 }
             }
         }
 
     }
 }
+
 @Composable
-fun FreeBoardListItem(board: BoardList.BoardListItem,viewModel: FreeBoardViewModel, routeAction: RouteAction) {
+fun FreeBoardListItem(
+    board: BoardList.BoardListItem,
+    viewModel: FreeBoardViewModel,
+    routeAction: RouteAction
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = {
-                viewModel.imageNum=board.imgUrl
-                viewModel.boardNum=board.brdId
+                viewModel.imageNum = board.imgUrl
+                viewModel.boardNum = board.brdId
                 routeAction.navWithNum("boardDetail/${board.brdId}")
             })
+            .border(1.dp, shape = RectangleShape, color = Color.Gray)
     ) {
-        Column(Modifier.fillMaxWidth()) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if(board.brdImg==1) {
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Image(
-                        painter = painterResource(id = R.drawable.schumi),
-                        contentDescription = "",
-                        modifier = Modifier.size(16.sp.value.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(text = board.brdTitle, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if(board.brdCommentCount!=0) {
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(text = "[${board.brdCommentCount}]", fontSize = 16.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = board.brdTitle,
+                    fontSize = 18.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(2.dp)
+                )
+                Text(
+                    text = board.memNickname,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(2.dp)
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row() {
+                        Text(
+                            text = board.brdDatetime.split(".")[0],
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(2.dp)
+                        )
+                    }
+                    Row() {
+                        Text(
+                            text = "조회 ${board.brdHit}",
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(2.dp)
+                        )
+                        Text(
+                            text = "추천 ${board.brdLike}",
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(2.dp)
+                        )
+                        Text(
+                            text = "댓글 ${board.brdCommentCount}",
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(2.dp)
+                        )
+                    }
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Row(){
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = board.memNickname, fontSize = 14.sp, modifier = Modifier.widthIn(max=140.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "조회 ${board.brdHit}",fontSize = 14.sp)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "추천 ${board.brdLike}",fontSize = 14.sp)
-                }
-                Row() {
-                    Text(text = board.brdDatetime.split(".")[0], fontSize = 14.sp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
+            if (board.brdImg == 1) {
+                Image(
+                    painter = painterResource(id = R.drawable.schumi),
+                    contentDescription = "",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .padding(8.dp),
+                    alignment = Alignment.Center
+                )
+            } else {
+                Spacer(modifier = Modifier.width(8.dp))
             }
-            Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }
