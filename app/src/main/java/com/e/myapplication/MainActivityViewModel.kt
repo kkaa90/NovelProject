@@ -21,7 +21,7 @@ class MainActivityViewModel : ViewModel() {
     val t : StateFlow<List<List<String>>> get() = _t
 
     fun updateNovels(){
-        val gNovels = RetrofitClass.api.getNovels("nvcHit,DESC")
+        val gNovels = RetrofitClass.api.getNovels("nvcHit,DESC",1)
         gNovels.enqueue(object :retrofit2.Callback<Novels>{
             override fun onResponse(call: Call<Novels>, response: Response<Novels>) {
                 println(response.body()!!.content.size)

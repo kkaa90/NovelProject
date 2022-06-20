@@ -31,10 +31,10 @@ import java.io.File
 
 class NovelViewModel : ViewModel(){
     //소설 목록
-    private val _n = MutableStateFlow(emptyList<Novels.Content>())
+    private val _n = MutableStateFlow(mutableListOf<Novels.Content>())
     val n = _n.asStateFlow()
     //태그 목록
-    private val _t = MutableStateFlow(emptyList<List<String>>())
+    private val _t = MutableStateFlow(mutableListOf<List<String>>())
     val t = _t.asStateFlow()
     //소설 게시물 목록
     private val _d = MutableStateFlow(mutableListOf<NovelsInfo.NovelInfo>())
@@ -51,9 +51,10 @@ class NovelViewModel : ViewModel(){
     //소설 조회순
     private val _h = MutableStateFlow(mutableListOf<NovelsInfo.NovelInfo>())
     val h = _h.asStateFlow()
-    //소설 키
 
-    var back by mutableStateOf("")
+    var progress by mutableStateOf(false)
+    var p by mutableStateOf(1)
+    var pageNum by mutableStateOf(1)
 
     //소설 커버 작성
     var nCTitle by mutableStateOf("")
@@ -110,11 +111,16 @@ class NovelViewModel : ViewModel(){
 
     //소설 커버 목록 받아오기
     fun updateNovels(){
-        val gNovels = RetrofitClass.api.getNovels("${sNow.v},$asc")
+        if(p==1){
+            _n.value.clear()
+        }
+        val gNovels = RetrofitClass.api.getNovels("${sNow.v},$asc",p)
         gNovels.enqueue(object :retrofit2.Callback<Novels>{
             override fun onResponse(call: Call<Novels>, response: Response<Novels>) {
-                _n.value = response.body()!!.content
-                _t.value = response.body()!!.tags
+                _n.value.addAll(response.body()!!.content)
+                _t.value.addAll(response.body()!!.tags)
+                pageNum = response.body()!!.totalPages
+                progress = false
             }
 
             override fun onFailure(call: Call<Novels>, t: Throwable) {

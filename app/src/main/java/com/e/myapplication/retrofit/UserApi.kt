@@ -182,7 +182,8 @@ interface UserApi {
     //소설 커버 목록 받기 및 쓰기
     @GET("/novels")
     fun getNovels(
-        @Query("sort") sort : String
+        @Query("sort") sort : String,
+        @Query("page") page : Int
     ): Call<Novels>
 
     @GET("/novels")
