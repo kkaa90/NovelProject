@@ -53,6 +53,8 @@ class FreeBoardViewModel : ViewModel() {
 
     var p by mutableStateOf(1)
     var pageNum by mutableStateOf(1)
+    var check by mutableStateOf(false)
+
     //ShowFreeBoard
     var comment by mutableStateOf("")
     var comment2 by mutableStateOf("")
@@ -112,6 +114,7 @@ class FreeBoardViewModel : ViewModel() {
         retrofitClass.enqueue(object : retrofit2.Callback<Boards>{
             override fun onResponse(call: Call<Boards>, response: Response<Boards>) {
                 _board.value = response.body()!!
+                check = false
             }
             override fun onFailure(call: Call<Boards>, t: Throwable) {
                 t.printStackTrace()
@@ -146,6 +149,12 @@ class FreeBoardViewModel : ViewModel() {
                     if(r.pagenum >page){
                         updateComments(num,page+1)
                     }
+                    else {
+                        progress=false
+                    }
+                }
+                else {
+                    progress = false
                 }
             }
             override fun onFailure(call: Call<Comments>, t: Throwable) {
@@ -201,7 +210,7 @@ class FreeBoardViewModel : ViewModel() {
                 val result = response.body()?.msg
                 println(result)
                 if (result == "OK") {
-                    //updateComments(boardNum,1)
+                    updateComments(boardNum,1)
                 } else {
                     getAToken(context)
                     retrofitClass.cancel()
@@ -228,6 +237,7 @@ class FreeBoardViewModel : ViewModel() {
         val retrofitClass = RetrofitClass.api.likeBoard(ac.authorization, num)
         retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
             override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                println(response.body()!!.msg)
                 when (response.body()!!.msg) {
                     "OK" -> {
                         Toast.makeText(
@@ -235,13 +245,15 @@ class FreeBoardViewModel : ViewModel() {
                             "추천을 누르셨습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        updateBoard(num)
                     }
-                    "reduplication" -> {
+                    "cancel" -> {
                         Toast.makeText(
                             context,
-                            "이미 추천을 누르셨습니다.",
+                            "추천이 취소되었습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        updateBoard(num)
                     }
                     else -> {
                         getAToken(context)
@@ -277,13 +289,15 @@ class FreeBoardViewModel : ViewModel() {
                             "비추천을 누르셨습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        updateBoard(num)
                     }
-                    "reduplication" -> {
+                    "cancel" -> {
                         Toast.makeText(
                             context,
-                            "이미 비추천을 누르셨습니다.",
+                            "비추천이 취소되었습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        updateBoard(num)
                     }
                     else -> {
                         getAToken(context)
@@ -364,13 +378,15 @@ class FreeBoardViewModel : ViewModel() {
                             "추천을 누르셨습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        updateComments(boardNum,1)
                     }
-                    "reduplication" -> {
+                    "cancel" -> {
                         Toast.makeText(
                             context,
-                            "이미 추천을 누르셨습니다.",
+                            "추천이 취소되었습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        updateComments(boardNum,1)
                     }
                     else -> {
                         getAToken(context)
@@ -406,13 +422,15 @@ class FreeBoardViewModel : ViewModel() {
                             "비추천을 누르셨습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        updateComments(boardNum,1)
                     }
-                    "reduplication" -> {
+                    "cancel" -> {
                         Toast.makeText(
                             context,
-                            "이미 비추천을 누르셨습니다.",
+                            "비추천이 취소되었습니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        updateComments(boardNum,1)
                     }
                     else -> {
                         getAToken(context)

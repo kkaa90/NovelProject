@@ -40,10 +40,13 @@ import coil.compose.rememberImagePainter
 import com.e.myapplication.NAVROUTE
 import com.e.myapplication.R
 import com.e.myapplication.RouteAction
+import com.e.myapplication.dataclass.Boards
 import com.e.myapplication.dataclass.Comment
 import com.e.myapplication.dataclass.reportState
 import com.e.myapplication.lCheck
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlin.concurrent.timer
 
 
 @Composable
@@ -52,7 +55,9 @@ fun ShowBoard(
     routeAction: RouteAction,
     num: Int
 ) {
-    val board by viewModel.board.collectAsState()
+    var board = remember {
+        mutableStateOf(Boards(Boards.Board(),Boards.User()))
+    }
     val comment = remember {
         mutableStateListOf<Comment>()
     }
@@ -65,14 +70,18 @@ fun ShowBoard(
         viewModel.updateBoard(num)
         viewModel.updateComments(num, 1)
         viewModel.a = viewModel.read()
-        Handler(Looper.getMainLooper()).postDelayed(
-            {
+        timer(period = 100) {
+            if(!viewModel.progress) {
+                viewModel.viewModelScope.launch {
+                    viewModel.board.collect {
+                        board.value = it
+                    }
+                }
                 viewModel.viewModelScope.launch {
                     viewModel.comments.collect {
                         comment.clear()
                         comment.addAll(it)
                     }
-
                 }
                 viewModel.viewModelScope.launch {
                     viewModel.replys.collect {
@@ -80,9 +89,9 @@ fun ShowBoard(
                         reply.putAll(it)
                     }
                 }
-                viewModel.progress=false
-            }, 1000
-        )
+                cancel()
+            }
+        }
     }
     val context = LocalContext.current
     val rdVisibility = remember {
@@ -98,7 +107,6 @@ fun ShowBoard(
         mutableStateOf(false)
     }
     Scaffold(topBar = {
-
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -110,14 +118,14 @@ fun ShowBoard(
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = board.board.brdTitle,
+                    text = board.value.board.brdTitle,
                     fontSize = 24.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (viewModel.a.memId == board.board.memId.toString()) {
+                if (viewModel.a.memId == board.value.board.memId.toString()) {
                     TextButton(onClick = {
                         viewModel.editing(num)
                         routeAction.navTo(NAVROUTE.WRITINGBOARD)
@@ -154,6 +162,8 @@ fun ShowBoard(
                 DeleteCommentDialog(
                     visibility = deleteCVisibility,
                     viewModel = viewModel,
+                    comments = comment,
+                    replys = reply,
                     routeAction = routeAction
                 )
             }
@@ -206,13 +216,13 @@ fun ShowBoard(
                         Spacer(modifier = Modifier.width(4.dp))
                         Column(verticalArrangement = Arrangement.Center) {
                             Text(
-                                text = board.user.memNick,
+                                text = board.value.user.memNick,
                                 fontSize = 14.sp,
                                 modifier = Modifier.clickable {
-                                    routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${board.board.memId}&nick=${board.board.memNickname}")
+                                    routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${board.value.board.memId}&nick=${board.value.board.memNickname}")
                                 })
                             Text(
-                                text = board.board.brdDatetime.split(".")[0] + " 조회 ${board.board.brdHit}",
+                                text = board.value.board.brdDatetime.split(".")[0] + " 조회 ${board.value.board.brdHit}",
                                 fontSize = 14.sp
                             )
                         }
@@ -220,7 +230,7 @@ fun ShowBoard(
                     Divider(thickness = 1.dp, color = Color(0xFFA0A0A0))
 
                 }
-                items(items = board.board.imgUrls) { url ->
+                items(items = board.value.board.imgUrls) { url ->
                     Column(
                         Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -236,7 +246,7 @@ fun ShowBoard(
                 item {
                     Column {
                         Text(
-                            text = Html.fromHtml(board.board.brdContents).toString()
+                            text = Html.fromHtml(board.value.board.brdContents).toString()
                                 .replace("<br>", "\n")
                         )
                         Row(
@@ -246,21 +256,23 @@ fun ShowBoard(
                         ) {
                             FreeBoardIconButton(
                                 context = context,
+                                board,
                                 num = num,
                                 routeAction = routeAction,
                                 l = true,
                                 icon = R.drawable.ic_baseline_thumb_up_24,
-                                count = board.board.brdLike.toString(),
+                                count = board.value.board.brdLike.toString(),
                                 viewModel = viewModel
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             FreeBoardIconButton(
                                 context = context,
+                                board,
                                 num = num,
                                 routeAction = routeAction,
                                 l = false,
                                 icon = R.drawable.ic_baseline_thumb_down_24,
-                                count = board.board.brdDislike.toString(),
+                                count = board.value.board.brdDislike.toString(),
                                 viewModel = viewModel
                             )
 
@@ -334,7 +346,7 @@ fun ShowBoard(
                         Divider(thickness = 1.dp, color = Color(0xFFA0A0A0))
                         Row(Modifier.padding(8.dp)) {
 
-                            Text(text = "댓글(${board.board.brdCommentCount})")
+                            Text(text = "댓글(${board.value.board.brdCommentCount})")
                             Spacer(modifier = Modifier.width(12.dp))
                             Icon(
                                 imageVector = Icons.Default.Refresh,
@@ -390,6 +402,7 @@ fun ShowBoard(
 @Composable
 fun FreeBoardIconButton(
     context: Context,
+    board: MutableState<Boards>,
     num: Int,
     routeAction: RouteAction,
     l: Boolean,
@@ -404,12 +417,23 @@ fun FreeBoardIconButton(
             .border(1.dp, Color.Black)
             .clickable {
                 if (lCheck) {
+                    viewModel.check = true
                     if (l) {
                         viewModel.likeClick(num)
                     } else {
                         viewModel.dislikeClick(num)
                     }
-
+                    timer(period = 100){
+                        if(!viewModel.check){
+                            viewModel.viewModelScope.launch{
+                                viewModel.board.collect{
+                                    println(it)
+                                    board.value=it
+                                }
+                            }
+                            cancel()
+                        }
+                    }
                 } else {
                     Toast
                         .makeText(
@@ -422,7 +446,6 @@ fun FreeBoardIconButton(
                 }
             }
     ) {
-
         Icon(
             painter = painterResource(id = icon),
             contentDescription = "",
@@ -447,7 +470,6 @@ fun ShowComment(
     visibility: MutableState<Boolean>,
     dVisibility: MutableState<Boolean>
 ) {
-    println("index : $index")
     Card(modifier = Modifier
         .clickable {
             viewModel.comment2 = ""
@@ -478,10 +500,12 @@ fun ShowComment(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable {
+                            viewModel.progress = true
                             viewModel.likeComment(
                                 comment.brdId,
                                 comment.brdCmtId
                             )
+                            refreshComment(viewModel, comments, replys)
                         }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
@@ -495,10 +519,12 @@ fun ShowComment(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable {
+                            viewModel.progress=true
                             viewModel.dislikeComment(
                                 comment.brdId,
                                 comment.brdCmtId
                             )
+                            refreshComment(viewModel, comments, replys)
                         }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
@@ -508,8 +534,6 @@ fun ShowComment(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(comment.brdCmtDislike.toString(), fontSize = 16.sp)
                     }
-                    println(viewModel.a.memId)
-                    println(comment.memId.toString())
                     if (viewModel.a.memId == comment.memId.toString()) {
                         TextButton(onClick = {
                             viewModel.reportComment = comment.brdCmtId
@@ -577,23 +601,7 @@ fun ShowComment(
                             )
                             viewModel.comment2 = ""
                             viewModel.progress = true
-                            Handler(Looper.getMainLooper()).postDelayed(
-                                {
-                                    comments.clear()
-                                    viewModel.viewModelScope.launch {
-                                        viewModel.comments.collect {
-                                            comments.addAll(it)
-                                        }
-                                    }
-                                    viewModel.viewModelScope.launch {
-                                        viewModel.replys.collect {
-                                            replys.clear()
-                                            replys.putAll(it)
-                                        }
-                                    }
-                                    viewModel.progress = false
-                                }, 1000
-                            )
+                            refreshComment(viewModel, comments, replys)
                         }, enabled = (viewModel.comment2 != "")) {
                             Text(text = "작성")
                         }
@@ -608,6 +616,8 @@ fun ShowComment(
                         visibility = visibility,
                         viewModel = viewModel,
                         dVisibility = dVisibility,
+                        comments,
+                        replys,
                         routeAction = routeAction
                     )
                 }
@@ -622,6 +632,8 @@ fun ShowComment2(
     visibility: MutableState<Boolean>,
     viewModel: FreeBoardViewModel,
     dVisibility: MutableState<Boolean>,
+    comments: MutableList<Comment>,
+    replys: MutableMap<Int, MutableList<Comment>>,
     routeAction: RouteAction
 ) {
     Card(
@@ -651,10 +663,12 @@ fun ShowComment2(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable {
+                                viewModel.progress = true
                                 viewModel.likeComment(
                                     comment.brdId,
                                     comment.brdCmtId
                                 )
+                                refreshComment(viewModel, comments, replys)
                             }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
@@ -668,10 +682,12 @@ fun ShowComment2(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable {
+                                viewModel.progress=true
                                 viewModel.dislikeComment(
                                     comment.brdId,
                                     comment.brdCmtId
                                 )
+                                refreshComment(viewModel, comments, replys)
                             }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
@@ -874,6 +890,8 @@ fun DeleteBoardDialog(
 fun DeleteCommentDialog(
     visibility: MutableState<Boolean>,
     viewModel: FreeBoardViewModel,
+    comments: MutableList<Comment>,
+    replys: MutableMap<Int, MutableList<Comment>>,
     routeAction: RouteAction
 ) {
     AlertDialog(onDismissRequest = { visibility.value = false },
@@ -881,9 +899,10 @@ fun DeleteCommentDialog(
         text = { Text(text = "댓글을 삭제하시겠습니까?") },
         confirmButton = {
             TextButton(onClick = {
+                viewModel.progress=true
                 viewModel.deleteComment()
-                routeAction.goBack()
-                routeAction.navWithNum(NAVROUTE.BOARDDETAIL.routeName + "/${viewModel.boardNum}")
+                refreshComment(viewModel, comments, replys)
+                visibility.value=false
             }) {
                 Text(text = "확인")
             }
@@ -894,4 +913,28 @@ fun DeleteCommentDialog(
                 Text(text = "취소")
             }
         })
+}
+
+fun refreshComment(
+    viewModel: FreeBoardViewModel,
+    comments: MutableList<Comment>,
+    replys: MutableMap<Int, MutableList<Comment>>
+){
+    timer(period = 100){
+        if(!viewModel.progress){
+            viewModel.viewModelScope.launch {
+                viewModel.comments.collect {
+                    comments.clear()
+                    comments.addAll(it)
+                }
+            }
+            viewModel.viewModelScope.launch {
+                viewModel.replys.collect {
+                    replys.clear()
+                    replys.putAll(it)
+                }
+            }
+            cancel()
+        }
+    }
 }
