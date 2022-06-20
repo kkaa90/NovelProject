@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.e.myapplication.AccountInfo
 import com.e.myapplication.NAVROUTE
 import com.e.myapplication.RouteAction
@@ -177,12 +178,17 @@ fun MessageItem(
                     )
                 }
                 Row {
-                    Text(text = message.title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    if(message.isRead==1){
+                    Text(
+                        text = message.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (message.isRead == 1) {
                         Text(text = "읽음 ")
                     }
                 }
-                
+
             }
         }
     }
@@ -247,12 +253,44 @@ fun MessageView(
 fun SendMessageView(memId: Int, memNick: String, routeAction: RouteAction) {
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+    val repository = ProtoRepository(context)
     var title by remember {
         mutableStateOf("")
     }
     var content by remember {
         mutableStateOf("")
     }
+
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+        }
+        return accountInfo
+    }
+
+    val ac = read()
+    var alert by remember {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(true) {
+        if (ac.memId.toInt() == memId) {
+            alert = true
+        }
+    }
+    AlertDialog(
+        onDismissRequest = {
+            alert = false
+            routeAction.goBack()
+        },
+        title = { Text(text = "오류") },
+        text = { Text(text = "자신에게 쪽지를 보낼 수 없습니다.") },
+        confirmButton = {
+            TextButton(
+                onClick = { routeAction.goBack() }) {
+                Text(text = "확인")
+            }
+        })
     Column(modifier = Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onClick = { routeAction.goBack() }) {
@@ -304,7 +342,6 @@ fun getRMessages(context: Context, rMessage: SnapshotStateList<Message.Msg.Conte
         var accountInfo: AccountInfo
         runBlocking(Dispatchers.IO) {
             accountInfo = repository.readAccountInfo()
-
         }
         return accountInfo
     }
@@ -314,21 +351,20 @@ fun getRMessages(context: Context, rMessage: SnapshotStateList<Message.Msg.Conte
     retrofitClass.enqueue(object : retrofit2.Callback<Message> {
         override fun onResponse(call: Call<Message>, response: Response<Message>) {
             val r = response.body()?.msg
-            if (r == null) {
-                getAToken(context)
-                retrofitClass.cancel()
-                Handler(Looper.getMainLooper()).postDelayed(
-                    {
-                        getRMessages(context, rMessage)
-                    }, 1000
-                )
-            } else {
-                rMessage.addAll(r.content)
-            }
+
+            rMessage.addAll(r!!.content)
+
         }
 
         override fun onFailure(call: Call<Message>, t: Throwable) {
             t.printStackTrace()
+            getAToken(context)
+            retrofitClass.cancel()
+            Handler(Looper.getMainLooper()).postDelayed(
+                {
+                    getRMessages(context, rMessage)
+                }, 1000
+            )
         }
     })
 }
@@ -350,21 +386,20 @@ fun getSMessages(context: Context, sMessage: SnapshotStateList<Message.Msg.Conte
     retrofitClass.enqueue(object : retrofit2.Callback<Message> {
         override fun onResponse(call: Call<Message>, response: Response<Message>) {
             val r = response.body()?.msg
-            if (r == null) {
-                getAToken(context)
-                retrofitClass.cancel()
-                Handler(Looper.getMainLooper()).postDelayed(
-                    {
-                        getSMessages(context, sMessage)
-                    }, 1000
-                )
-            } else {
-                sMessage.addAll(r.content)
-            }
+
+            sMessage.addAll(r!!.content)
+
         }
 
         override fun onFailure(call: Call<Message>, t: Throwable) {
             t.printStackTrace()
+            getAToken(context)
+            retrofitClass.cancel()
+            Handler(Looper.getMainLooper()).postDelayed(
+                {
+                    getSMessages(context, sMessage)
+                }, 1000
+            )
         }
     })
 }
@@ -390,22 +425,19 @@ fun getMessage(context: Context, message: MutableState<Message.Msg.Content>, num
             response: Response<SingleMessage>
         ) {
             val r = response.body()
-            if (r == null) {
-                getAToken(context)
-                retrofitClass.cancel()
-                Handler(Looper.getMainLooper()).postDelayed(
-                    {
-                        getMessage(context, message, num)
-                    }, 1000
-                )
-            } else {
-                println(r)
-                message.value = r.msg
-            }
+            message.value = r!!.msg
+
         }
 
         override fun onFailure(call: Call<SingleMessage>, t: Throwable) {
             t.printStackTrace()
+            getAToken(context)
+            retrofitClass.cancel()
+            Handler(Looper.getMainLooper()).postDelayed(
+                {
+                    getMessage(context, message, num)
+                }, 1000
+            )
         }
     })
 }
@@ -483,11 +515,11 @@ fun deleteMessage(
                         }, 1000
                     )
                 } else {
+                    isChecked.removeFirst()
                     if (isChecked.isEmpty()) {
                         getSMessages(context, sMessage)
                         getRMessages(context, rMessage)
                     } else {
-                        isChecked.removeFirst()
                         deleteMessage(context, isChecked, rMessage, sMessage)
                     }
 
