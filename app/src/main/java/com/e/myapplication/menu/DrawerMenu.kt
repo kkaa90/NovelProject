@@ -147,6 +147,7 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
                     loginSave(ChkLogin(chkIdSave = l.chkIdSave, chkAutoLogin = false, id = l.id, pwd = ""))
                     point = 0
                     read()
+                    routeAction.clearBack()
                 }) {
                     Text(text = "로그아웃")
                 }

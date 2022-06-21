@@ -368,6 +368,7 @@ class NovelViewModel : ViewModel(){
         })
     }
     fun getSubList(){
+        _nvcList.value.clear()
         val context = MyApplication.ApplicationContext()
         val ac = read()
         val retrofitClass = RetrofitClass.api.getSub(ac.authorization)

@@ -80,6 +80,7 @@ fun ShowPostList(
     val t = viewModel.h.collectAsState()
     val cover = viewModel.c.collectAsState()
     val test = viewModel.tree.collectAsState()
+    val sub = viewModel.nvcList.collectAsState()
     LaunchedEffect(true) {
         viewModel.detailNow = -1
         viewModel.getNovelsList(num)
@@ -203,15 +204,17 @@ fun ShowPostList(
                                             fontSize = 12.sp
                                         )
                                     }
-                                    TextButton(onClick = {
-                                        println(m)
-                                        val nvc = Nvc(
-                                            num.toString(),
-                                            m.value
-                                        )
-                                        addSubscribe(context, nvc, viewModel)
-                                    }) {
-                                        Text(text = "구독")
+                                    if(lCheck) {
+                                        TextButton(onClick = {
+                                            println(m)
+                                            val nvc = Nvc(
+                                                num.toString(),
+                                                m.value
+                                            )
+                                            addSubscribe(context, nvc, viewModel)
+                                        }) {
+                                            Text(text = if(sub.value.contains(cover.value.nvcId)) "구독중" else "구독")
+                                        }
                                     }
                                 }
                             }
@@ -637,10 +640,12 @@ fun addSubscribe(context: Context, nvc: Nvc, viewModel: NovelViewModel) {
             when (r) {
                 "delete" -> {
                     viewModel.refreshCover(nvc.nvcId.toInt())
+                    viewModel.getSubList()
                     message = "구독이 취소 되었습니다."
                 }
                 "subscribe" -> {
                     viewModel.refreshCover(nvc.nvcId.toInt())
+                    viewModel.getSubList()
                     message = "구독 되었습니다."
                 }
                 else -> {
