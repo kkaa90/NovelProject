@@ -83,6 +83,9 @@ fun ShowPostList(
     LaunchedEffect(true) {
         viewModel.detailNow = -1
         viewModel.getNovelsList(num)
+        if (lCheck) {
+            viewModel.getSubList()
+        }
         c = true
         Handler(Looper.getMainLooper()).postDelayed({
             c = false;
@@ -188,12 +191,7 @@ fun ShowPostList(
                                     Spacer(modifier = Modifier.padding(4.0.dp))
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         IconButton(onClick = {
-                                            println(m)
-                                            val nvc = Nvc(
-                                                num.toString(),
-                                                m.value
-                                            )
-                                            addSubscribe(context, nvc)
+
                                         }) {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.ic_baseline_notifications_24),
@@ -204,6 +202,16 @@ fun ShowPostList(
                                             cover.value.nvcSubscribeCount.toString(),
                                             fontSize = 12.sp
                                         )
+                                    }
+                                    TextButton(onClick = {
+                                        println(m)
+                                        val nvc = Nvc(
+                                            num.toString(),
+                                            m.value
+                                        )
+                                        addSubscribe(context, nvc, viewModel)
+                                    }) {
+                                        Text(text = "구독")
                                     }
                                 }
                             }
@@ -609,7 +617,7 @@ fun NovelDetailListItem2(
     }
 }
 
-fun addSubscribe(context: Context, nvc: Nvc) {
+fun addSubscribe(context: Context, nvc: Nvc, viewModel: NovelViewModel) {
     val repository = ProtoRepository(context)
     fun read(): AccountInfo {
         var accountInfo: AccountInfo
@@ -627,12 +635,18 @@ fun addSubscribe(context: Context, nvc: Nvc) {
             val r = response.body()!!.msg
             var message = ""
             when (r) {
-                "delete" -> message = "구독이 취소 되었습니다."
-                "subscribe" -> message = "구독 되었습니다."
+                "delete" -> {
+                    viewModel.refreshCover(nvc.nvcId.toInt())
+                    message = "구독이 취소 되었습니다."
+                }
+                "subscribe" -> {
+                    viewModel.refreshCover(nvc.nvcId.toInt())
+                    message = "구독 되었습니다."
+                }
                 else -> {
                     getAToken(context)
                     Handler(Looper.getMainLooper()).postDelayed(
-                        { addSubscribe(context, nvc) },
+                        { addSubscribe(context, nvc, viewModel) },
                         1000
                     )
                 }

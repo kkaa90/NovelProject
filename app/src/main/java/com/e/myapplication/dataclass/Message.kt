@@ -5,9 +5,11 @@ import com.google.gson.annotations.SerializedName
 
 data class Message(
     @SerializedName("msg")
-    val msg: Msg
+    val msg : String,
+    @SerializedName("items")
+    val items: Items
 ) {
-    data class Msg(
+    data class Items(
         @SerializedName("content")
         val content: List<Content>,
         @SerializedName("empty")
@@ -44,16 +46,16 @@ data class Message(
             val receiverDelete: Int,
             @SerializedName("receiverId")
             val receiverId: Int,
+            @SerializedName("receiverNickname")
+            val receiverNickname: String,
             @SerializedName("senderDelete")
             val senderDelete: Int,
             @SerializedName("senderId")
             val senderId: Int,
-            @SerializedName("title")
-            val title: String,
             @SerializedName("senderNickname")
-            val senderNickname : String,
-            @SerializedName("receiverNickname")
-            val receiverNickname : String
+            val senderNickname: String,
+            @SerializedName("title")
+            val title: String
         )
 
         data class Pageable(
@@ -93,5 +95,7 @@ data class Message(
 
 data class SingleMessage(
     @SerializedName("msg")
-    val msg: Message.Msg.Content
+    val msg : String,
+    @SerializedName("items")
+    val items: Message.Items.Content
 )

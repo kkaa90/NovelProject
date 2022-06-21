@@ -51,6 +51,9 @@ class NovelViewModel : ViewModel(){
     //소설 조회순
     private val _h = MutableStateFlow(mutableListOf<NovelsInfo.NovelInfo>())
     val h = _h.asStateFlow()
+    //구독
+    private val _nvcList = MutableStateFlow(mutableListOf<Int>())
+    val nvcList = _nvcList.asStateFlow()
 
     var progress by mutableStateOf(false)
     var p by mutableStateOf(1)
@@ -308,7 +311,21 @@ class NovelViewModel : ViewModel(){
         woe = false
         routeAction.goBack()
     }
+    fun refreshCover(
+        num: Int
+    ){
+        val retrofitClass = RetrofitClass.api.getNovelList(num)
+        retrofitClass.enqueue(object : retrofit2.Callback<NovelsInfo>{
+            override fun onResponse(call: Call<NovelsInfo>, response: Response<NovelsInfo>) {
+                _c.value=response.body()!!.novelCover
+            }
 
+            override fun onFailure(call: Call<NovelsInfo>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
     fun getNovelsList(
         num: Int
     ){
@@ -345,6 +362,35 @@ class NovelViewModel : ViewModel(){
             }
 
             override fun onFailure(call: Call<NovelsInfo>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+    fun getSubList(){
+        val context = MyApplication.ApplicationContext()
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.getSub(ac.authorization)
+        retrofitClass.enqueue(object : retrofit2.Callback<NvcList>{
+            override fun onResponse(call: Call<NvcList>, response: Response<NvcList>) {
+                val r = response.body()
+                if(r?.msg.isNullOrEmpty()){
+                    r?.novelCovers!!.forEach {
+                        _nvcList.value.add(it.nvcId)
+                    }
+                }
+                else {
+                    getAToken(context)
+                    retrofitClass.cancel()
+                    Handler(Looper.getMainLooper()).postDelayed(
+                        {
+                            getSubList()
+                        }, 1000
+                    )
+                }
+            }
+
+            override fun onFailure(call: Call<NvcList>, t: Throwable) {
                 t.printStackTrace()
             }
 

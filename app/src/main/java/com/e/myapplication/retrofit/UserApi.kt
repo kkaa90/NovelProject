@@ -300,6 +300,11 @@ interface UserApi {
     ): Call<CallMethod>
 
     //소설 구독
+    @GET("/nvc")
+    fun getSub(
+        @Header("Authorization") authorization: String?,
+    ): Call<NvcList>
+
     @POST("/nvc")
     fun subscribe(
         @Header("Authorization") authorization: String?,

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -52,10 +53,10 @@ import retrofit2.Response
 fun MessageListView(routeAction: RouteAction) {
     val context = LocalContext.current
     var sMessages = remember {
-        mutableStateListOf<Message.Msg.Content>()
+        mutableStateListOf<Message.Items.Content>()
     }
     var rMessages = remember {
-        mutableStateListOf<Message.Msg.Content>()
+        mutableStateListOf<Message.Items.Content>()
     }
     var isChecked = remember {
         mutableListOf<Int>()
@@ -141,7 +142,7 @@ fun MessageListView(routeAction: RouteAction) {
 
 @Composable
 fun MessageItem(
-    message: Message.Msg.Content,
+    message: Message.Items.Content,
     isChecked: MutableList<Int>,
     routeAction: RouteAction
 ) {
@@ -203,15 +204,15 @@ fun MessageView(
     val context = LocalContext.current
     var message = remember {
         mutableStateOf(
-            Message.Msg.Content(
+            Message.Items.Content(
                 "", "", 0, 0,
-                0, 0, 0, 0, "", "", ""
+                0, 0, "", 0, 0, "", ""
             )
         )
     }
     LaunchedEffect(true) {
         println(num)
-        getMessage(context, message, num)
+        getMessage(context, message, num, routeAction)
     }
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -278,19 +279,21 @@ fun SendMessageView(memId: Int, memNick: String, routeAction: RouteAction) {
             alert = true
         }
     }
-    AlertDialog(
-        onDismissRequest = {
-            alert = false
-            routeAction.goBack()
-        },
-        title = { Text(text = "오류") },
-        text = { Text(text = "자신에게 쪽지를 보낼 수 없습니다.") },
-        confirmButton = {
-            TextButton(
-                onClick = { routeAction.goBack() }) {
-                Text(text = "확인")
-            }
-        })
+    if (alert) {
+        AlertDialog(
+            onDismissRequest = {
+                alert = false
+                routeAction.goBack()
+            },
+            title = { Text(text = "오류") },
+            text = { Text(text = "자신에게 쪽지를 보낼 수 없습니다.") },
+            confirmButton = {
+                TextButton(
+                    onClick = { routeAction.goBack() }) {
+                    Text(text = "확인")
+                }
+            })
+    }
     Column(modifier = Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onClick = { routeAction.goBack() }) {
@@ -335,7 +338,7 @@ fun SendMessageView(memId: Int, memNick: String, routeAction: RouteAction) {
     }
 }
 
-fun getRMessages(context: Context, rMessage: SnapshotStateList<Message.Msg.Content>) {
+fun getRMessages(context: Context, rMessage: SnapshotStateList<Message.Items.Content>) {
     rMessage.clear()
     val repository = ProtoRepository(context)
     fun read(): AccountInfo {
@@ -350,26 +353,29 @@ fun getRMessages(context: Context, rMessage: SnapshotStateList<Message.Msg.Conte
     val retrofitClass = RetrofitClass.api.getReceiveMessages(ac.authorization)
     retrofitClass.enqueue(object : retrofit2.Callback<Message> {
         override fun onResponse(call: Call<Message>, response: Response<Message>) {
-            val r = response.body()?.msg
-
-            rMessage.addAll(r!!.content)
-
+            val r = response.body()
+            if (r?.msg.isNullOrEmpty()) {
+                rMessage.addAll(r?.items!!.content)
+            }
+            else {
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        getRMessages(context, rMessage)
+                    }, 1000
+                )
+            }
         }
 
         override fun onFailure(call: Call<Message>, t: Throwable) {
             t.printStackTrace()
-            getAToken(context)
-            retrofitClass.cancel()
-            Handler(Looper.getMainLooper()).postDelayed(
-                {
-                    getRMessages(context, rMessage)
-                }, 1000
-            )
+
         }
     })
 }
 
-fun getSMessages(context: Context, sMessage: SnapshotStateList<Message.Msg.Content>) {
+fun getSMessages(context: Context, sMessage: SnapshotStateList<Message.Items.Content>) {
     sMessage.clear()
     val repository = ProtoRepository(context)
     fun read(): AccountInfo {
@@ -385,26 +391,31 @@ fun getSMessages(context: Context, sMessage: SnapshotStateList<Message.Msg.Conte
     val retrofitClass = RetrofitClass.api.getSendMessages(ac.authorization)
     retrofitClass.enqueue(object : retrofit2.Callback<Message> {
         override fun onResponse(call: Call<Message>, response: Response<Message>) {
-            val r = response.body()?.msg
+            val r = response.body()
+            if (r?.msg.isNullOrEmpty()) {
+                sMessage.addAll(r!!.items.content)
+            }
+            else {
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        getSMessages(context, sMessage)
+                    }, 1000
+                )
+            }
 
-            sMessage.addAll(r!!.content)
 
         }
 
         override fun onFailure(call: Call<Message>, t: Throwable) {
             t.printStackTrace()
-            getAToken(context)
-            retrofitClass.cancel()
-            Handler(Looper.getMainLooper()).postDelayed(
-                {
-                    getSMessages(context, sMessage)
-                }, 1000
-            )
+
         }
     })
 }
 
-fun getMessage(context: Context, message: MutableState<Message.Msg.Content>, num: Int) {
+fun getMessage(context: Context, message: MutableState<Message.Items.Content>, num: Int, routeAction: RouteAction) {
 
     val repository = ProtoRepository(context)
     fun read(): AccountInfo {
@@ -425,19 +436,33 @@ fun getMessage(context: Context, message: MutableState<Message.Msg.Content>, num
             response: Response<SingleMessage>
         ) {
             val r = response.body()
-            message.value = r!!.msg
+            println(r?.msg)
+            if(r?.msg.isNullOrEmpty()){
+                message.value = r?.items!!
+            }
+            else if(r?.msg=="JWT expiration"){
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        getMessage(context, message, num, routeAction)
+                    }, 1000
+                )
+            }
+            else{
+                Toast.makeText(
+                    context,
+                    r?.msg,
+                    Toast.LENGTH_LONG
+                ).show()
+                routeAction.goBack()
+            }
 
         }
 
         override fun onFailure(call: Call<SingleMessage>, t: Throwable) {
             t.printStackTrace()
-            getAToken(context)
-            retrofitClass.cancel()
-            Handler(Looper.getMainLooper()).postDelayed(
-                {
-                    getMessage(context, message, num)
-                }, 1000
-            )
+
         }
     })
 }
@@ -488,8 +513,8 @@ fun sendMessage(
 fun deleteMessage(
     context: Context,
     isChecked: MutableList<Int>,
-    rMessage: SnapshotStateList<Message.Msg.Content>,
-    sMessage: SnapshotStateList<Message.Msg.Content>
+    rMessage: SnapshotStateList<Message.Items.Content>,
+    sMessage: SnapshotStateList<Message.Items.Content>
 ) {
     val repository = ProtoRepository(context)
     fun read(): AccountInfo {
