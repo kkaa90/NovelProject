@@ -53,18 +53,20 @@ fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteActi
         mutableStateListOf<BoardList.BoardListItem>()
     }
     LaunchedEffect(true) {
-        boardViewModel.progress = true
-        boardViewModel.p = 1
-        boardViewModel.updateBoardList()
-        timer(period = 100){
-            if(!boardViewModel.progress){
-                boardViewModel.viewModelScope.launch{
-                    boardViewModel.boards.collect{
-                        boards.clear()
-                        boards.addAll(it)
+        if(boards.isEmpty()) {
+            boardViewModel.progress = true
+            boardViewModel.p = 1
+            boardViewModel.updateBoardList()
+            timer(period = 100) {
+                if (!boardViewModel.progress) {
+                    boardViewModel.viewModelScope.launch {
+                        boardViewModel.boards.collect {
+                            boards.clear()
+                            boards.addAll(it)
+                        }
                     }
+                    cancel()
                 }
-                cancel()
             }
         }
     }
@@ -143,6 +145,7 @@ fun FreeBoardListItem(
                 viewModel.imageNum = board.imgUrl
                 viewModel.boardNum = board.brdId
                 routeAction.navWithNum("boardDetail/${board.brdId}")
+
             })
             .border(1.dp, shape = RectangleShape, color = Color.Gray)
     ) {

@@ -227,13 +227,6 @@ class RouteAction(navHostController: NavHostController) {
         navHostController.backQueue.removeLast()
         navHostController.navigate(route)
     }
-    val goDetail: (Int, Int) -> Unit = { nNum, bNum ->
-        navHostController.navigate("novelDetail?nNum=${nNum}&bNum=${bNum}") {
-            popUpTo(NAVROUTE.NOVELDETAILSLIST.routeName + "/${nNum}") {
-                inclusive = false
-            }
-        }
-    }
     val getNow = navHostController
 
 }
