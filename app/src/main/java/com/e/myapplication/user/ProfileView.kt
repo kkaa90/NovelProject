@@ -73,6 +73,7 @@ fun ProfileView(routeAction: RouteAction) {
     val pwdDialog = remember { mutableStateOf(false) }
     val emailDialog = remember { mutableStateOf(false) }
     val nickDialog = remember { mutableStateOf(false) }
+    val deleteDialog = remember { mutableStateOf(false) }
     val emailContent = remember { mutableStateOf("") }
     val nickContent = remember { mutableStateOf("") }
     val iconContent = remember { mutableStateOf(ac.memIcon) }
@@ -134,12 +135,19 @@ fun ProfileView(routeAction: RouteAction) {
                 visibility = nickDialog
             )
         }
+        AnimatedVisibility(visible = deleteDialog.value) {
+            DeleteAccountDialog(visibility = deleteDialog, routeAction = routeAction)
+        }
     }
-    Column(modifier = Modifier
-        .fillMaxWidth()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().background(gray),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(gray),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -151,14 +159,24 @@ fun ProfileView(routeAction: RouteAction) {
             }
             Row {
                 TextButton(
-                    onClick = { emailContent.value = ""; nickContent.value = ""; bitmap.value = null },
-                    enabled = (emailContent.value != "" || nickContent.value != "" || ac.memIcon!=iconContent.value || bitmap.value!=null)
+                    onClick = {
+                        emailContent.value = ""; nickContent.value = ""; bitmap.value = null
+                    },
+                    enabled = (emailContent.value != "" || nickContent.value != "" || ac.memIcon != iconContent.value || bitmap.value != null)
                 ) {
                     Text(text = "변경 취소")
                 }
                 TextButton(
-                    onClick = { changeProfile(context, emailContent, nickContent, iconContent, bitmap) },
-                    enabled = (emailContent.value != "" || nickContent.value != "" || ac.memIcon!=iconContent.value)
+                    onClick = {
+                        changeProfile(
+                            context,
+                            emailContent,
+                            nickContent,
+                            iconContent,
+                            bitmap
+                        )
+                    },
+                    enabled = (emailContent.value != "" || nickContent.value != "" || ac.memIcon != iconContent.value)
                 ) {
                     Text(text = "저장")
                 }
@@ -167,7 +185,9 @@ fun ProfileView(routeAction: RouteAction) {
         }
         Row(modifier = Modifier
             .clickable { launcher.launch("image/*") }
-            .height(60.dp).border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp)
+            .height(60.dp)
+            .border(width = 1.dp, shape = RectangleShape, color = gray)
+            .padding(8.dp)
             .fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(text = "이미지", fontSize = 20.sp)
             if (ac.memIcon == "1") {
@@ -206,14 +226,18 @@ fun ProfileView(routeAction: RouteAction) {
         }
         Column(
             modifier = Modifier
-                .fillMaxWidth().border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp)
+                .fillMaxWidth()
+                .border(width = 1.dp, shape = RectangleShape, color = gray)
+                .padding(8.dp)
         ) {
             Text(text = "아이디", fontSize = 20.sp)
             Text(text = ac.memUserid)
         }
         Column(modifier = Modifier
             .clickable { nickDialog.value = true }
-            .fillMaxWidth().border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp)) {
+            .fillMaxWidth()
+            .border(width = 1.dp, shape = RectangleShape, color = gray)
+            .padding(8.dp)) {
             Text(text = "닉네임", fontSize = 20.sp)
             Text(text = ac.memNick)
             if (nickContent.value != "") {
@@ -236,7 +260,9 @@ fun ProfileView(routeAction: RouteAction) {
                 }
 
             }
-            .fillMaxWidth().border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp)) {
+            .fillMaxWidth()
+            .border(width = 1.dp, shape = RectangleShape, color = gray)
+            .padding(8.dp)) {
             Text(text = "이메일", fontSize = 20.sp)
             Text(text = ac.email)
             if (emailContent.value != "") {
@@ -244,19 +270,34 @@ fun ProfileView(routeAction: RouteAction) {
                 Text(text = "[${emailContent.value}]으로 변경됩니다.")
             }
         }
-        Column(modifier = Modifier.fillMaxWidth().border(width = 1.dp,shape = RectangleShape,color = gray).padding(8.dp).clickable {
-            if(ac.memUserid.contains("Google")){
-                Toast.makeText(
-                    context,
-                    "구글 계정은 변경할 수 없습니다.",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-            else {
-                pwdDialog.value = true
-            }
-        }) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(width = 1.dp, shape = RectangleShape, color = gray)
+                .padding(8.dp)
+                .clickable {
+                    if (ac.memUserid.contains("Google")) {
+                        Toast
+                            .makeText(
+                                context,
+                                "구글 계정은 변경할 수 없습니다.",
+                                Toast.LENGTH_LONG
+                            )
+                            .show()
+                    } else {
+                        pwdDialog.value = true
+                    }
+                }) {
             Text("비밀번호 변경", fontSize = 20.sp)
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(width = 1.dp, shape = RectangleShape, color = gray)
+                .padding(8.dp)
+                .clickable { deleteDialog.value = true }
+        ) {
+            Text(text = "회원 탈퇴", fontSize = 20.sp)
         }
 
     }
@@ -295,14 +336,13 @@ fun ChangeProfileDialog(
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     OutlinedButton(onClick = {
-                        if (change.value.contains(" ")){
+                        if (change.value.contains(" ")) {
                             Toast.makeText(
                                 context,
                                 "공백을 포함하실 수 없습니다.",
                                 Toast.LENGTH_LONG
                             ).show()
-                        }
-                        else {
+                        } else {
                             visibility.value = false
                         }
 
@@ -326,17 +366,19 @@ fun ChangePasswordDialog(visibility: MutableState<Boolean>, routeAction: RouteAc
     Dialog(onDismissRequest = { visibility.value = false }) {
         Surface(
             modifier = Modifier
-                .width(240.dp)
-                .height(400.dp),
+                .wrapContentSize(),
             shape = RoundedCornerShape(12.dp),
             color = Color.White
         ) {
-            Column {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(text = "비밀번호 변경")
                 Spacer(modifier = Modifier.height(20.dp))
                 OutlinedTextField(value = pwd, onValueChange = { pwd = it })
                 Spacer(modifier = Modifier.height(20.dp))
-                Row {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     OutlinedButton(onClick = { visibility.value = false }) {
                         Text(text = "취소")
                     }
@@ -350,11 +392,43 @@ fun ChangePasswordDialog(visibility: MutableState<Boolean>, routeAction: RouteAc
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun DefaultPreview14() {
-    MyApplicationTheme {
-        //Greeting12()
+fun DeleteAccountDialog(visibility: MutableState<Boolean>, routeAction: RouteAction) {
+    val context = LocalContext.current
+    var pwd by remember {
+        mutableStateOf("")
+    }
+    Dialog(onDismissRequest = { visibility.value = false }) {
+        Surface(
+            modifier = Modifier
+                .wrapContentSize(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Text(text = "회원탈퇴")
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("비밀번호를 입력해야 합니다.")
+                OutlinedTextField(value = pwd, onValueChange = { pwd = it })
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    OutlinedButton(onClick = { visibility.value = false }) {
+                        Text(text = "취소")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    OutlinedButton(onClick = {
+                        deleteUser(
+                            context,
+                            pwd,
+                            visibility,
+                            routeAction
+                        )
+                    }) {
+                        Text(text = "확인")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -383,7 +457,7 @@ fun uploadIcon(
             println(response.body().toString())
             val r = response.body()!!.imgUrl
             cIcon.value = r
-            uploadCheck.value=false
+            uploadCheck.value = false
             Toast.makeText(
                 context,
                 "업로드 되었습니다.",
@@ -529,4 +603,68 @@ fun changePWD(context: Context, pwd: String, routeAction: RouteAction) {
         }
 
     })
+}
+
+fun deleteUser(
+    context: Context,
+    pwd: String,
+    visibility: MutableState<Boolean>,
+    routeAction: RouteAction
+) {
+    val repository = ProtoRepository(context = context)
+    val repository2 = LoginRepository(context)
+    fun read(): AccountInfo {
+        var accountInfo: AccountInfo
+        runBlocking(Dispatchers.IO) {
+            accountInfo = repository.readAccountInfo()
+        }
+        return accountInfo
+    }
+
+    fun accountSave(user: User?) {
+        runBlocking(Dispatchers.IO) {
+            if (user != null) {
+                repository.writeAccountInfo(user)
+            }
+        }
+        return
+    }
+
+    fun loginSave(chkLogin: ChkLogin?) {
+        runBlocking(Dispatchers.IO) {
+            if (chkLogin != null) {
+                repository2.writeLoginInfo(chkLogin)
+            }
+        }
+        return
+    }
+
+    val ac = read()
+    val retrofitClass = RetrofitClass.api.deleteUser(ac.authorization, LoginBody(ac.memUserid, pwd))
+    retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
+        override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+            val r = response.body()!!.msg
+            println(r)
+            when (r) {
+                "OK" -> {
+                    accountSave(User("", "", "", "", "", "", "", "", ""))
+                    loginSave(ChkLogin(chkIdSave = false, chkAutoLogin = false, "", ""))
+                    visibility.value = false
+                    Toast.makeText(
+                        context,
+                        "회원탈퇴가 완료되었습니다.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    routeAction.clearBack()
+                }
+                "JWT expiration" -> {}
+            }
+        }
+
+        override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+            t.printStackTrace()
+        }
+
+    })
+
 }

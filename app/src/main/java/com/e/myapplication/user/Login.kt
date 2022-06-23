@@ -3,13 +3,9 @@ package com.e.myapplication.user
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,13 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.e.myapplication.*
-import com.e.myapplication.R
 import com.e.myapplication.dataclass.*
 import com.e.myapplication.menu.point
 import com.e.myapplication.retrofit.RetrofitClass
@@ -368,7 +362,7 @@ fun loginFun(context: Context, id: String, pwd: String, check1: Boolean, check2:
 
     val login = RetrofitClass
     val service = login.api
-    val getResult = service.getUser(GetBody(id, pwd))
+    val getResult = service.getUser(LoginBody(id, pwd))
     println(getResult.request().url())
     println(getResult.request().toString())
     val chkLogin = ChkLogin(check1,check2,if (check1) id else "", if(check2) pwd else "")

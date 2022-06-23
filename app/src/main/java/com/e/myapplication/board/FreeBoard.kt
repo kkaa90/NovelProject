@@ -14,14 +14,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,6 +40,7 @@ import com.e.myapplication.dataclass.BoardList
 import com.e.myapplication.menu.Drawer
 import com.e.myapplication.retrofit.RetrofitClass
 import com.e.myapplication.ui.theme.MyApplicationTheme
+import com.e.myapplication.ui.theme.gray
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Response
@@ -49,39 +52,45 @@ fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteActi
     fun LazyListState.isScrolledToTheEnd() =
         layoutInfo.visibleItemsInfo.lastOrNull()?.index == layoutInfo.totalItemsCount - 1
 
-    val boards = remember {
-        mutableStateListOf<BoardList.BoardListItem>()
-    }
+//    val boards = remember {
+//        mutableStateListOf<BoardList.BoardListItem>()
+//    }
+    val boards = boardViewModel.boards.collectAsState()
     LaunchedEffect(true) {
-        if(boards.isEmpty()) {
+        if (boards.value.isEmpty()) {
             boardViewModel.progress = true
             boardViewModel.p = 1
             boardViewModel.updateBoardList()
-            timer(period = 100) {
-                if (!boardViewModel.progress) {
-                    boardViewModel.viewModelScope.launch {
-                        boardViewModel.boards.collect {
-                            boards.clear()
-                            boards.addAll(it)
-                        }
-                    }
-                    cancel()
-                }
-            }
+//            timer(period = 100) {
+//                if (!boardViewModel.progress) {
+//                    boardViewModel.viewModelScope.launch {
+//                        boardViewModel.boards.collect {
+//                            boards.clear()
+//                            boards.addAll(it)
+//                        }
+//                    }
+//                    cancel()
+//                }
+//            }
         }
     }
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val sMenu: List<String> = listOf("제목", "글쓴이", "전체")
+    var sMenuExpanded by remember { mutableStateOf(false) }
+    var sMenuName: String by rememberSaveable { mutableStateOf(sMenu[0]) }
+    var sKeyword by rememberSaveable { mutableStateOf("") }
+    var cancelVisibility by remember { mutableStateOf(false)}
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                routeAction.navTo(NAVROUTE.WRITINGBOARD)
-            }) {
-                Icon(Icons.Filled.Add, contentDescription = "")
-            }
-        },
+//        floatingActionButton = {
+//            FloatingActionButton(onClick = {
+//                routeAction.navTo(NAVROUTE.WRITINGBOARD)
+//            }) {
+//                Icon(Icons.Filled.Add, contentDescription = "")
+//            }
+//        },
         drawerContent = {
             Drawer(routeAction, scaffoldState)
         },
@@ -106,24 +115,98 @@ fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteActi
         Column(modifier = Modifier.fillMaxSize()) {
             //Divider(color = Color(0xFFCFCECE))
             LazyColumn(state = listState) {
-                items(boards) { board ->
-                    FreeBoardListItem(board, boardViewModel, routeAction)
-                    //Divider(color = Color(0xFFCFCECE))
-                    if (listState.isScrolledToTheEnd() && boardViewModel.pageNum > boardViewModel.p) {
-                        boardViewModel.progress = true
-                        boardViewModel.p++
-                        boardViewModel.updateBoardList()
-                        timer(period = 100){
-                            if(!boardViewModel.progress){
-                                boardViewModel.viewModelScope.launch{
-                                    boardViewModel.boards.collect{
-                                        boards.clear()
-                                        boards.addAll(it)
+                item {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(4.dp)
+                                .border(width = 1.dp, shape = RectangleShape, color = gray),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Row(Modifier.clickable { sMenuExpanded = !sMenuExpanded }) {
+                                    Text(text = sMenuName)
+                                    Icon(
+                                        imageVector = Icons.Filled.ArrowDropDown,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                            DropdownMenu(
+                                expanded = sMenuExpanded,
+                                onDismissRequest = { sMenuExpanded = false }) {
+                                sMenu.forEach { sMenuItem ->
+                                    DropdownMenuItem(onClick = {
+                                        sMenuExpanded = false; sMenuName = sMenuItem
+                                    }) {
+                                        Text(text = sMenuItem)
                                     }
                                 }
-                                cancel()
                             }
+                            TextField(
+                                value = sKeyword,
+                                onValueChange = { sKeyword = it },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(2.dp),
+                                colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.White)
+                            )
+                            if(cancelVisibility) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clickable {
+                                            boardViewModel.progress = true
+                                            sKeyword = ""
+                                            boardViewModel.p = 1
+                                            boardViewModel.updateBoardList()
+                                            cancelVisibility=false
+                                        })
+                            }
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .clickable {
+                                        boardViewModel.progress = true
+                                        boardViewModel.getBSearch(sMenuName, sKeyword)
+                                        cancelVisibility = true
+                                    })
                         }
+                        OutlinedButton(onClick = { routeAction.navTo(NAVROUTE.WRITINGBOARD) }) {
+                            Text("글쓰기")
+                        }
+                    }
+                }
+                if (boards.value.isNotEmpty()) {
+                    items(boards.value) { board ->
+                        FreeBoardListItem(board, boardViewModel, routeAction)
+                        if (listState.isScrolledToTheEnd() && boardViewModel.pageNum > boardViewModel.p) {
+                            boardViewModel.progress = true
+                            boardViewModel.p++
+                            boardViewModel.updateBoardList()
+//                        timer(period = 100) {
+//                            if (!boardViewModel.progress) {
+//                                boardViewModel.viewModelScope.launch {
+//                                    boardViewModel.boards.collect {
+//                                        boards.clear()
+//                                        boards.addAll(it)
+//                                    }
+//                                }
+//                                cancel()
+//                            }
+//                        }
+                        }
+                    }
+                }
+                else {
+                    item { 
+                        Text(text = "검색 결과가 없습니다.",modifier = Modifier.fillMaxSize(), textAlign = TextAlign.Center)
                     }
                 }
             }

@@ -13,7 +13,7 @@ interface UserApi {
     @Headers("Content-Type: application/json")
     @POST("/login")
     fun getUser(
-        @Body body: GetBody
+        @Body body: LoginBody
     ): Call<ResponseBody>
 
     @Headers("Content-Type: application/json")
@@ -35,7 +35,14 @@ interface UserApi {
         @Body body: SendBody
     ): Call<PostBody>
 
+    //회원 탈퇴
+    @DELETE("/users")
+    fun deleteUser(
+        @Header("Authorization") authorization: String?,
+        @Body body : LoginBody
+    ) : Call<CallMethod>
 
+    //회원 정보 변경
     @Headers("Content-Type: application/json")
     @PUT("/users")
     fun changeProfile(

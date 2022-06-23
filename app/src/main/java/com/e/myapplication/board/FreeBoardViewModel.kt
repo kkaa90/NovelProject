@@ -681,4 +681,22 @@ class FreeBoardViewModel : ViewModel() {
         body.clear()
         routeAction.goBack()
     }
+
+    fun getBSearch(srcType: String, keyword: String) {
+        _boards.value.clear()
+        val t = if (srcType == "제목") "title" else if (srcType == "글쓴이") "" else ""
+        val retrofitClass = RetrofitClass.api.searchBoard(t, keyword)
+        retrofitClass.enqueue(object : retrofit2.Callback<BoardList> {
+            override fun onResponse(call: Call<BoardList>, response: Response<BoardList>) {
+                val r = response.body()!!.boards
+//                list.addAll(r)
+                println(r)
+                _boards.value.addAll(r)
+                progress = false
+            }
+            override fun onFailure(call: Call<BoardList>, t: Throwable) {
+                t.printStackTrace()
+            }
+        })
+    }
 }

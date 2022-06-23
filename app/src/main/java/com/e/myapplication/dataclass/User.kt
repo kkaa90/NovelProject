@@ -32,7 +32,7 @@ data class SendBody(
     @SerializedName("memIcon") val memIcon: String
 )
 
-data class GetBody(
+data class LoginBody(
     @SerializedName("memUserId") val memUserId: String,
     @SerializedName("memPassword") val memPassword: String
 )
