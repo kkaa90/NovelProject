@@ -38,8 +38,7 @@ interface UserApi {
     //회원 탈퇴
     @DELETE("/users")
     fun deleteUser(
-        @Header("Authorization") authorization: String?,
-        @Body body : LoginBody
+        @Header("Authorization") authorization: String?
     ) : Call<CallMethod>
 
     //회원 정보 변경

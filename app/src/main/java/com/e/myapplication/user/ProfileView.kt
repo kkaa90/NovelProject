@@ -8,6 +8,8 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -395,9 +397,6 @@ fun ChangePasswordDialog(visibility: MutableState<Boolean>, routeAction: RouteAc
 @Composable
 fun DeleteAccountDialog(visibility: MutableState<Boolean>, routeAction: RouteAction) {
     val context = LocalContext.current
-    var pwd by remember {
-        mutableStateOf("")
-    }
     Dialog(onDismissRequest = { visibility.value = false }) {
         Surface(
             modifier = Modifier
@@ -408,8 +407,7 @@ fun DeleteAccountDialog(visibility: MutableState<Boolean>, routeAction: RouteAct
             Column(Modifier.padding(20.dp)) {
                 Text(text = "회원탈퇴")
                 Spacer(modifier = Modifier.height(20.dp))
-                Text("비밀번호를 입력해야 합니다.")
-                OutlinedTextField(value = pwd, onValueChange = { pwd = it })
+                Text("회원탈퇴를 하시겠습니까?")
                 Spacer(modifier = Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     OutlinedButton(onClick = { visibility.value = false }) {
@@ -419,7 +417,6 @@ fun DeleteAccountDialog(visibility: MutableState<Boolean>, routeAction: RouteAct
                     OutlinedButton(onClick = {
                         deleteUser(
                             context,
-                            pwd,
                             visibility,
                             routeAction
                         )
@@ -455,14 +452,25 @@ fun uploadIcon(
             response: Response<ImageUploadSingle>
         ) {
             println(response.body().toString())
-            val r = response.body()!!.imgUrl
-            cIcon.value = r
-            uploadCheck.value = false
-            Toast.makeText(
-                context,
-                "업로드 되었습니다.",
-                Toast.LENGTH_LONG
-            ).show()
+            if(response.body()!!.msg=="JWT expiration"){
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        uploadIcon(context, body, cIcon, uploadCheck)
+                    }, 1000
+                )
+            }
+            else {
+                val r = response.body()!!.imgUrl
+                cIcon.value = r
+                uploadCheck.value = false
+                Toast.makeText(
+                    context,
+                    "업로드 되었습니다.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
         override fun onFailure(call: Call<ImageUploadSingle>, t: Throwable) {
@@ -526,6 +534,14 @@ fun changeProfile(
                 cEmail.value = ""
                 cNick.value = ""
                 bitmap.value = null
+            } else if (response.body()!!.msg == "JWT expiration") {
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        changeProfile(context, cEmail, cNick, cIcon, bitmap)
+                    }, 1000
+                )
             } else {
                 Toast.makeText(
                     context,
@@ -588,6 +604,14 @@ fun changePWD(context: Context, pwd: String, routeAction: RouteAction) {
                     Toast.LENGTH_LONG
                 ).show()
                 routeAction.navTo(NAVROUTE.LOGIN)
+            } else if (response.body()!!.msg == "JWT expiration") {
+                getAToken(context)
+                retrofitClass.cancel()
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        changePWD(context, pwd, routeAction)
+                    }, 1000
+                )
             } else {
                 Toast.makeText(
                     context,
@@ -607,7 +631,6 @@ fun changePWD(context: Context, pwd: String, routeAction: RouteAction) {
 
 fun deleteUser(
     context: Context,
-    pwd: String,
     visibility: MutableState<Boolean>,
     routeAction: RouteAction
 ) {
@@ -640,7 +663,7 @@ fun deleteUser(
     }
 
     val ac = read()
-    val retrofitClass = RetrofitClass.api.deleteUser(ac.authorization, LoginBody(ac.memUserid, pwd))
+    val retrofitClass = RetrofitClass.api.deleteUser(ac.authorization)
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
             val r = response.body()!!.msg
@@ -649,6 +672,7 @@ fun deleteUser(
                 "OK" -> {
                     accountSave(User("", "", "", "", "", "", "", "", ""))
                     loginSave(ChkLogin(chkIdSave = false, chkAutoLogin = false, "", ""))
+                    lCheck = false
                     visibility.value = false
                     Toast.makeText(
                         context,
@@ -657,7 +681,17 @@ fun deleteUser(
                     ).show()
                     routeAction.clearBack()
                 }
-                "JWT expiration" -> {}
+                "JWT expiration" -> {
+
+                    getAToken(context)
+                    retrofitClass.cancel()
+                    Handler(Looper.getMainLooper()).postDelayed(
+                        {
+                            deleteUser(context, visibility, routeAction)
+                        }, 1000
+                    )
+
+                }
             }
         }
 

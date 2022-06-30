@@ -936,7 +936,7 @@ fun sendC(
 
     val ac = read()
     val retrofitClass = RetrofitClass.api.sendNComment(
-        ac.authorization, nNum, PostNvComments(ac.memNick, cmt, nCR, 0)
+        ac.authorization, bNum, PostNvComments(ac.memNick, cmt, nCR, 0)
     )
     retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
         override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
