@@ -10,7 +10,12 @@ import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.e.treenovel.RouteAction
 import com.e.treenovel.board.bitmapToFile
 import com.e.treenovel.dataclass.PostBody
@@ -31,6 +38,7 @@ import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Response
 import java.io.File
+import java.io.IOException
 import java.util.regex.Pattern
 
 @Composable
@@ -53,6 +61,8 @@ fun Register(routeAction: RouteAction) {
     val files = remember { mutableStateOf<File?>(null) }
     var requestBody: RequestBody
     val body = remember { mutableStateOf<MultipartBody.Part?>(null) }
+    var visibility = remember { mutableStateOf(false) }
+    var serviceAgreement = remember { mutableStateOf(false) }
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
             if (uri != null) {
@@ -85,6 +95,11 @@ fun Register(routeAction: RouteAction) {
                 ).show()
             }
         }
+    if(visibility.value){
+        Box() {
+            TermOfServiceDialog(visibility = visibility, agreement = serviceAgreement)
+        }
+    }
     Column(
         Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -196,8 +211,13 @@ fun Register(routeAction: RouteAction) {
 //            }
 //        }
 //        Spacer(modifier = Modifier.height(16.dp))
+        Row(modifier = Modifier.clickable { serviceAgreement.value = !serviceAgreement.value }, verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = serviceAgreement.value, onCheckedChange = {serviceAgreement.value = it})
+            Text(text = "이용 약관에 동의합니다. ")
+            Text(text = "[이용약관 확인]", color = Color.Blue, modifier = Modifier.clickable { visibility.value =true })
+        }
         OutlinedButton(onClick = {
-            if (idError || pwdError || pwd2Error || emailError || nickError) {
+            if (idError || pwdError || pwd2Error || emailError || nickError || !serviceAgreement.value) {
                 Toast.makeText(
                     context,
                     "각 항목의 조건을 확인 후 다시 시도해주세요.",
@@ -218,7 +238,41 @@ fun Register(routeAction: RouteAction) {
         }
     }
 }
-
+@Composable
+fun TermOfServiceDialog(visibility: MutableState<Boolean>, agreement: MutableState<Boolean>) {
+    Dialog(onDismissRequest = { visibility.value = false }) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(4.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(text = TermOfService.t)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    OutlinedButton(onClick = { visibility.value = false }) {
+                        Text(text = "취소")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    OutlinedButton(onClick = {
+                        agreement.value=true
+                        visibility.value=false
+                    }) {
+                        Text(text = "동의")
+                    }
+                }
+            }
+        }
+    }
+}
 fun signUpCall(
     context: Context,
     id: String,
