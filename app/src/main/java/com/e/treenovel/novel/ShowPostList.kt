@@ -33,9 +33,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberImagePainter
 import com.e.treenovel.R
 import com.e.treenovel.*
-import com.e.treenovel.dataclass.NovelsInfo
-import com.e.treenovel.dataclass.Nvc
-import com.e.treenovel.dataclass.nvcr
+import com.e.treenovel.dataclass.*
 import com.e.treenovel.menu.Drawer
 import com.e.treenovel.retrofit.RetrofitClass
 import com.e.treenovel.ui.theme.dimGray
@@ -75,6 +73,7 @@ fun ShowPostList(
     val cover = viewModel.c.collectAsState()
     val test = viewModel.tree.collectAsState()
     val sub = viewModel.nvcList.collectAsState()
+    var reportVisibility = remember { mutableStateOf(false) }
     LaunchedEffect(true) {
         viewModel.detailNow = -1
         viewModel.getNovelsList(num)
@@ -108,13 +107,6 @@ fun ShowPostList(
     getToken(m)
     Scaffold(
         topBar = { TopMenu(scaffoldState, scope, routeAction) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName + "?num=${num}&state=0")
-            }) {
-                Icon(Icons.Filled.Add, contentDescription = "")
-            }
-        },
         drawerContent = {
             Drawer(routeAction, scaffoldState)
         },
@@ -144,6 +136,11 @@ fun ShowPostList(
                 ) {
                     CircularProgressIndicator()
                 }
+            }
+        }
+        if(reportVisibility.value){
+            Box() {
+                NovelCoverReport(num = num, visibility = reportVisibility, viewModel = viewModel)
             }
         }
         LazyColumn() {
@@ -184,21 +181,12 @@ fun ShowPostList(
                                         count = cover.value.nvcHit.toString()
                                     )
                                     Spacer(modifier = Modifier.padding(4.0.dp))
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        IconButton(onClick = {
-
-                                        }) {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_baseline_notifications_24),
-                                                contentDescription = null
-                                            )
-                                        }
-                                        Text(
-                                            cover.value.nvcSubscribeCount.toString(),
-                                            fontSize = 12.sp
-                                        )
-                                    }
-                                    if(lCheck) {
+                                    NovelsIconButton(
+                                        icon =
+                                        R.drawable.ic_baseline_notifications_24,
+                                        count = cover.value.nvcSubscribeCount.toString()
+                                    )
+                                    if (lCheck) {
                                         TextButton(onClick = {
                                             println(m)
                                             val nvc = Nvc(
@@ -207,13 +195,20 @@ fun ShowPostList(
                                             )
                                             addSubscribe(context, nvc, viewModel)
                                         }) {
-                                            Text(text = if(sub.value.contains(cover.value.nvcId)) "구독중" else "구독")
+                                            Text(text = if (sub.value.contains(cover.value.nvcId)) "구독중" else "구독")
                                         }
                                     }
                                 }
                             }
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "")
+                            TextButton(onClick = {
+                                if(lCheck) {
+                                    reportVisibility.value = true
+                                }
+                                else {
+                                    routeAction.navTo(NAVROUTE.LOGIN)
+                                }
+                            }) {
+                                Text(text = "신고", color = Color.Red)
                             }
                         }
 
@@ -323,9 +318,16 @@ fun ShowPostList(
                             }
                         }
                     }
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = {
+                        if(lCheck) {
+                            routeAction.navWithNum(NAVROUTE.WRITINGNOVELDETAIL.routeName + "?num=${num}&state=0")
+                        }
+                        else {
+                            routeAction.navTo(NAVROUTE.LOGIN)
+                        }
+                    }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_baseline_sort_24),
+                            imageVector = Icons.Default.Edit,
                             contentDescription = ""
                         )
                     }
@@ -613,6 +615,75 @@ fun NovelDetailListItem2(
         }
     }
 }
+
+@Composable
+fun NovelCoverReport(num: Int, visibility: MutableState<Boolean>, viewModel: NovelViewModel) {
+    val context = LocalContext.current
+    var mSelected by remember {
+        mutableStateOf(reportState[0])
+    }
+    var mVisibility by remember {
+        mutableStateOf(false)
+    }
+    Dialog(onDismissRequest = {
+        viewModel.reportContent = ""
+        visibility.value = false
+    }) {
+        Surface(
+            modifier = Modifier
+                .wrapContentSize(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(text = "신고", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Column {
+                    Row(modifier = Modifier.clickable { mVisibility = !mVisibility }) {
+                        Text(text = "  ${mSelected.presentState}")
+                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "")
+                    }
+                    DropdownMenu(
+                        expanded = mVisibility,
+                        onDismissRequest = { mVisibility = false }) {
+                        reportState.forEach {
+                            DropdownMenuItem(onClick = { mSelected = it; mVisibility = false }) {
+                                Text(text = it.presentState)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+                OutlinedTextField(
+                    value = viewModel.reportContent,
+                    onValueChange = { viewModel.reportContent = it },
+                    label = { Text(text = "자세한 사유") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    OutlinedButton(onClick = {
+                        viewModel.reportContent = ""
+                        visibility.value = false
+                    }) {
+                        Text(text = "취소")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    OutlinedButton(onClick = {
+                        viewModel.reportNovelCover(context, num, mSelected)
+                        visibility.value = false
+                        println("게시글 신고")
+                    }, enabled = visibility.value) {
+                        Text(text = "확인")
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 fun addSubscribe(context: Context, nvc: Nvc, viewModel: NovelViewModel) {
     val repository = ProtoRepository(context)

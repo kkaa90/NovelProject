@@ -26,10 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.e.treenovel.NAVROUTE
+import com.e.treenovel.*
 import com.e.treenovel.R
-import com.e.treenovel.RouteAction
-import com.e.treenovel.TopMenu
 import com.e.treenovel.dataclass.BoardList
 import com.e.treenovel.menu.Drawer
 import com.e.treenovel.ui.theme.gray
@@ -166,7 +164,13 @@ fun ShowFreeBoardList(boardViewModel: FreeBoardViewModel, routeAction: RouteActi
                                         cancelVisibility = true
                                     })
                         }
-                        OutlinedButton(onClick = { routeAction.navTo(NAVROUTE.WRITINGBOARD) }) {
+                        OutlinedButton(onClick = {
+                            if(lCheck){
+                            routeAction.navTo(NAVROUTE.WRITINGBOARD)}
+                            else {
+                                routeAction.navTo(NAVROUTE.LOGIN)
+                            }
+                        }) {
                             Text("글쓰기")
                         }
                     }

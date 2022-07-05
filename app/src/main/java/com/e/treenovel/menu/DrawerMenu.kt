@@ -179,7 +179,14 @@ fun Drawer(routeAction: RouteAction, scaffoldState: ScaffoldState) {
         }
         Divider()
         Column(Modifier
-            .clickable { routeAction.navTo(NAVROUTE.MESSAGE) }
+            .clickable {
+                if(lCheck){
+                    routeAction.navTo(NAVROUTE.MESSAGE)
+                }
+                else {
+                    routeAction.navTo(NAVROUTE.LOGIN)
+                }
+            }
             .fillMaxWidth()) {
             Text(text = NAVROUTE.MESSAGE.description, modifier = Modifier.padding(8.dp))
 

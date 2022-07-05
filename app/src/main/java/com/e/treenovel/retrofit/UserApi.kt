@@ -192,6 +192,13 @@ interface UserApi {
         @Query("page") page : Int
     ): Call<Novels>
 
+    @POST("/novels/{num}/reportcover")
+    fun reportNovelCover(
+        @Header("Authorization") authorization: String?,
+        @Path("num") num: Int,
+        @Body body: ReportMethod
+    ): Call<CallMethod>
+
     @GET("/novels")
     fun getNovelsWithToken(
         @Header("Authorization") authorization: String?,

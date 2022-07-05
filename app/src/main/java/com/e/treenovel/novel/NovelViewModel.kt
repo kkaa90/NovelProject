@@ -1,5 +1,6 @@
 package com.e.treenovel.novel
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Handler
@@ -543,6 +544,66 @@ class NovelViewModel : ViewModel(){
                     }
                 }
                 retrofitClass.cancel()
+            }
+
+            override fun onFailure(call: Call<CallMethod>, t: Throwable) {
+                t.printStackTrace()
+            }
+
+        })
+    }
+    fun reportNovelCover(
+        context: Context,
+        num: Int,
+        reportState: ReportState,
+    ) {
+        val repository = ProtoRepository(context)
+        fun read(): AccountInfo {
+            var accountInfo: AccountInfo
+            runBlocking(Dispatchers.IO) {
+                accountInfo = repository.readAccountInfo()
+
+            }
+            return accountInfo
+        }
+
+        val ac = read()
+        val retrofitClass = RetrofitClass.api.reportNovelCover(
+            ac.authorization,
+            num,
+            ReportMethod(reportState.sendState, reportContent)
+        )
+        println(retrofitClass.request().toString())
+        retrofitClass.enqueue(object : retrofit2.Callback<CallMethod> {
+            override fun onResponse(call: Call<CallMethod>, response: Response<CallMethod>) {
+                println(response.body().toString())
+                when (response.body()!!.msg) {
+                    "OK" -> {
+                        Toast.makeText(
+                            context,
+                            "신고가 완료되었습니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        reportContent = ""
+                    }
+                    "reduplication" -> {
+                        Toast.makeText(
+                            context,
+                            "이미 신고한 게시물입니다.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        reportContent = ""
+                    }
+                    else -> {
+                        getAToken(context)
+                        retrofitClass.cancel()
+                        Handler(Looper.getMainLooper()).postDelayed(
+                            {
+                                reportNovelCover(context, num, reportState)
+                            }, 1000
+                        )
+                    }
+                }
             }
 
             override fun onFailure(call: Call<CallMethod>, t: Throwable) {

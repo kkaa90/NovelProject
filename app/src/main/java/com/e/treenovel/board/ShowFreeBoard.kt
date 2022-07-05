@@ -135,7 +135,14 @@ fun ShowBoard(
                         Text(text = "삭제")
                     }
                 } else {
-                    TextButton(onClick = { rdVisibility.value = true }) {
+                    TextButton(onClick = {
+                        if(lCheck) {
+                            rdVisibility.value = true
+                        }
+                        else {
+                            routeAction.navTo(NAVROUTE.LOGIN)
+                        }
+                    }) {
                         Text(text = "신고")
                     }
                 }
@@ -218,7 +225,12 @@ fun ShowBoard(
                                 text = board.value.user.memNick,
                                 fontSize = 14.sp,
                                 modifier = Modifier.clickable {
-                                    routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${board.value.board.memId}&nick=${board.value.board.memNickname}")
+                                    if(lCheck) {
+                                        routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${board.value.board.memId}&nick=${board.value.board.memNickname}")
+                                    }
+                                    else {
+                                        routeAction.navTo(NAVROUTE.LOGIN)
+                                    }
                                 })
                             Text(
                                 text = board.value.board.brdDatetime.split(".")[0] + " 조회 ${board.value.board.brdHit}",
@@ -492,19 +504,29 @@ fun ShowComment(
                         text = comment.memNickname,
                         fontSize = 16.sp,
                         modifier = Modifier.clickable {
-                            routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
+                            if(lCheck) {
+                                routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
+                            }
+                            else {
+                                routeAction.navTo(NAVROUTE.LOGIN)
+                            }
                         })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable {
-                            viewModel.progress = true
-                            viewModel.likeComment(
-                                comment.brdId,
-                                comment.brdCmtId
-                            )
-                            refreshComment(viewModel, comments, replys)
+                            if(lCheck) {
+                                viewModel.progress = true
+                                viewModel.likeComment(
+                                    comment.brdId,
+                                    comment.brdCmtId
+                                )
+                                refreshComment(viewModel, comments, replys)
+                            }
+                            else {
+                                routeAction.navTo(NAVROUTE.LOGIN)
+                            }
                         }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
@@ -518,12 +540,17 @@ fun ShowComment(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable {
-                            viewModel.progress=true
-                            viewModel.dislikeComment(
-                                comment.brdId,
-                                comment.brdCmtId
-                            )
-                            refreshComment(viewModel, comments, replys)
+                            if(lCheck) {
+                                viewModel.progress = true
+                                viewModel.dislikeComment(
+                                    comment.brdId,
+                                    comment.brdCmtId
+                                )
+                                refreshComment(viewModel, comments, replys)
+                            }
+                            else {
+                                routeAction.navTo(NAVROUTE.LOGIN)
+                            }
                         }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
@@ -542,8 +569,13 @@ fun ShowComment(
                         }
                     } else {
                         TextButton(onClick = {
-                            viewModel.reportComment = comment.brdCmtId
-                            visibility.value = true
+                            if(lCheck) {
+                                viewModel.reportComment = comment.brdCmtId
+                                visibility.value = true
+                            }
+                            else {
+                                routeAction.navTo(NAVROUTE.LOGIN)
+                            }
                         }) {
                             Text(text = "신고")
                         }
@@ -654,7 +686,12 @@ fun ShowComment2(
                             text = comment.memNickname,
                             fontSize = 16.sp,
                             modifier = Modifier.clickable {
-                                routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
+                                if(lCheck) {
+                                    routeAction.navWithNum(NAVROUTE.WRITEMESSAGE.routeName + "?num=${comment.memId}&nick=${comment.memNickname}")
+                                }
+                                else {
+                                    routeAction.navTo(NAVROUTE.LOGIN)
+                                }
                             })
                     }
 
@@ -662,12 +699,17 @@ fun ShowComment2(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable {
-                                viewModel.progress = true
-                                viewModel.likeComment(
-                                    comment.brdId,
-                                    comment.brdCmtId
-                                )
-                                refreshComment(viewModel, comments, replys)
+                                if(lCheck) {
+                                    viewModel.progress = true
+                                    viewModel.likeComment(
+                                        comment.brdId,
+                                        comment.brdCmtId
+                                    )
+                                    refreshComment(viewModel, comments, replys)
+                                }
+                                else {
+                                    routeAction.navTo(NAVROUTE.LOGIN)
+                                }
                             }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_baseline_thumb_up_24),
@@ -681,12 +723,17 @@ fun ShowComment2(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable {
-                                viewModel.progress=true
-                                viewModel.dislikeComment(
-                                    comment.brdId,
-                                    comment.brdCmtId
-                                )
-                                refreshComment(viewModel, comments, replys)
+                                if(lCheck) {
+                                    viewModel.progress = true
+                                    viewModel.dislikeComment(
+                                        comment.brdId,
+                                        comment.brdCmtId
+                                    )
+                                    refreshComment(viewModel, comments, replys)
+                                }
+                                else {
+                                    routeAction.navTo(NAVROUTE.LOGIN)
+                                }
                             }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_baseline_thumb_down_24),
@@ -705,8 +752,13 @@ fun ShowComment2(
                             }
                         } else {
                             TextButton(onClick = {
-                                viewModel.reportComment = comment.brdCmtId
-                                visibility.value = true
+                                if(lCheck) {
+                                    viewModel.reportComment = comment.brdCmtId
+                                    visibility.value = true
+                                }
+                                else {
+                                    routeAction.navTo(NAVROUTE.LOGIN)
+                                }
                             }) {
                                 Text(text = "신고")
                             }
